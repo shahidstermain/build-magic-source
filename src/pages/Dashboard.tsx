@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { Eye, Heart, Loader2, Pause, Play, Receipt, Rocket, Sparkles, Trash2, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,7 +58,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [boostTarget, setBoostTarget] = useState<ListingRow | null>(null);
 
-  const loadAll = async () => {
+  const loadAll = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     const [{ data: mine, error: mineErr }, { data: favs, error: favErr }] = await Promise.all([
@@ -84,12 +84,11 @@ const Dashboard = () => {
     setMyListings((mine ?? []) as ListingRow[]);
     setFavorites((favs ?? []) as unknown as FavoriteRow[]);
     setLoading(false);
-  };
+  }, [user, toast]);
 
   useEffect(() => {
     if (user) loadAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, loadAll]);
 
   if (authLoading) {
     return (
