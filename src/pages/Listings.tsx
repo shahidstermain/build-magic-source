@@ -281,7 +281,7 @@ const Listings = () => {
       ) : (
         <>
           <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {items.map((item) => {
+            {items.map((item, idx) => {
               const cover = [...item.listing_images]
                 .sort((a, b) => a.display_order - b.display_order)[0]?.image_url;
               return (
@@ -293,7 +293,11 @@ const Listings = () => {
                     <div className="relative aspect-square w-full overflow-hidden bg-muted">
                       {cover ? (
                         <img
-                          src={cover} alt={item.title} loading="lazy"
+                          src={cover}
+                          alt={item.title}
+                          loading={idx === 0 ? "eager" : "lazy"}
+                          fetchPriority={idx === 0 ? "high" : "auto"}
+                          decoding="async"
                           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                       ) : (
