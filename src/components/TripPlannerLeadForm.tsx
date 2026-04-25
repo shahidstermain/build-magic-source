@@ -112,21 +112,20 @@ export function TripPlannerLeadForm({ className, compact = false }: LeadFormProp
       });
       if (error) throw error;
 
-      // Fire-and-forget notification email — don't block success on it.
-      supabase.functions
-        .invoke("send-trip-lead", {
-          body: {
-            name: data.name,
-            whatsapp: data.whatsapp,
-            travel_from: data.travel_from,
-            travel_to: data.travel_to,
-            travelers: String(data.travelers),
-            budget_range: data.budget_range,
-            query: data.query,
-            preferred_call_time: data.preferred_call_time,
-          },
-        })
-        .catch((err) => console.warn("Notification email failed", err));
+      // Wait for the notification email to confirm before showing success.
+      const { error: emailError } = await supabase.functions.invoke("send-trip-lead", {
+        body: {
+          name: data.name,
+          whatsapp: data.whatsapp,
+          travel_from: data.travel_from,
+          travel_to: data.travel_to,
+          travelers: String(data.travelers),
+          budget_range: data.budget_range,
+          query: data.query,
+          preferred_call_time: data.preferred_call_time,
+        },
+      });
+      if (emailError) throw new Error(emailError.message || "Notification email failed");
 
       setSuccess(true);
     } catch (err) {
