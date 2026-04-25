@@ -1,6 +1,6 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
-import { ArrowLeft, Loader2, Send } from "lucide-react";
+import { ArrowLeft, ImagePlus, Loader2, Send, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +15,7 @@ type Message = {
   chat_id: string;
   sender_id: string;
   body: string;
+  image_url: string | null;
   created_at: string;
 };
 
@@ -40,8 +41,11 @@ const ChatRoom = () => {
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [pendingImage, setPendingImage] = useState<File | null>(null);
+  const [pendingPreview, setPendingPreview] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user || !id) return;
@@ -77,7 +81,7 @@ const ChatRoom = () => {
 
       const { data: msgs } = await supabase
         .from("messages")
-        .select("id, chat_id, sender_id, body, created_at")
+        .select("id, chat_id, sender_id, body, image_url, created_at")
         .eq("chat_id", id)
         .order("created_at", { ascending: true });
 
@@ -141,16 +145,52 @@ const ChatRoom = () => {
     return img ? publicImageUrl(img) : null;
   }, [meta]);
 
+  const onPickImage = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Sirf image bhej sakte ho", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Image bahut badi hai (max 5 MB)", variant: "destructive" });
+      return;
+    }
+    setPendingImage(file);
+    setPendingPreview(URL.createObjectURL(file));
+  };
+
+  const clearPending = () => {
+    if (pendingPreview) URL.revokeObjectURL(pendingPreview);
+    setPendingImage(null);
+    setPendingPreview(null);
+  };
+
   const onSend = async (e: FormEvent) => {
     e.preventDefault();
     if (!user || !id) return;
     const body = draft.trim();
-    if (!body || sending) return;
+    if ((!body && !pendingImage) || sending) return;
     setSending(true);
+    let imageUrl: string | null = null;
+    if (pendingImage) {
+      const ext = pendingImage.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/${id}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("chat-images")
+        .upload(path, pendingImage, { contentType: pendingImage.type, upsert: false });
+      if (upErr) {
+        setSending(false);
+        toast({ title: "Image upload fail", description: upErr.message, variant: "destructive" });
+        return;
+      }
+      imageUrl = supabase.storage.from("chat-images").getPublicUrl(path).data.publicUrl;
+    }
     const { data, error } = await supabase
       .from("messages")
-      .insert({ chat_id: id, sender_id: user.id, body })
-      .select("id, chat_id, sender_id, body, created_at")
+      .insert({ chat_id: id, sender_id: user.id, body: body || "", image_url: imageUrl })
+      .select("id, chat_id, sender_id, body, image_url, created_at")
       .single();
     setSending(false);
     if (error) {
@@ -158,6 +198,7 @@ const ChatRoom = () => {
       return;
     }
     setDraft("");
+    clearPending();
     setMessages((prev) =>
       prev.some((m) => m.id === data.id) ? prev : [...prev, data as Message],
     );
@@ -242,6 +283,20 @@ const ChatRoom = () => {
                       : "rounded-bl-sm bg-muted text-foreground"
                   }`}
                 >
+                  {m.image_url && (
+                    <a
+                      href={m.image_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mb-1 block overflow-hidden rounded-lg"
+                    >
+                      <img
+                        src={m.image_url}
+                        alt="Shared photo"
+                        className="max-h-64 w-auto object-cover"
+                      />
+                    </a>
+                  )}
                   {m.body}
                   <div
                     className={`mt-1 text-[10px] ${
@@ -261,21 +316,59 @@ const ChatRoom = () => {
       </div>
 
       {/* Composer */}
-      <form
-        onSubmit={onSend}
-        className="flex items-center gap-2 border-t border-border pt-3"
-      >
-        <Input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Type a message"
-          autoComplete="off"
-          maxLength={2000}
-          className="flex-1"
-        />
-        <Button type="submit" size="icon" disabled={!draft.trim() || sending} aria-label="Send">
-          {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        </Button>
+      <form onSubmit={onSend} className="border-t border-border pt-3">
+        {pendingPreview && (
+          <div className="relative mb-2 inline-block">
+            <img
+              src={pendingPreview}
+              alt="Preview"
+              className="h-20 w-20 rounded-lg object-cover"
+            />
+            <button
+              type="button"
+              onClick={clearPending}
+              className="absolute -right-1 -top-1 rounded-full bg-foreground p-0.5 text-background"
+              aria-label="Remove image"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={onPickImage}
+          />
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            onClick={() => fileRef.current?.click()}
+            disabled={sending}
+            aria-label="Attach photo"
+          >
+            <ImagePlus className="h-4 w-4" />
+          </Button>
+          <Input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Type a message"
+            autoComplete="off"
+            maxLength={2000}
+            className="flex-1"
+          />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={(!draft.trim() && !pendingImage) || sending}
+            aria-label="Send"
+          >
+            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          </Button>
+        </div>
       </form>
     </section>
   );
