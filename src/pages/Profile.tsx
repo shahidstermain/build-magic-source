@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ANDAMAN_AREAS } from "@/lib/listings";
+import { GitHubSyncCard } from "@/components/GitHubSyncCard";
 
 const profileSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(80),
@@ -442,6 +443,10 @@ const Profile = () => {
             </Button>
           </div>
         )}
+      </div>
+
+      <div className="mt-6">
+        <GitHubSyncCard />
       </div>
     </section>
   );
