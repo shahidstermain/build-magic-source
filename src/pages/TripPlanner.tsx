@@ -12,12 +12,16 @@ import {
   Sparkles,
   Wallet,
   Wand2,
+  Edit3,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -33,8 +37,10 @@ import {
   getTripDownloadUrl,
   regenerateTrip,
 } from "@/lib/tripPlanner";
+import { saveCollaborativeTrip } from "@/lib/collaborativeTrips";
 import { PayTripDialog } from "@/components/PayTripDialog";
 import { RecommendationsSection } from "@/components/RecommendationCard";
+import { WhatsAppShare } from "@/components/WhatsAppShare";
 import { cn } from "@/lib/utils";
 
 type Stage = "form" | "preview" | "generating" | "ready";
@@ -97,6 +103,12 @@ export default function TripPlanner() {
   const [genError, setGenError] = useState<string | null>(null);
   const [teaserRecs, setTeaserRecs] = useState<TripRecommendation[]>([]);
   const [fullRecs, setFullRecs] = useState<TripRecommendation[]>([]);
+  
+  // Enhanced features
+  const [isEditing, setIsEditing] = useState(false);
+  const [tripNotes, setTripNotes] = useState("");
+  const [collaborators, setCollaborators] = useState<string[]>([]);
+  const [newCollaborator, setNewCollaborator] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?next=/trip-planner");
@@ -132,6 +144,23 @@ export default function TripPlanner() {
       setTripId(result.trip_id);
       setPreview(result.preview);
       setStage("preview");
+      
+      // Save collaborative data if present
+      if ((tripNotes || collaborators.length > 0) && user) {
+        const collabResult = await saveCollaborativeTrip(
+          result.trip_id,
+          user.id,
+          result.preview.trip_title,
+          tripNotes,
+          collaborators
+        );
+        
+        if (!collabResult.success) {
+          console.warn("Failed to save collaborative trip data:", collabResult.error);
+          // Don't block the preview if collaborative save fails
+        }
+      }
+      
       // Fire-and-forget teaser recommendations (2 items)
       fetchTripRecommendations(result.trip_id, { teaserOnly: true })
         .then((recs) => setTeaserRecs(recs))
@@ -216,6 +245,17 @@ export default function TripPlanner() {
       await navigator.clipboard.writeText(downloadUrl);
       toast({ title: "Link copied", description: "Share it before it expires (10 min)." });
     }
+  };
+
+  const addCollaborator = () => {
+    if (newCollaborator.trim() && !collaborators.includes(newCollaborator.trim())) {
+      setCollaborators([...collaborators, newCollaborator.trim()]);
+      setNewCollaborator("");
+    }
+  };
+
+  const removeCollaborator = (email: string) => {
+    setCollaborators(collaborators.filter(c => c !== email));
   };
 
   if (authLoading || !user) {
@@ -336,6 +376,54 @@ export default function TripPlanner() {
             </div>
           </div>
 
+          {/* Collaborative Planning Section */}
+          <div className="space-y-3 border-t pt-4">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <Label>Collaborative Planning (Optional)</Label>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Trip Notes</Label>
+              <Textarea
+                value={tripNotes}
+                onChange={(e) => setTripNotes(e.target.value)}
+                placeholder="Add notes about preferences, special requirements, or ideas..."
+                rows={2}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Invite Collaborators</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={newCollaborator}
+                  onChange={(e) => setNewCollaborator(e.target.value)}
+                  placeholder="Enter email address"
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCollaborator())}
+                />
+                <Button type="button" variant="outline" onClick={addCollaborator}>
+                  Add
+                </Button>
+              </div>
+              {collaborators.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {collaborators.map((email) => (
+                    <Badge key={email} variant="secondary" className="gap-1">
+                      {email}
+                      <button
+                        onClick={() => removeCollaborator(email)}
+                        className="ml-1 text-xs hover:text-destructive"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           <Button onClick={onPreview} disabled={submitting} size="lg" className="w-full">
             {submitting ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -353,17 +441,54 @@ export default function TripPlanner() {
       {stage === "preview" && preview && (
         <div className="space-y-4">
           <Card className="space-y-3 p-6">
-            <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-              <Compass className="h-3.5 w-3.5" /> Preview
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
+                <Compass className="h-3.5 w-3.5" /> Preview
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditing(!isEditing)}
+              >
+                <Edit3 className="h-4 w-4 mr-1" />
+                {isEditing ? "Save" : "Edit"}
+              </Button>
             </div>
-            <h2 className="text-2xl font-semibold tracking-tight">{preview.trip_title}</h2>
-            <p className="text-muted-foreground">{preview.summary}</p>
+            
+            {isEditing ? (
+              <div className="space-y-3">
+                <Input
+                  value={preview.trip_title}
+                  onChange={(e) => setPreview({...preview, trip_title: e.target.value})}
+                  className="text-2xl font-semibold"
+                />
+                <Textarea
+                  value={preview.summary}
+                  onChange={(e) => setPreview({...preview, summary: e.target.value})}
+                  rows={3}
+                />
+              </div>
+            ) : (
+              <>
+                <h2 className="text-2xl font-semibold tracking-tight">{preview.trip_title}</h2>
+                <p className="text-muted-foreground">{preview.summary}</p>
+              </>
+            )}
 
             <div className="rounded-xl border border-border bg-muted/30 p-4">
               <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                 <CalendarDays className="h-3.5 w-3.5" /> Day 1 — Morning
               </div>
-              <p className="mt-1 text-sm">{preview.day1_morning}</p>
+              {isEditing ? (
+                <Textarea
+                  value={preview.day1_morning}
+                  onChange={(e) => setPreview({...preview, day1_morning: e.target.value})}
+                  className="mt-1"
+                  rows={2}
+                />
+              ) : (
+                <p className="mt-1 text-sm">{preview.day1_morning}</p>
+              )}
             </div>
 
             <div className="grid gap-2 sm:grid-cols-3">
@@ -381,6 +506,14 @@ export default function TripPlanner() {
                 ₹{preview.estimated_total_inr.toLocaleString("en-IN")}
               </span>
             </div>
+            
+            {/* Collaboration info */}
+            {collaborators.length > 0 && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Users className="h-4 w-4" />
+                <span>Shared with: {collaborators.join(", ")}</span>
+              </div>
+            )}
           </Card>
 
           <Card className="relative overflow-hidden p-6">
@@ -468,6 +601,13 @@ export default function TripPlanner() {
             <Button variant="outline" size="lg" onClick={onShare}>
               <Share2 className="mr-2 h-4 w-4" /> Share
             </Button>
+            <WhatsAppShare
+              title={preview?.trip_title || "My Andaman Trip Plan"}
+              url={downloadUrl}
+              type="trip"
+              variant="button"
+              tripId={tripId || undefined}
+            />
           </div>
           <div className="flex justify-center gap-3 pt-2 text-sm">
             <Link to="/my-trips" className="text-primary hover:underline">
