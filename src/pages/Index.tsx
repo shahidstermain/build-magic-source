@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Smartphone, Sofa, Car, Home as HomeIcon, Briefcase, Bike, Shirt, Dog, MapPin, ShieldCheck, Sparkles } from "lucide-react";
+import { Search, Smartphone, Sofa, Car, Home as HomeIcon, Briefcase, Bike, Shirt, Dog, MapPin, ShieldCheck, Sparkles, Wand2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/listings";
 import { slangOfTheDay } from "@/lib/slang";
@@ -103,6 +103,23 @@ const Index = () => {
     {/* Featured rail */}
     {(loadingFeatured || featured.length > 0) && (
       <section>
+        <Link
+          to="/trip-planner"
+          className="mb-6 flex items-center gap-4 rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/5 p-4 transition-shadow hover:shadow-[var(--shadow-elevated)]"
+        >
+          <div className="grid h-12 w-12 flex-none place-items-center rounded-xl bg-primary/15 text-primary">
+            <Wand2 className="h-6 w-6" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold">Plan your Andaman trip with AI · ₹49</p>
+            <p className="text-xs text-muted-foreground">
+              Ferry-aware, weather-backed, day-by-day PDF. Built like a local insider.
+            </p>
+          </div>
+          <span className="hidden rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground sm:inline-flex">
+            Try it
+          </span>
+        </Link>
         <div className="mb-4 flex items-end justify-between">
           <h2 className="inline-flex items-center gap-2 text-xl font-semibold tracking-tight">
             <Sparkles className="h-5 w-5 text-accent" />
