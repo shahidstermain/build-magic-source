@@ -379,7 +379,7 @@ export default function TripPlanner() {
           <div className="space-y-2">
             <Label>Interests</Label>
             <div className="flex flex-wrap gap-2">
-              {INTEREST_OPTIONS.map((i) => {
+              {EXPANDED_INTEREST_OPTIONS.map((i) => {
                 const active = interests.includes(i);
                 return (
                   <button
@@ -414,6 +414,209 @@ export default function TripPlanner() {
               ))}
             </div>
           </div>
+
+          {/* ========= Who's travelling ========= */}
+          <Collapsible open={openProfile} onOpenChange={setOpenProfile} className="border-t pt-4">
+            <CollapsibleTrigger className="flex w-full items-center justify-between text-left">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <Label className="cursor-pointer">Who's travelling</Label>
+                <span className="text-xs text-muted-foreground">(personalises the plan)</span>
+              </div>
+              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", openProfile && "rotate-180")} />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 pt-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="travelers">Number of travellers</Label>
+                  <Input
+                    id="travelers"
+                    type="number"
+                    min={1}
+                    max={30}
+                    value={travelers}
+                    onChange={(e) => setTravelers(Math.max(1, Number(e.target.value) || 1))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Group type</Label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {GROUP_OPTIONS.map((g) => (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => setGroupType(g.id)}
+                        className={cn(
+                          "rounded-lg border px-2 py-2 text-xs transition-colors",
+                          groupType === g.id
+                            ? "border-primary bg-primary/5 text-primary"
+                            : "border-border hover:bg-muted",
+                        )}
+                      >
+                        {g.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ages">Ages in group (optional)</Label>
+                <Input
+                  id="ages"
+                  value={ages}
+                  onChange={(e) => setAges(e.target.value)}
+                  placeholder="e.g. 32, 30, child 6, infant 1"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Helps avoid impossible activities (e.g. scuba with infants).
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Fitness level</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {FITNESS_OPTIONS.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setFitness(f.id)}
+                      className={cn(
+                        "rounded-lg border px-2 py-2 text-left text-xs transition-colors",
+                        fitness === f.id
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border hover:bg-muted",
+                      )}
+                    >
+                      <div className="font-medium">{f.label}</div>
+                      <div className="text-[10px] text-muted-foreground">{f.hint}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* ========= Stay & food ========= */}
+          <Collapsible open={openPreferences} onOpenChange={setOpenPreferences} className="border-t pt-4">
+            <CollapsibleTrigger className="flex w-full items-center justify-between text-left">
+              <div className="flex items-center gap-2">
+                <Wallet className="h-4 w-4 text-muted-foreground" />
+                <Label className="cursor-pointer">Stay & food preferences</Label>
+              </div>
+              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", openPreferences && "rotate-180")} />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 pt-4">
+              <div className="space-y-1.5">
+                <Label>Accommodation</Label>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {ACCOMMODATION_OPTIONS.map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => setAccommodation(a.id)}
+                      className={cn(
+                        "rounded-lg border px-2 py-2 text-xs transition-colors",
+                        accommodation === a.id
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border hover:bg-muted",
+                      )}
+                    >
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Diet</Label>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {DIET_OPTIONS.map((d) => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => setDiet(d.id)}
+                      className={cn(
+                        "rounded-lg border px-2 py-2 text-xs transition-colors",
+                        diet === d.id
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border hover:bg-muted",
+                      )}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* ========= Logistics ========= */}
+          <Collapsible open={openLogistics} onOpenChange={setOpenLogistics} className="border-t pt-4">
+            <CollapsibleTrigger className="flex w-full items-center justify-between text-left">
+              <div className="flex items-center gap-2">
+                <Compass className="h-4 w-4 text-muted-foreground" />
+                <Label className="cursor-pointer">Logistics & avoid list</Label>
+              </div>
+              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", openLogistics && "rotate-180")} />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label>Islands or activities to avoid (optional)</Label>
+                <div className="flex flex-wrap gap-2">
+                  {[...ISLAND_OPTIONS, "scuba", "treks", "long ferry rides"].map((item) => {
+                    const active = avoid.includes(item);
+                    return (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setAvoid((arr) => toggle(arr, item))}
+                        className={cn(
+                          "rounded-full border px-3 py-1 text-xs transition-colors",
+                          active
+                            ? "border-destructive bg-destructive/10 text-destructive"
+                            : "border-border hover:bg-muted",
+                        )}
+                      >
+                        {item}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <label className="flex items-start gap-2 text-sm">
+                  <Checkbox
+                    checked={permitsArranged}
+                    onCheckedChange={(v) => setPermitsArranged(v === true)}
+                  />
+                  <span>Permits already arranged</span>
+                </label>
+                <label className="flex items-start gap-2 text-sm">
+                  <Checkbox
+                    checked={returningVisitor}
+                    onCheckedChange={(v) => setReturningVisitor(v === true)}
+                  />
+                  <span>Been to Andaman before</span>
+                </label>
+                <label className="flex items-start gap-2 text-sm">
+                  <Checkbox
+                    checked={isForeign}
+                    onCheckedChange={(v) => setIsForeign(v === true)}
+                  />
+                  <span>Foreign national</span>
+                </label>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="extraNotes">Anything else? (optional)</Label>
+                <Textarea
+                  id="extraNotes"
+                  value={extraNotes}
+                  onChange={(e) => setExtraNotes(e.target.value)}
+                  rows={2}
+                  maxLength={500}
+                  placeholder="Allergies, must-do bucket list, anniversaries…"
+                />
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* Collaborative Planning Section */}
           <div className="space-y-3 border-t pt-4">
