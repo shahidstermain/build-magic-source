@@ -295,6 +295,9 @@ const Listings = () => {
                         <img
                           src={cover}
                           alt={item.title}
+                          width={400}
+                          height={400}
+                          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                           loading={idx === 0 ? "eager" : "lazy"}
                           fetchPriority={idx === 0 ? "high" : "auto"}
                           decoding="async"
