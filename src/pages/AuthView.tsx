@@ -449,43 +449,50 @@ const AuthView = () => {
           </p>
 
           {/* Legal */}
-          <p className="text-center text-xs text-muted-foreground">
-            By continuing you agree to our{" "}
-            <LegalDialog
-              trigger={
-                <button type="button" className="underline underline-offset-2 hover:text-foreground">
-                  Terms
-                </button>
-              }
-              title="Terms of Service"
-              description="Preview of our Terms — opens the full page in a new tab from the link below."
-            >
-              <TermsOfService />
-              <p className="mt-4 text-xs text-muted-foreground">
-                <Link to="/terms" target="_blank" rel="noopener" className="underline">
-                  Open full page in a new tab ↗
-                </Link>
-              </p>
-            </LegalDialog>
-            {" "}and{" "}
-            <LegalDialog
-              trigger={
-                <button type="button" className="underline underline-offset-2 hover:text-foreground">
-                  Privacy Policy
-                </button>
-              }
-              title="Privacy Policy"
-              description="Preview of our Privacy Policy — opens the full page in a new tab from the link below."
-            >
-              <PrivacyPolicy />
-              <p className="mt-4 text-xs text-muted-foreground">
-                <Link to="/privacy" target="_blank" rel="noopener" className="underline">
-                  Open full page in a new tab ↗
-                </Link>
-              </p>
-            </LegalDialog>
-            .
-          </p>
+          <div className="space-y-2 text-center text-xs text-muted-foreground">
+            <p>By continuing you agree to our</p>
+            <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-center sm:gap-3">
+              <LegalDialog
+                trigger={
+                  <button
+                    type="button"
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:border-primary/40 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:min-h-0 sm:border-0 sm:bg-transparent sm:px-1 sm:py-0 sm:text-xs sm:font-normal sm:text-muted-foreground sm:shadow-none sm:underline sm:underline-offset-2 sm:hover:bg-transparent sm:hover:text-foreground"
+                  >
+                    Terms of Service
+                  </button>
+                }
+                title="Terms of Service"
+                description="Preview of our Terms — opens the full page in a new tab from the link below."
+              >
+                <TermsOfService />
+                <p className="mt-4 text-xs text-muted-foreground">
+                  <Link to="/terms" target="_blank" rel="noopener" className="underline">
+                    Open full page in a new tab ↗
+                  </Link>
+                </p>
+              </LegalDialog>
+              <span className="hidden text-muted-foreground sm:inline">and</span>
+              <LegalDialog
+                trigger={
+                  <button
+                    type="button"
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:border-primary/40 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:min-h-0 sm:border-0 sm:bg-transparent sm:px-1 sm:py-0 sm:text-xs sm:font-normal sm:text-muted-foreground sm:shadow-none sm:underline sm:underline-offset-2 sm:hover:bg-transparent sm:hover:text-foreground"
+                  >
+                    Privacy Policy
+                  </button>
+                }
+                title="Privacy Policy"
+                description="Preview of our Privacy Policy — opens the full page in a new tab from the link below."
+              >
+                <PrivacyPolicy />
+                <p className="mt-4 text-xs text-muted-foreground">
+                  <Link to="/privacy" target="_blank" rel="noopener" className="underline">
+                    Open full page in a new tab ↗
+                  </Link>
+                </p>
+              </LegalDialog>
+            </div>
+          </div>
         </div>
       </div>
     </div>
