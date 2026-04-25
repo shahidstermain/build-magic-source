@@ -277,7 +277,7 @@ const AdminEmails = () => {
                   {new Date(webhookCheck.checkedAt).toLocaleString()}
                 </div>
               )}
-              {webhookCheck && !webhookCheck.ok && (
+              {webhookCheck && webhookCheck.ok === false && (
                 <div className="mt-1 text-xs text-destructive truncate">{webhookCheck.message}</div>
               )}
             </div>
