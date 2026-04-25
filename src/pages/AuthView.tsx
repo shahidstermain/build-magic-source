@@ -10,6 +10,42 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Anchor, Compass, ShieldCheck } from "lucide-react";
 import logoUrl from "@/assets/logo.webp";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import TermsOfService from "@/pages/TermsOfService";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+
+const LegalDialog = ({
+  trigger,
+  title,
+  description,
+  children,
+}: {
+  trigger: React.ReactNode;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) => (
+  <Dialog>
+    <DialogTrigger asChild>{trigger}</DialogTrigger>
+    <DialogContent className="max-w-3xl p-0">
+      <DialogHeader className="border-b border-border px-6 py-4">
+        <DialogTitle>{title}</DialogTitle>
+        <DialogDescription>{description}</DialogDescription>
+      </DialogHeader>
+      <ScrollArea className="max-h-[70vh] px-6">
+        <div className="py-2">{children}</div>
+      </ScrollArea>
+    </DialogContent>
+  </Dialog>
+);
 
 type Mode = "signin" | "signup" | "forgot";
 
