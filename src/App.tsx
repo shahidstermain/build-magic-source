@@ -20,6 +20,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy.tsx";
 import TermsOfService from "./pages/TermsOfService.tsx";
 import Brand from "./pages/Brand.tsx";
 import Favorites from "./pages/Favorites.tsx";
+import PaymentTestChecklist from "./pages/PaymentTestChecklist.tsx";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/brand" element={<Brand />} />
               <Route path="/favorites" element={<Favorites />} />
+              <Route path="/payment-test" element={<PaymentTestChecklist />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Route>
