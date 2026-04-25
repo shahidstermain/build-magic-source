@@ -222,6 +222,27 @@ export type Database = {
         }
         Relationships: []
       }
+      andaman_knowledge: {
+        Row: {
+          data: Json
+          id: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          data?: Json
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          data?: Json
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       chats: {
         Row: {
           buyer_id: string
@@ -917,6 +938,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trip_day_feedback: {
+        Row: {
+          comment: string | null
+          created_at: string
+          day_number: number
+          id: string
+          is_helpful: boolean
+          trip_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          day_number: number
+          id?: string
+          is_helpful?: boolean
+          trip_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          day_number?: number
+          id?: string
+          is_helpful?: boolean
+          trip_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      trip_generation_logs: {
+        Row: {
+          conflicts_fixed: Json
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          id: string
+          inputs: Json
+          model: string | null
+          output: Json | null
+          status: string
+          trip_id: string
+          user_id: string
+        }
+        Insert: {
+          conflicts_fixed?: Json
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          inputs: Json
+          model?: string | null
+          output?: Json | null
+          status?: string
+          trip_id: string
+          user_id: string
+        }
+        Update: {
+          conflicts_fixed?: Json
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          inputs?: Json
+          model?: string | null
+          output?: Json | null
+          status?: string
+          trip_id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       trip_pdfs: {
         Row: {
