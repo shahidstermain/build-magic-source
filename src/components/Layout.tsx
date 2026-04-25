@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NotificationBell } from "@/components/NotificationBell";
+import logoUrl from "@/assets/logo.png";
 
 const tabs = [
   { to: "/", label: "Home", icon: Home, end: true },
@@ -36,9 +37,11 @@ export function Layout() {
       <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
           <Link to="/" className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-[image:var(--gradient-hero)] text-primary-foreground font-bold">
-              A
-            </span>
+            <img
+              src={logoUrl}
+              alt="AndamanBazaar logo"
+              className="h-9 w-9 rounded-lg object-cover shadow-sm"
+            />
             <span className="text-lg font-semibold tracking-tight">
               Andaman<span className="text-primary">Bazaar</span>
             </span>
