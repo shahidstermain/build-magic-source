@@ -48,6 +48,7 @@ import {
   getTripDownloadUrl,
   regenerateTrip,
 } from "@/lib/tripPlanner";
+import { formatPriceLabel } from "@/lib/promo";
 import { saveCollaborativeTrip } from "@/lib/collaborativeTrips";
 import { PayTripDialog } from "@/components/PayTripDialog";
 import { RecommendationsSection } from "@/components/RecommendationCard";
@@ -320,7 +321,7 @@ export default function TripPlanner() {
         </h1>
         <p className="text-muted-foreground">
           Ferry-aware, weather-backed, budget-tuned. Built with a local insider mindset — no
-          generic tourist fluff. Premium PDF for ₹{TRIP_PRICE_INR}.
+          generic tourist fluff. Premium PDF for {formatPriceLabel(TRIP_PRICE_INR)}.
         </p>
       </header>
 
@@ -679,7 +680,7 @@ export default function TripPlanner() {
             Build my preview
           </Button>
           <p className="text-center text-xs text-muted-foreground">
-            You'll see a free teaser. Pay ₹{TRIP_PRICE_INR} only when you want the full plan.
+            You'll see a free teaser. Pay {formatPriceLabel(TRIP_PRICE_INR)} only when you want the full plan.
           </p>
         </Card>
       )}
@@ -788,7 +789,7 @@ export default function TripPlanner() {
               </div>
               <p className="font-medium">Unlock full plan</p>
               <Button size="lg" onClick={() => setPayOpen(true)}>
-                <Sparkles className="mr-2 h-4 w-4" /> Pay ₹{TRIP_PRICE_INR} & generate PDF
+                <Sparkles className="mr-2 h-4 w-4" /> Pay {formatPriceLabel(TRIP_PRICE_INR)} & generate PDF
               </Button>
               <Button variant="ghost" size="sm" onClick={() => setStage("form")}>
                 Edit inputs

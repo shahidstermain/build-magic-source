@@ -11,7 +11,8 @@ import { CONDITIONS, formatPrice } from "@/lib/listings";
 import { getOrCreateChat } from "@/lib/chats";
 import { ReportListingDialog } from "@/components/ReportListingDialog";
 import { TrustBadge } from "@/components/TrustBadge";
-import { BoostListingDialog } from "@/components/BoostListingDialog";
+import { BoostListingDialog, BOOST_PRICE_INR } from "@/components/BoostListingDialog";
+import { formatPriceLabel } from "@/lib/promo";
 import { ReviewSystem } from "@/components/ReviewSystem";
 import { MessageSellerPanel } from "@/components/MessageSellerPanel";
 
@@ -381,11 +382,13 @@ const ListingDetail = () => {
             </div>
             <div>
               <p className="text-sm font-semibold">Boost this listing</p>
-              <p className="text-xs text-muted-foreground">Featured rail · ~3× views · ₹99 one-time</p>
+              <p className="text-xs text-muted-foreground">
+                Featured rail · ~3× views · {formatPriceLabel(BOOST_PRICE_INR)} one-time
+              </p>
             </div>
           </div>
           <Button onClick={() => setBoostOpen(true)} className="w-full rounded-xl sm:w-auto">
-            <Rocket className="mr-2 h-4 w-4" /> Boost for ₹99
+            <Rocket className="mr-2 h-4 w-4" /> Boost for {formatPriceLabel(BOOST_PRICE_INR)}
           </Button>
         </div>
       )}

@@ -34,3 +34,12 @@ export function daysLeftInPromo(now: Date = new Date()): number {
   const ms = promoEndDate().getTime() - now.getTime();
   return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
 }
+
+// Compact text label for inline CTAs / copy lines.
+// Promo active → "₹99 (was ₹198)". Otherwise → "₹198".
+export function formatPriceLabel(basePrice: number, now: Date = new Date()): string {
+  const list = listPrice(basePrice).toLocaleString("en-IN");
+  if (!isPromoActive(now)) return `₹${list}`;
+  const eff = effectivePrice(basePrice, now).toLocaleString("en-IN");
+  return `₹${eff} (was ₹${list})`;
+}

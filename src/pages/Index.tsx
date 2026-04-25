@@ -8,6 +8,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/listings";
 import { slangOfTheDay } from "@/lib/slang";
+import { TRIP_PRICE_INR } from "@/lib/tripPlanner";
+import { formatPriceLabel } from "@/lib/promo";
 
 const categories = [
   { id: "experiences", label: "Experiences", icon: Compass,   accent: true },
@@ -114,7 +116,9 @@ export default function Index() {
           <Wand2 className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold">AI Trip Planner · ₹49</p>
+          <p className="text-sm font-semibold">
+            AI Trip Planner · {formatPriceLabel(TRIP_PRICE_INR)}
+          </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             Ferry-aware, weather-backed, day-by-day PDF — built like a local insider.
           </p>
