@@ -407,6 +407,30 @@ export type Database = {
           },
         ]
       }
+      site_settings: {
+        Row: {
+          id: boolean
+          site_description: string
+          site_title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: boolean
+          site_description?: string
+          site_title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: boolean
+          site_description?: string
+          site_title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

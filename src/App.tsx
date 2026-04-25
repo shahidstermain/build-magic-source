@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/Layout";
 import { AuthProvider } from "@/hooks/useAuth";
+import { SiteMetaProvider } from "@/hooks/useSiteMeta";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Listings from "./pages/Listings.tsx";
@@ -28,6 +29,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AuthProvider>
+        <SiteMetaProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -53,6 +55,7 @@ const App = () => (
             </Route>
           </Routes>
         </TooltipProvider>
+        </SiteMetaProvider>
       </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>

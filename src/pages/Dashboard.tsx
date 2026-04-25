@@ -22,6 +22,7 @@ import { formatPrice, publicImageUrl } from "@/lib/listings";
 import { slang } from "@/lib/slang";
 import { BoostListingDialog } from "@/components/BoostListingDialog";
 import { PaymentHistory } from "@/components/PaymentHistory";
+import { SiteSettingsCard } from "@/components/SiteSettingsCard";
 
 type ListingRow = {
   id: string;
@@ -166,6 +167,7 @@ const Dashboard = () => {
           <TabsTrigger value="payments">
             <Receipt className="mr-1 h-3.5 w-3.5" /> Payments
           </TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="listings" className="mt-4">
@@ -358,6 +360,10 @@ const Dashboard = () => {
 
         <TabsContent value="payments" className="mt-4">
           <PaymentHistory userId={user.id} />
+        </TabsContent>
+
+        <TabsContent value="settings" className="mt-4">
+          <SiteSettingsCard />
         </TabsContent>
       </Tabs>
 
