@@ -21,6 +21,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import TermsOfService from "@/pages/TermsOfService";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import { LEGAL_VERSIONS } from "@/lib/legal";
 
 const LegalDialog = ({
   trigger,
@@ -99,7 +100,12 @@ const AuthView = () => {
   const next = params.get("next") || "/";
 
   useEffect(() => {
-    if (!loading && session) navigate(next, { replace: true });
+    if (!loading && session) {
+      // Backfill legal acceptance records on the first authenticated visit.
+      // RLS allows users to insert their own rows; duplicate versions are skipped.
+      void recordLegalAcceptanceIfMissing(session.user.id);
+      navigate(next, { replace: true });
+    }
   }, [loading, session, navigate, next]);
 
   const validate = () => {
@@ -135,7 +141,13 @@ const AuthView = () => {
           password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { name, phone: phone.trim() || null },
+            data: {
+              name,
+              phone: phone.trim() || null,
+              accepted_terms_version: LEGAL_VERSIONS.terms,
+              accepted_privacy_version: LEGAL_VERSIONS.privacy,
+              accepted_at: new Date().toISOString(),
+            },
           },
         });
         if (error) throw error;
