@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { CONDITIONS, formatPrice } from "@/lib/listings";
+import { getOrCreateChat } from "@/lib/chats";
 
 type Listing = {
   id: string;
@@ -40,6 +41,7 @@ const ListingDetail = () => {
   const [loading, setLoading] = useState(true);
   const [activePhoto, setActivePhoto] = useState(0);
   const [isFav, setIsFav] = useState(false);
+  const [startingChat, setStartingChat] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -135,6 +137,28 @@ const ListingDetail = () => {
   const conditionLabel = CONDITIONS.find((c) => c.value === listing.condition)?.label ?? listing.condition;
   const isOwner = user?.id === listing.seller_id;
 
+  const onMessageSeller = async () => {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    if (!listing) return;
+    setStartingChat(true);
+    try {
+      const chatId = await getOrCreateChat({
+        listingId: listing.id,
+        buyerId: user.id,
+        sellerId: listing.seller_id,
+      });
+      navigate(`/chats/${chatId}`);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Could not start chat";
+      toast({ title: "Could not start chat", description: message, variant: "destructive" });
+    } finally {
+      setStartingChat(false);
+    }
+  };
+
   return (
     <article className="py-4">
       <button
@@ -195,12 +219,15 @@ const ListingDetail = () => {
               <Button
                 size="lg"
                 className="flex-1"
-                onClick={() => {
-                  if (!user) navigate("/auth");
-                  else navigate(`/chats?listing=${listing.id}`);
-                }}
+                onClick={onMessageSeller}
+                disabled={startingChat}
               >
-                <MessageCircle className="mr-2 h-4 w-4" /> Message seller
+                {startingChat ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                )}
+                Message seller
               </Button>
             )}
             <Button
