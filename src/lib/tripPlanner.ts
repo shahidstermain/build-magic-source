@@ -104,6 +104,51 @@ export async function getTripDownloadUrl(tripId: string) {
   return (data as { url: string }).url;
 }
 
+// ============= Recommendations / affiliate =============
+
+export type TripRecommendation = {
+  id: string;
+  trip_id: string;
+  vendor_id: string | null;
+  item_type: "hotel" | "ferry" | "activity" | "package" | "transport" | "addon";
+  item_name: string;
+  short_description: string | null;
+  merchant_name: string;
+  price_inr: number | null;
+  price_label: string | null;
+  affiliate_url: string;
+  disclosure_text: string;
+  cta_label: string;
+  is_affiliate: boolean;
+  rank: number;
+  click_count: number;
+};
+
+export async function fetchTripRecommendations(
+  tripId: string,
+  opts: { teaserOnly?: boolean; force?: boolean } = {},
+) {
+  const { data, error } = await supabase.functions.invoke("trip-recommendations", {
+    body: {
+      trip_id: tripId,
+      teaser_only: opts.teaserOnly ?? false,
+      force: opts.force ?? false,
+    },
+  });
+  if (error) throw new Error(error.message ?? "Recommendations failed");
+  if ((data as any)?.error) throw new Error((data as any).error);
+  return (data as { recommendations: TripRecommendation[] }).recommendations ?? [];
+}
+
+/**
+ * Build the server-side tracking redirect URL for a recommendation.
+ * The edge function logs the click then 302-redirects to the merchant URL.
+ */
+export function affiliateTrackingUrl(recommendationId: string): string {
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  return `https://${projectId}.supabase.co/functions/v1/affiliate-click?rec=${encodeURIComponent(recommendationId)}`;
+}
+
 const CASHFREE_SDK_URL = "https://sdk.cashfree.com/js/v3/cashfree.js";
 
 export function loadCashfreeSdk(): Promise<void> {
