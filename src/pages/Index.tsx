@@ -1,6 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { Link } from "react-router-dom";
-import { Search, Smartphone, Sofa, Car, Home as HomeIcon, Briefcase, Bike, Shirt, Dog, MapPin, ShieldCheck, Sparkles, Wand2 } from "lucide-react";
+import {
+  Search,
+  Smartphone,
+  Sofa,
+  Car,
+  Home as HomeIcon,
+  Briefcase,
+  Bike,
+  Shirt,
+  Dog,
+  MapPin,
+  ShieldCheck,
+  Sparkles,
+  Wand2,
+  Anchor,
+  MessageCircle,
+  HeartHandshake,
+  Compass,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/listings";
 import { slangOfTheDay } from "@/lib/slang";
@@ -233,8 +251,100 @@ const Index = () => {
         </p>
       </div>
     </section>
+
+    {/* About */}
+    <section
+      id="about"
+      className="overflow-hidden rounded-3xl border border-border bg-card shadow-[var(--shadow-card)]"
+    >
+      <div className="grid gap-0 md:grid-cols-[1.1fr_0.9fr]">
+        {/* Story side */}
+        <div className="space-y-5 p-6 sm:p-10">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">
+            <Anchor className="h-3.5 w-3.5" />
+            About AndamanBazaar
+          </div>
+          <h2 className="text-2xl font-semibold leading-tight tracking-tight sm:text-3xl">
+            Built on the islands, for the islands.
+          </h2>
+          <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
+            AndamanBazaar is the hyperlocal marketplace for the Andaman & Nicobar archipelago —
+            a place where Port Blair, Havelock, Neil, Diglipur and the smaller islands trade
+            in the same room. No mainland middlemen, no shipping surprises, no week-long waits.
+            Just neighbours, fair prices, and conversations that happen at island pace.
+          </p>
+          <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
+            We started this because finding a fridge in Havelock or selling a scooter in Port
+            Blair shouldn't mean shouting in WhatsApp groups. Every listing here is local. Every
+            seller is reachable. And every trade runs on the one thing that actually moves
+            things across the Bay — <span className="italic">boat pe bharosa</span>.
+          </p>
+          <div className="flex flex-wrap gap-3 pt-2">
+            <Link
+              to="/listings"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90"
+            >
+              <Compass className="h-4 w-4" />
+              Explore the bazaar
+            </Link>
+            <Link
+              to="/brand"
+              className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
+            >
+              Our story & brand
+            </Link>
+          </div>
+        </div>
+
+        {/* Pillars side */}
+        <div className="grid gap-4 border-t border-border bg-muted/40 p-6 sm:p-8 md:border-l md:border-t-0">
+          <AboutPillar
+            icon={MapPin}
+            title="Hyperlocal by design"
+            body="Every listing is tagged to an island and an area, so what you see is actually nearby — not three ferries away."
+          />
+          <AboutPillar
+            icon={ShieldCheck}
+            title="Island Verified trust"
+            body="GPS-checked sellers earn a verified badge. You always know you're dealing with a real local, not a passing tourist."
+          />
+          <AboutPillar
+            icon={MessageCircle}
+            title="Chat first, ferry later"
+            body="Built-in chat lets you ask the practical questions — pickup, condition, ferry timings — before anyone leaves the harbour."
+          />
+          <AboutPillar
+            icon={HeartHandshake}
+            title="Built with islanders"
+            body="Designed in A&N, shaped by feedback from sellers in Port Blair and Havelock. We ship updates the way you'd expect: often, and with care."
+          />
+        </div>
+      </div>
+    </section>
     </div>
   );
 };
+
+function AboutPillar({
+  icon: Icon,
+  title,
+  body,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="flex gap-3 rounded-xl border border-border bg-background p-4 shadow-[var(--shadow-card)]">
+      <span className="grid h-9 w-9 flex-none place-items-center rounded-lg bg-primary/10 text-primary">
+        <Icon className="h-4.5 w-4.5" />
+      </span>
+      <div>
+        <h3 className="text-sm font-semibold">{title}</h3>
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{body}</p>
+      </div>
+    </div>
+  );
+}
 
 export default Index;
