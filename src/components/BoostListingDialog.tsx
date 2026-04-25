@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Loader2, Rocket, TrendingUp, Sparkles, Eye } from "lucide-react";
+import { AlertCircle, Eye, Loader2, RefreshCw, Rocket, Sparkles, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -67,22 +67,45 @@ export function BoostListingDialog({
 }: Props) {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
+  const [errorInfo, setErrorInfo] = useState<{
+    message: string;
+    stage: string;
+    detail?: string;
+  } | null>(null);
+  const [attemptCount, setAttemptCount] = useState(0);
 
   const onConfirm = async () => {
     if (!listingId) return;
     setSubmitting(true);
+    setErrorInfo(null);
+    setAttemptCount((n) => n + 1);
+    let stage: string = "create-order";
     try {
       // 1. Create Cashfree order via edge function
       const { data: orderData, error: orderErr } = await supabase.functions.invoke(
         "cashfree-create-order",
         { body: { listing_id: listingId } }
       );
-      if (orderErr) throw orderErr;
+      if (orderErr) {
+        const ctx = (orderErr as { context?: Response }).context;
+        let serverDetail: string | undefined;
+        if (ctx && typeof ctx.text === "function") {
+          try {
+            serverDetail = await ctx.clone().text();
+          } catch {
+            /* ignore */
+          }
+        }
+        const err = new Error(orderErr.message ?? "Order creation failed");
+        (err as Error & { detail?: string }).detail = serverDetail;
+        throw err;
+      }
       if (!orderData?.payment_session_id) {
         throw new Error(orderData?.error ?? "Order creation failed");
       }
 
       // 2. Load SDK and open checkout modal
+      stage = "checkout";
       await loadCashfreeSdk();
       if (!window.Cashfree) throw new Error("Cashfree SDK unavailable");
       const cashfree = window.Cashfree({
@@ -97,6 +120,7 @@ export function BoostListingDialog({
       }
 
       // 3. Verify on backend
+      stage = "verify-payment";
       const { data: verifyData, error: verifyErr } = await supabase.functions.invoke(
         "cashfree-verify-payment",
         { body: { order_id: orderData.order_id } }
@@ -114,14 +138,25 @@ export function BoostListingDialog({
       onOpenChange(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Boost failed";
+      const detail = (err as Error & { detail?: string })?.detail;
+      console.error("[BoostListingDialog] failed", { stage, message, detail, err });
+      setErrorInfo({ message, stage, detail });
       toast({ title: "Boost failed", description: message, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
   };
 
+  const handleOpenChange = (next: boolean) => {
+    if (!next) {
+      setErrorInfo(null);
+      setAttemptCount(0);
+    }
+    onOpenChange(next);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-accent/10 text-accent">
@@ -165,22 +200,62 @@ export function BoostListingDialog({
           <p className="mt-1 text-xs text-muted-foreground">per listing · no recurring charge</p>
         </div>
 
+        {errorInfo && (
+          <div
+            role="alert"
+            className="space-y-2 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm"
+          >
+            <div className="flex items-start gap-2">
+              <AlertCircle className="mt-0.5 h-4 w-4 flex-none text-destructive" />
+              <div className="flex-1 space-y-1">
+                <p className="font-medium text-destructive">Boost failed</p>
+                <p className="text-foreground/90 break-words">{errorInfo.message}</p>
+              </div>
+            </div>
+            <details className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+              <summary className="cursor-pointer select-none font-medium text-foreground/80">
+                Technical details
+              </summary>
+              <dl className="mt-2 space-y-1">
+                <div className="flex gap-2">
+                  <dt className="font-medium">Stage:</dt>
+                  <dd className="font-mono">{errorInfo.stage}</dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="font-medium">Attempt:</dt>
+                  <dd className="font-mono">#{attemptCount}</dd>
+                </div>
+                {errorInfo.detail && (
+                  <div>
+                    <dt className="font-medium">Server response:</dt>
+                    <dd className="mt-1 max-h-32 overflow-auto rounded bg-background/60 p-2 font-mono text-[11px] leading-snug break-all">
+                      {errorInfo.detail}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            </details>
+          </div>
+        )}
+
         <DialogFooter className="flex-col gap-2 sm:flex-col">
           <Button onClick={onConfirm} disabled={submitting} className="w-full" size="lg">
             {submitting ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : errorInfo ? (
+              <RefreshCw className="mr-2 h-4 w-4" />
             ) : (
               <Rocket className="mr-2 h-4 w-4" />
             )}
-            Boost for ₹{BOOST_PRICE_INR}
+            {errorInfo ? `Retry boost (₹${BOOST_PRICE_INR})` : `Boost for ₹${BOOST_PRICE_INR}`}
           </Button>
           <Button
             variant="ghost"
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleOpenChange(false)}
             disabled={submitting}
             className="w-full"
           >
-            Maybe later
+            {errorInfo ? "Close" : "Maybe later"}
           </Button>
         </DialogFooter>
       </DialogContent>
