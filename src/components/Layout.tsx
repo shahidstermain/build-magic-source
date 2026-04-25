@@ -116,6 +116,18 @@ export function Layout() {
         <Outlet />
       </main>
 
+      <footer className="mx-auto hidden max-w-6xl px-4 pb-8 pt-4 text-xs text-muted-foreground md:block">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+          <p>© {new Date().getFullYear()} AndamanBazaar · Port Blair, A&amp;N Islands</p>
+          <ul className="flex flex-wrap items-center gap-4">
+            <li><Link to="/contact" className="hover:text-foreground">Contact</Link></li>
+            <li><Link to="/privacy" className="hover:text-foreground">Privacy</Link></li>
+            <li><Link to="/terms" className="hover:text-foreground">Terms</Link></li>
+            <li><Link to="/brand" className="hover:text-foreground">Brand</Link></li>
+          </ul>
+        </div>
+      </footer>
+
       <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur md:hidden">
         <ul className="mx-auto flex max-w-6xl items-stretch justify-around">
           {tabs.map(({ to, label, icon: Icon, end }) => (
