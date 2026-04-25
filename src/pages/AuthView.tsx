@@ -21,7 +21,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import TermsOfService from "@/pages/TermsOfService";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
-import { LEGAL_VERSIONS } from "@/lib/legal";
+import { LEGAL_VERSIONS, recordLegalAcceptanceIfMissing } from "@/lib/legal";
 
 const LegalDialog = ({
   trigger,
