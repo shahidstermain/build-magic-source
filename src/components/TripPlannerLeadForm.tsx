@@ -119,7 +119,8 @@ export function TripPlannerLeadForm({ className, compact = false }: LeadFormProp
       });
       if (error) throw error;
 
-      // Wait for the notification email to confirm before showing success.
+      // Lead is saved — show success regardless of email outcome to avoid
+      // duplicate submissions. The admin dashboard is the source of truth.
       const { error: emailError } = await supabase.functions.invoke("send-trip-lead", {
         body: {
           name: data.name,
@@ -132,8 +133,10 @@ export function TripPlannerLeadForm({ className, compact = false }: LeadFormProp
           preferred_call_time: data.preferred_call_time,
         },
       });
-      if (emailError) throw new Error(emailError.message || "Notification email failed");
-
+      if (emailError) {
+        // Non-blocking: log only. Lead is already in the DB.
+        console.warn("send-trip-lead notification failed:", emailError.message);
+      }
       setSuccess(true);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Something went wrong";
