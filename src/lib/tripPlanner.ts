@@ -106,19 +106,6 @@ export async function getTripDownloadUrl(tripId: string) {
 
 const CASHFREE_SDK_URL = "https://sdk.cashfree.com/js/v3/cashfree.js";
 
-type Cashfree = {
-  checkout: (opts: {
-    paymentSessionId: string;
-    redirectTarget?: "_self" | "_blank" | "_modal";
-  }) => Promise<{ error?: { message?: string }; redirect?: boolean }>;
-};
-
-declare global {
-  interface Window {
-    Cashfree?: (opts: { mode: "sandbox" | "production" }) => Cashfree;
-  }
-}
-
 export function loadCashfreeSdk(): Promise<void> {
   return new Promise((resolve, reject) => {
     if (typeof window === "undefined") return reject(new Error("No window"));
