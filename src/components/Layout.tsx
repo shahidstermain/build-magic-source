@@ -74,7 +74,15 @@ export function Layout() {
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
           {/* Logo */}
           <Link to="/" className="flex shrink-0 items-center gap-2">
-            <img src={logoUrl} alt="AndamanBazaar" className="h-8 w-8 rounded-lg object-cover" />
+            <img
+              src={logoUrl}
+              alt="AndamanBazaar"
+              width={32}
+              height={32}
+              fetchPriority="high"
+              decoding="async"
+              className="h-8 w-8 rounded-lg object-cover"
+            />
             <span className="hidden text-base font-semibold tracking-tight sm:block">
               Andaman<span className="text-primary">Bazaar</span>
             </span>
