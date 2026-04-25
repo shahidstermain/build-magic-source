@@ -53,6 +53,7 @@ import { PayTripDialog } from "@/components/PayTripDialog";
 import { RecommendationsSection } from "@/components/RecommendationCard";
 import { WhatsAppShare } from "@/components/WhatsAppShare";
 import { TripPlannerLeadForm } from "@/components/TripPlannerLeadForm";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 type Stage = "form" | "preview" | "generating" | "ready";
