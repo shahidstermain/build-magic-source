@@ -1,5 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.74.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,7 +8,7 @@ const corsHeaders = {
 
 const SYSTEM = `You write short, honest, friendly classifieds listings for AndamanBazaar — a hyperlocal marketplace in the Andaman & Nicobar Islands. Voice: warm Hinglish-friendly English, "boat pe bharosa" tone — trustworthy, unpretentious, island-flavored. Output ONLY the description text (2-3 short sentences, max ~280 chars). No emojis, no markdown, no quotes, no prefixes like "Description:". Mention condition naturally if useful. Never invent specs that weren't given.`;
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -33,9 +32,8 @@ serve(async (req) => {
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: authErr } = await userClient.auth.getClaims(token);
-    if (authErr || !claims?.claims?.sub) {
+    const { data: { user }, error: authErr } = await userClient.auth.getUser();
+    if (authErr || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
