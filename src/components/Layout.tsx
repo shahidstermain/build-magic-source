@@ -1,6 +1,16 @@
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { Home, Search, PlusSquare, MessageCircle, User } from "lucide-react";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Home, Search, PlusSquare, MessageCircle, User, LogOut, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const tabs = [
   { to: "/", label: "Home", icon: Home, end: true },
@@ -12,6 +22,8 @@ const tabs = [
 
 export function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const hideChrome = ["/auth", "/reset-password"].some((p) => location.pathname.startsWith(p));
 
   if (hideChrome) {
@@ -43,6 +55,46 @@ export function Layout() {
             >
               + Post
             </Link>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger className="ml-1 rounded-full outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring">
+                  <Avatar className="h-9 w-9 border border-border">
+                    <AvatarImage src={user.user_metadata?.avatar_url} alt="" />
+                    <AvatarFallback className="bg-muted text-sm font-medium">
+                      {(user.user_metadata?.name || user.email || "?").slice(0, 1).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="truncate">
+                    {user.user_metadata?.name || user.email}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/profile")}>
+                    <User className="mr-2 h-4 w-4" /> Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={async () => {
+                      await signOut();
+                      navigate("/", { replace: true });
+                    }}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" /> Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link
+                to="/auth"
+                className="rounded-full border border-border px-4 py-1.5 text-sm font-medium hover:bg-muted"
+              >
+                Sign in
+              </Link>
+            )}
           </div>
         </div>
       </header>
