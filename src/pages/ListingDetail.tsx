@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Eye, Flag, Heart, Loader2, MapPin, MessageCircle, Pencil, Share2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Eye, Flag, Heart, Loader2, MapPin, MessageCircle, Pencil, Rocket, Share2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { getOrCreateChat } from "@/lib/chats";
 import { DeliveryEstimator } from "@/components/DeliveryEstimator";
 import { ReportListingDialog } from "@/components/ReportListingDialog";
 import { TrustBadge } from "@/components/TrustBadge";
+import { BoostListingDialog } from "@/components/BoostListingDialog";
 
 type Listing = {
   id: string;
@@ -26,6 +27,7 @@ type Listing = {
   created_at: string;
   seller_id: string;
   status: string;
+  is_featured: boolean;
   listing_images: { image_url: string; display_order: number }[];
   profiles: {
     id: string;
@@ -49,6 +51,7 @@ const ListingDetail = () => {
   const [startingChat, setStartingChat] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [marking, setMarking] = useState(false);
+  const [boostOpen, setBoostOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -58,7 +61,7 @@ const ListingDetail = () => {
       const { data, error } = await supabase
         .from("listings")
         .select(
-          "id, title, description, price, category, condition, city, area, views_count, created_at, seller_id, status, listing_images(image_url, display_order), profiles!listings_seller_profile_fkey(id, name, photo_url, is_location_verified, total_listings, successful_sales)",
+          "id, title, description, price, category, condition, city, area, views_count, created_at, seller_id, status, is_featured, listing_images(image_url, display_order), profiles!listings_seller_profile_fkey(id, name, photo_url, is_location_verified, total_listings, successful_sales)",
         )
         .eq("id", id)
         .maybeSingle();
@@ -253,6 +256,11 @@ const ListingDetail = () => {
             <Badge variant="secondary" className="capitalize">{listing.category}</Badge>
             <Badge variant="outline">{conditionLabel}</Badge>
             {isSold && <Badge className="bg-success text-success-foreground">Sold</Badge>}
+            {listing.is_featured && (
+              <Badge className="bg-accent text-accent-foreground">
+                <Sparkles className="mr-1 h-3 w-3" /> Boosted
+              </Badge>
+            )}
           </div>
 
           <div className="mt-5 flex gap-2">
@@ -359,10 +367,38 @@ const ListingDetail = () => {
         </div>
       </div>
 
+      {isOwner && !isSold && !listing.is_featured && (
+        <div className="mt-6 flex flex-col items-start justify-between gap-3 rounded-2xl border border-accent/30 bg-accent/5 p-4 sm:flex-row sm:items-center">
+          <div className="flex items-start gap-3">
+            <div className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-accent/15 text-accent">
+              <Rocket className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Boost this listing</p>
+              <p className="text-xs text-muted-foreground">
+                Featured rail pe top spot · ~3× views · ₹99 one-time
+              </p>
+            </div>
+          </div>
+          <Button onClick={() => setBoostOpen(true)} className="w-full sm:w-auto">
+            <Rocket className="mr-2 h-4 w-4" />
+            Boost for ₹99
+          </Button>
+        </div>
+      )}
+
       <ReportListingDialog
         listingId={listing.id}
         open={reportOpen}
         onOpenChange={setReportOpen}
+      />
+
+      <BoostListingDialog
+        listingId={listing.id}
+        listingTitle={listing.title}
+        open={boostOpen}
+        onOpenChange={setBoostOpen}
+        onBoosted={() => setListing({ ...listing, is_featured: true })}
       />
     </article>
   );
