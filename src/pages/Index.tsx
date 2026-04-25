@@ -8,7 +8,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/listings";
 import { slangOfTheDay } from "@/lib/slang";
-import { TRIP_PRICE_INR } from "@/lib/tripPlanner";
+import { TRIP_PRICE_INR } from "@/lib/pricing";
 import { formatPriceLabel } from "@/lib/promo";
 
 const categories = [
