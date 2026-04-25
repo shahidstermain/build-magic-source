@@ -56,6 +56,13 @@ export type Database = {
             foreignKeyName: "affiliate_clicks_recommendation_id_fkey"
             columns: ["recommendation_id"]
             isOneToOne: false
+            referencedRelation: "affiliate_link_performance"
+            referencedColumns: ["recommendation_id"]
+          },
+          {
+            foreignKeyName: "affiliate_clicks_recommendation_id_fkey"
+            columns: ["recommendation_id"]
+            isOneToOne: false
             referencedRelation: "trip_recommendations"
             referencedColumns: ["id"]
           },
@@ -85,6 +92,8 @@ export type Database = {
           id: string
           raw_payload: Json
           recommendation_id: string | null
+          recorded_by: string | null
+          source: string
           status: string
           updated_at: string
           user_id: string | null
@@ -99,6 +108,8 @@ export type Database = {
           id?: string
           raw_payload?: Json
           recommendation_id?: string | null
+          recorded_by?: string | null
+          source?: string
           status?: string
           updated_at?: string
           user_id?: string | null
@@ -113,6 +124,8 @@ export type Database = {
           id?: string
           raw_payload?: Json
           recommendation_id?: string | null
+          recorded_by?: string | null
+          source?: string
           status?: string
           updated_at?: string
           user_id?: string | null
@@ -125,6 +138,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "affiliate_clicks"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_conversions_recommendation_id_fkey"
+            columns: ["recommendation_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_link_performance"
+            referencedColumns: ["recommendation_id"]
           },
           {
             foreignKeyName: "affiliate_conversions_recommendation_id_fkey"
@@ -160,6 +180,7 @@ export type Database = {
           slug: string
           trusted: boolean
           updated_at: string
+          webhook_secret: string | null
         }
         Insert: {
           active?: boolean
@@ -178,6 +199,7 @@ export type Database = {
           slug: string
           trusted?: boolean
           updated_at?: string
+          webhook_secret?: string | null
         }
         Update: {
           active?: boolean
@@ -196,6 +218,7 @@ export type Database = {
           slug?: string
           trusted?: boolean
           updated_at?: string
+          webhook_secret?: string | null
         }
         Relationships: []
       }
@@ -793,6 +816,7 @@ export type Database = {
       }
       site_settings: {
         Row: {
+          github_repo_url: string | null
           id: boolean
           site_description: string
           site_title: string
@@ -800,6 +824,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          github_repo_url?: string | null
           id?: boolean
           site_description?: string
           site_title?: string
@@ -807,6 +832,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          github_repo_url?: string | null
           id?: boolean
           site_description?: string
           site_title?: string
@@ -1104,6 +1130,38 @@ export type Database = {
       }
     }
     Views: {
+      affiliate_link_performance: {
+        Row: {
+          affiliate_url: string | null
+          clicks: number | null
+          commission_inr: number | null
+          conversions: number | null
+          is_high_traffic_no_revenue: boolean | null
+          item_name: string | null
+          link_created_at: string | null
+          merchant_name: string | null
+          recommendation_id: string | null
+          revenue_inr: number | null
+          trip_id: string | null
+          vendor_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_recommendations_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trip_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_recommendations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_profiles: {
         Row: {
           area: string | null
