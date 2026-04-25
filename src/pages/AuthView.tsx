@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MapPin, Anchor, Compass, ShieldCheck } from "lucide-react";
+import { Loader2, Anchor, Compass, ShieldCheck } from "lucide-react";
 import logoUrl from "@/assets/logo.webp";
 
 type Mode = "signin" | "signup" | "forgot";
@@ -19,24 +19,28 @@ const nameSchema = z.string().trim().min(2, "Tell us your name").max(80);
 
 const ISLAND_FACTS = [
   {
+    badge: "01",
+    badgeClass: "bg-warning text-warning-foreground",
+    rotate: "-rotate-1 hover:rotate-0",
     icon: Anchor,
-    heading: "Hyperlocal to A&N",
-    body: "Every listing is tagged to an island — Port Blair, Havelock, Neil, Diglipur and beyond. No mainland middlemen.",
+    heading: "Hyperlocal Commerce",
+    body: "Buy fresh catches from Havelock or sell handicrafts from Port Blair — no mainland middlemen.",
   },
   {
+    badge: "02",
+    badgeClass: "bg-success text-success-foreground",
+    rotate: "rotate-1 hover:rotate-0",
     icon: ShieldCheck,
-    heading: "Island Verified sellers",
-    body: "GPS-checked locals earn a trust badge. You always know you're dealing with a real islander.",
+    heading: "Island Verified Trust",
+    body: "GPS-authenticated sellers verified by locals. Real people, real products, real bharosa.",
   },
   {
+    badge: "03",
+    badgeClass: "bg-accent text-accent-foreground",
+    rotate: "-rotate-1 hover:rotate-0",
     icon: Compass,
-    heading: "AI Trip Planner",
-    body: "Ferry-aware, weather-backed, day-by-day PDF itineraries built with a local insider mindset.",
-  },
-  {
-    icon: MapPin,
-    heading: "Experiences by locals",
-    body: "Scuba diving, sea walks, limestone caves, mangrove tours — booked directly with the people who run them.",
+    heading: "Ferry-Aware Planning",
+    body: "Our AI plans itineraries around real Makruzz & Green Ocean schedules. Never miss a boat.",
   },
 ];
 
@@ -147,83 +151,105 @@ const AuthView = () => {
   };
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[1fr_480px]">
+    <div className="min-h-screen lg:grid lg:grid-cols-2">
 
-      {/* ── Left panel — brand ─────────────────────────────────────────────── */}
-      <div className="relative hidden overflow-hidden bg-[image:var(--gradient-hero)] lg:flex lg:flex-col lg:justify-between lg:p-12">
-        {/* Decorative blobs */}
-        <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-1/3 right-1/4 h-48 w-48 rounded-full bg-accent/20 blur-2xl" />
+      {/* ── Left panel — brand marketing ───────────────────────────────────── */}
+      <div className="relative hidden overflow-hidden bg-primary p-12 text-primary-foreground lg:flex lg:flex-col lg:justify-between xl:p-16">
+        {/* Decorative coastal blobs */}
+        <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-warning/25 blur-3xl" />
+        <div className="pointer-events-none absolute top-1/2 -left-48 h-[32rem] w-[32rem] rounded-full bg-accent/30 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-72 w-72 rounded-full bg-success/20 blur-3xl" />
 
         {/* Logo */}
         <Link to="/" className="relative z-10 flex items-center gap-3">
-          <img src={logoUrl} alt="AndamanBazaar" className="h-10 w-10 rounded-xl shadow-md" />
-          <span className="text-xl font-semibold tracking-tight text-primary-foreground">
-            Andaman<span className="opacity-80">Bazaar</span>
+          <img src={logoUrl} alt="AndamanBazaar" className="h-12 w-12 rotate-3 rounded-xl bg-background p-1 shadow-elevated" />
+          <span className="text-2xl font-extrabold uppercase tracking-tight">
+            Andaman<span className="opacity-90">Bazaar</span>
           </span>
         </Link>
 
-        {/* Hero copy */}
-        <div className="relative z-10 space-y-6">
-          <div className="space-y-3">
-            <p className="font-mono text-xs uppercase tracking-widest text-primary-foreground/60">
+        {/* Hero copy + feature stack */}
+        <div className="relative z-10 my-8 space-y-10">
+          <div className="space-y-4">
+            <span className="inline-block rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-3 py-1 font-mono text-[10px] uppercase tracking-widest backdrop-blur-sm">
               Andaman & Nicobar Islands
-            </p>
-            <h1 className="font-serif text-4xl leading-tight text-primary-foreground xl:text-5xl">
-              Buy, sell, and discover — across the islands.
+            </span>
+            <h1 className="text-balance text-5xl font-extrabold leading-[0.95] tracking-tight xl:text-6xl">
+              Taming the <span className="text-warning">Tides</span> of Island Trade.
             </h1>
-            <p className="text-base text-primary-foreground/75">
-              The hyperlocal marketplace built on{" "}
-              <span className="italic text-primary-foreground">boat pe bharosa</span>.
+            <p className="max-w-md text-base text-primary-foreground/75">
+              The hyperlocal marketplace + AI trip planner built for the rhythm of the archipelago.
             </p>
           </div>
 
-          {/* Feature pills */}
-          <ul className="space-y-3">
-            {ISLAND_FACTS.map(({ icon: Icon, heading, body }) => (
-              <li key={heading} className="flex items-start gap-3">
-                <span className="mt-0.5 grid h-8 w-8 flex-none place-items-center rounded-lg bg-white/15 text-primary-foreground backdrop-blur-sm">
-                  <Icon className="h-4 w-4" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-primary-foreground">{heading}</p>
-                  <p className="text-xs text-primary-foreground/65">{body}</p>
+          {/* Tilted feature cards */}
+          <ul className="space-y-4">
+            {ISLAND_FACTS.map(({ icon: Icon, heading, body, badge, badgeClass, rotate }) => (
+              <li
+                key={heading}
+                className={`group rounded-2xl border border-primary-foreground/15 bg-primary-foreground/10 p-5 backdrop-blur-md transition-transform duration-300 hover:rotate-0 ${rotate}`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className={`grid h-11 w-11 flex-none place-items-center rounded-full font-bold ${badgeClass}`}>
+                    {badge}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4 opacity-70" />
+                      <h3 className="text-base font-bold">{heading}</h3>
+                    </div>
+                    <p className="mt-1 text-sm text-primary-foreground/75">{body}</p>
+                  </div>
                 </div>
               </li>
             ))}
           </ul>
         </div>
 
-        {/* Bottom tagline */}
-        <p className="relative z-10 font-mono text-xs text-primary-foreground/40">
-          © {new Date().getFullYear()} AndamanBazaar · Port Blair, A&N Islands
-        </p>
+        {/* Trust signal + tagline */}
+        <div className="relative z-10 space-y-5">
+          <div className="inline-block rotate-2 rounded-full bg-warning px-6 py-3 text-xl font-black tracking-tight text-warning-foreground shadow-elevated">
+            Boat pe bharosa.
+          </div>
+          <div className="flex items-center gap-3 text-xs uppercase tracking-wider text-primary-foreground/70">
+            <div className="flex -space-x-2">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-8 w-8 rounded-full border-2 border-primary bg-gradient-to-br from-accent to-warning"
+                />
+              ))}
+            </div>
+            <span className="font-medium">Joined by islanders across A&N this week</span>
+          </div>
+        </div>
       </div>
 
       {/* ── Right panel — form ─────────────────────────────────────────────── */}
-      <div className="flex min-h-screen flex-col justify-center bg-background px-6 py-12 lg:px-10">
+      <div className="relative flex min-h-screen flex-col justify-center bg-background px-6 py-12 lg:px-10">
+        {/* Subtle mobile background tint */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-primary/5 to-transparent lg:hidden" />
 
         {/* Mobile logo */}
-        <Link to="/" className="mb-8 flex items-center gap-2.5 lg:hidden">
-          <img src={logoUrl} alt="AndamanBazaar" className="h-9 w-9 rounded-xl shadow-sm" />
-          <span className="text-lg font-semibold tracking-tight">
+        <Link to="/" className="relative mb-8 flex items-center gap-2.5 lg:hidden">
+          <img src={logoUrl} alt="AndamanBazaar" className="h-10 w-10 rotate-3 rounded-xl bg-card p-1 shadow-card" />
+          <span className="text-lg font-extrabold uppercase tracking-tight">
             Andaman<span className="text-primary">Bazaar</span>
           </span>
         </Link>
 
-        <div className="w-full max-w-sm mx-auto space-y-6">
+        <div className="relative mx-auto w-full max-w-sm space-y-6">
 
           {/* Heading */}
-          <div className="space-y-1">
-            <h2 className="text-2xl font-semibold tracking-tight">
-              {mode === "signup" && "Create your account"}
+          <div className="space-y-1.5">
+            <h2 className="text-3xl font-extrabold tracking-tight">
+              {mode === "signup" && "Join the bazaar"}
               {mode === "signin" && "Welcome back"}
               {mode === "forgot" && "Reset your password"}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {mode === "signup" && "Join the island marketplace — it's free."}
-              {mode === "signin" && "Sign in to keep selling and chatting."}
+              {mode === "signup" && "Create your free account — start selling in minutes."}
+              {mode === "signin" && "Sign in to keep selling, chatting and planning trips."}
               {mode === "forgot" && "We'll email you a link to set a new password."}
             </p>
           </div>
@@ -311,10 +337,10 @@ const AuthView = () => {
               </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={busy}>
+            <Button type="submit" size="lg" className="w-full font-bold shadow-elevated" disabled={busy}>
               {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {mode === "signup" && "Create account"}
-              {mode === "signin" && "Sign in"}
+              {mode === "signup" && "Create my account"}
+              {mode === "signin" && "Enter the bazaar"}
               {mode === "forgot" && "Send reset link"}
             </Button>
           </form>
