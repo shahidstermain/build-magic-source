@@ -15,6 +15,32 @@ function isSafeHttpUrl(u: string): boolean {
   }
 }
 
+// Only allow redirects to known safe vendor domains.
+// The fallback ?u= param is kept for backwards compat but restricted.
+const ALLOWED_REDIRECT_HOSTS = [
+  "makemytrip.com",
+  "goibibo.com",
+  "yatra.com",
+  "cleartrip.com",
+  "booking.com",
+  "agoda.com",
+  "airbnb.com",
+  "andamantourism.gov.in",
+  "andamannicobar.gov.in",
+  "ferryandaman.com",
+  "nautika.in",
+];
+
+function isAllowedRedirectUrl(u: string): boolean {
+  if (!isSafeHttpUrl(u)) return false;
+  try {
+    const host = new URL(u).hostname.replace(/^www\./, "");
+    return ALLOWED_REDIRECT_HOSTS.some((d) => host === d || host.endsWith(`.${d}`));
+  } catch {
+    return false;
+  }
+}
+
 async function hashIp(ip: string): Promise<string> {
   const data = new TextEncoder().encode(ip + (Deno.env.get("SUPABASE_JWKS") ?? ""));
   const buf = await crypto.subtle.digest("SHA-256", data);
@@ -81,7 +107,17 @@ Deno.serve(async (req) => {
     }
   }
 
-  if (!target && fallback) target = fallback;
+  if (!target && fallback) {
+    // Only allow fallback redirects to known vendor domains to prevent open redirect abuse
+    if (fallback && isAllowedRedirectUrl(fallback)) {
+      target = fallback;
+    } else if (fallback) {
+      return new Response(JSON.stringify({ error: "Redirect target not allowed" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  }
 
   if (!target || !isSafeHttpUrl(target)) {
     return new Response(JSON.stringify({ error: "Invalid target" }), {
