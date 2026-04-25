@@ -10,6 +10,42 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Anchor, Compass, ShieldCheck } from "lucide-react";
 import logoUrl from "@/assets/logo.webp";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import TermsOfService from "@/pages/TermsOfService";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+
+const LegalDialog = ({
+  trigger,
+  title,
+  description,
+  children,
+}: {
+  trigger: React.ReactNode;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) => (
+  <Dialog>
+    <DialogTrigger asChild>{trigger}</DialogTrigger>
+    <DialogContent className="max-w-3xl p-0">
+      <DialogHeader className="border-b border-border px-6 py-4">
+        <DialogTitle>{title}</DialogTitle>
+        <DialogDescription>{description}</DialogDescription>
+      </DialogHeader>
+      <ScrollArea className="max-h-[70vh] px-6">
+        <div className="py-2">{children}</div>
+      </ScrollArea>
+    </DialogContent>
+  </Dialog>
+);
 
 type Mode = "signin" | "signup" | "forgot";
 
@@ -376,9 +412,40 @@ const AuthView = () => {
           {/* Legal */}
           <p className="text-center text-xs text-muted-foreground">
             By continuing you agree to our{" "}
-            <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">Terms</Link>
+            <LegalDialog
+              trigger={
+                <button type="button" className="underline underline-offset-2 hover:text-foreground">
+                  Terms
+                </button>
+              }
+              title="Terms of Service"
+              description="Preview of our Terms — opens the full page in a new tab from the link below."
+            >
+              <TermsOfService />
+              <p className="mt-4 text-xs text-muted-foreground">
+                <Link to="/terms" target="_blank" rel="noopener" className="underline">
+                  Open full page in a new tab ↗
+                </Link>
+              </p>
+            </LegalDialog>
             {" "}and{" "}
-            <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">Privacy Policy</Link>.
+            <LegalDialog
+              trigger={
+                <button type="button" className="underline underline-offset-2 hover:text-foreground">
+                  Privacy Policy
+                </button>
+              }
+              title="Privacy Policy"
+              description="Preview of our Privacy Policy — opens the full page in a new tab from the link below."
+            >
+              <PrivacyPolicy />
+              <p className="mt-4 text-xs text-muted-foreground">
+                <Link to="/privacy" target="_blank" rel="noopener" className="underline">
+                  Open full page in a new tab ↗
+                </Link>
+              </p>
+            </LegalDialog>
+            .
           </p>
         </div>
       </div>
