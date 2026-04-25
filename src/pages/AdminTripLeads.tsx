@@ -67,12 +67,32 @@ export default function AdminTripLeads() {
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .rpc("has_role", { _user_id: user.id, _role: "admin" })
-      .then(({ data, error }) => {
-        if (error) { setIsAdmin(false); return; }
-        setIsAdmin(Boolean(data));
+    let cancelled = false;
+    (async () => {
+      // Primary: use the SECURITY DEFINER RPC.
+      const { data, error } = await supabase.rpc("has_role", {
+        _user_id: user.id,
+        _role: "admin",
       });
+      if (!cancelled && !error) {
+        setIsAdmin(Boolean(data));
+        return;
+      }
+      // Fallback: query user_roles directly (RLS allows users to read their own).
+      const { data: rows, error: rowsError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .limit(1);
+      if (cancelled) return;
+      if (rowsError) {
+        setIsAdmin(false);
+        return;
+      }
+      setIsAdmin((rows ?? []).length > 0);
+    })();
+    return () => { cancelled = true; };
   }, [user]);
 
   const loadLeads = useCallback(async () => {
