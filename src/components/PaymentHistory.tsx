@@ -4,7 +4,7 @@ import { CheckCircle2, Clock, Loader2, Rocket, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { BOOST_PRICE_INR } from "@/components/BoostListingDialog";
+import { BOOST_PRICE_INR } from "@/lib/pricing";
 import { formatPriceLabel } from "@/lib/promo";
 
 type PaymentRow = {
