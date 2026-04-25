@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { Eye, Heart, Loader2, Pause, Play, Trash2, Trophy } from "lucide-react";
+import { Eye, Heart, Loader2, Pause, Play, Rocket, Sparkles, Trash2, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { formatPrice, publicImageUrl } from "@/lib/listings";
 import { slang } from "@/lib/slang";
+import { BoostListingDialog } from "@/components/BoostListingDialog";
 
 type ListingRow = {
   id: string;
@@ -27,6 +28,7 @@ type ListingRow = {
   price: number;
   status: "active" | "sold" | "paused" | "removed";
   views_count: number;
+  is_featured: boolean;
   created_at: string;
   listing_images: { image_url: string; display_order: number }[];
 };
@@ -50,6 +52,7 @@ const Dashboard = () => {
   const [myListings, setMyListings] = useState<ListingRow[]>([]);
   const [favorites, setFavorites] = useState<FavoriteRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [boostTarget, setBoostTarget] = useState<ListingRow | null>(null);
 
   const loadAll = async () => {
     if (!user) return;
@@ -57,7 +60,7 @@ const Dashboard = () => {
     const [{ data: mine, error: mineErr }, { data: favs, error: favErr }] = await Promise.all([
       supabase
         .from("listings")
-        .select("id, title, price, status, views_count, created_at, listing_images(image_url, display_order)")
+        .select("id, title, price, status, views_count, is_featured, created_at, listing_images(image_url, display_order)")
         .eq("seller_id", user.id)
         .order("created_at", { ascending: false }),
       supabase
@@ -205,11 +208,26 @@ const Dashboard = () => {
                       </p>
                       <div className="mt-1">
                         <StatusBadge status={l.status} />
+                        {l.is_featured && (
+                          <Badge className="ml-2 bg-accent text-accent-foreground">
+                            <Sparkles className="mr-1 h-3 w-3" /> Boosted
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-none flex-col gap-1 sm:flex-row">
                       {l.status === "active" && (
                         <>
+                          {!l.is_featured && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setBoostTarget(l)}
+                              className="border-accent/40 text-accent hover:bg-accent/10 hover:text-accent"
+                            >
+                              <Rocket className="mr-1 h-3 w-3" /> Boost
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             variant="outline"
@@ -334,6 +352,18 @@ const Dashboard = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      <BoostListingDialog
+        listingId={boostTarget?.id ?? null}
+        listingTitle={boostTarget?.title}
+        open={!!boostTarget}
+        onOpenChange={(o) => !o && setBoostTarget(null)}
+        onBoosted={() =>
+          setMyListings((rows) =>
+            rows.map((r) => (r.id === boostTarget?.id ? { ...r, is_featured: true } : r)),
+          )
+        }
+      />
     </section>
   );
 };
