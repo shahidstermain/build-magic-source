@@ -14,6 +14,129 @@ export type Database = {
   }
   public: {
     Tables: {
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listing_images: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          image_url: string
+          listing_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url: string
+          listing_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string
+          listing_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_images_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listings: {
+        Row: {
+          area: string | null
+          category: string
+          city: string
+          condition: Database["public"]["Enums"]["listing_condition"]
+          created_at: string
+          description: string
+          id: string
+          is_featured: boolean
+          price: number
+          seller_id: string
+          status: Database["public"]["Enums"]["listing_status"]
+          subcategory: string | null
+          title: string
+          updated_at: string
+          views_count: number
+        }
+        Insert: {
+          area?: string | null
+          category: string
+          city?: string
+          condition?: Database["public"]["Enums"]["listing_condition"]
+          created_at?: string
+          description?: string
+          id?: string
+          is_featured?: boolean
+          price: number
+          seller_id: string
+          status?: Database["public"]["Enums"]["listing_status"]
+          subcategory?: string | null
+          title: string
+          updated_at?: string
+          views_count?: number
+        }
+        Update: {
+          area?: string | null
+          category?: string
+          city?: string
+          condition?: Database["public"]["Enums"]["listing_condition"]
+          created_at?: string
+          description?: string
+          id?: string
+          is_featured?: boolean
+          price?: number
+          seller_id?: string
+          status?: Database["public"]["Enums"]["listing_status"]
+          subcategory?: string | null
+          title?: string
+          updated_at?: string
+          views_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listings_seller_profile_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           area: string | null
@@ -92,9 +215,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_listing_views: {
+        Args: { _listing_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      listing_condition: "new" | "like_new" | "good" | "fair"
+      listing_status: "active" | "sold" | "paused" | "removed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -223,6 +352,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      listing_condition: ["new", "like_new", "good", "fair"],
+      listing_status: ["active", "sold", "paused", "removed"],
     },
   },
 } as const
