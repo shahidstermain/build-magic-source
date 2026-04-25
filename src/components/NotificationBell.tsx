@@ -16,6 +16,7 @@ import {
   requestNotificationPermission,
 } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
+import { slangOfTheDay } from "@/lib/slang";
 
 type Notification = {
   id: string;
@@ -181,7 +182,7 @@ export function NotificationBell() {
         <ul className="max-h-96 divide-y divide-border overflow-y-auto">
           {items.length === 0 ? (
             <li className="px-3 py-8 text-center text-sm text-muted-foreground">
-              All caught up 👌
+              {slangOfTheDay("notifEmpty")}
             </li>
           ) : (
             items.map((n) => (
