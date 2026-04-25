@@ -311,26 +311,27 @@ const ChatRoom = () => {
                       : "rounded-bl-sm bg-muted text-foreground"
                   }`}
                 >
-                  {m.image_url && (
-                  (() => {
-                    const src = /^https?:\/\//.test(m.image_url) ? m.image_url : signedImages[m.image_url];
+                  {(() => {
+                    if (!m.image_url) return null;
+                    const src = /^https?:\/\//.test(m.image_url)
+                      ? m.image_url
+                      : signedImages[m.image_url];
                     if (!src) return null;
                     return (
-                    <a
-                      href={src}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mb-1 block overflow-hidden rounded-lg"
-                    >
-                      <img
-                        src={src}
-                        alt="Shared photo"
-                        className="max-h-64 w-auto object-cover"
-                      />
-                    </a>
+                      <a
+                        href={src}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mb-1 block overflow-hidden rounded-lg"
+                      >
+                        <img
+                          src={src}
+                          alt="Shared photo"
+                          className="max-h-64 w-auto object-cover"
+                        />
+                      </a>
                     );
-                  })()
-                  )}
+                  })()}
                   {m.body}
                   <div
                     className={`mt-1 text-[10px] ${
