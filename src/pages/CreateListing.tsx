@@ -1,6 +1,6 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ImagePlus, Loader2, X } from "lucide-react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { ImagePlus, Loader2, Sparkles, X } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -33,10 +33,15 @@ const schema = z.object({
   area: z.string().min(1, "Pick an area"),
 });
 
-type Photo = { file: File; preview: string };
+type NewPhoto = { kind: "new"; file: File; preview: string };
+type ExistingPhoto = { kind: "existing"; id: string; image_url: string };
+type Photo = NewPhoto | ExistingPhoto;
 
 const CreateListing = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get("edit");
+  const isEdit = !!editId;
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
 
@@ -47,15 +52,71 @@ const CreateListing = () => {
   const [condition, setCondition] = useState<ListingCondition>("good");
   const [area, setArea] = useState("Port Blair");
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [removedExistingIds, setRemovedExistingIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [fetching, setFetching] = useState(isEdit);
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate("/auth?next=/sell", { replace: true });
+      navigate(`/auth?next=/sell${isEdit ? `?edit=${editId}` : ""}`, { replace: true });
     }
-  }, [authLoading, user, navigate]);
+  }, [authLoading, user, navigate, isEdit, editId]);
 
-  useEffect(() => () => photos.forEach((p) => URL.revokeObjectURL(p.preview)), [photos]);
+  // Load existing listing for edit
+  useEffect(() => {
+    if (!isEdit || !user) return;
+    let cancelled = false;
+    (async () => {
+      setFetching(true);
+      const { data, error } = await supabase
+        .from("listings")
+        .select(
+          "id, title, description, price, category, condition, area, seller_id, listing_images(id, image_url, display_order)",
+        )
+        .eq("id", editId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error || !data) {
+        toast({ title: "Could not load listing", variant: "destructive" });
+        navigate("/sell", { replace: true });
+        return;
+      }
+      if (data.seller_id !== user.id) {
+        toast({ title: "You can only edit your own listings", variant: "destructive" });
+        navigate(`/listings/${editId}`, { replace: true });
+        return;
+      }
+      setTitle(data.title);
+      setDescription(data.description ?? "");
+      setPrice(String(data.price));
+      setCategory(data.category);
+      setCondition(data.condition as ListingCondition);
+      setArea(data.area ?? "Port Blair");
+      const sorted = [...(data.listing_images ?? [])].sort(
+        (a, b) => a.display_order - b.display_order,
+      );
+      setPhotos(
+        sorted.map((img) => ({
+          kind: "existing" as const,
+          id: img.id,
+          image_url: img.image_url,
+        })),
+      );
+      setFetching(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isEdit, editId, user, navigate, toast]);
+
+  useEffect(
+    () => () =>
+      photos.forEach((p) => {
+        if (p.kind === "new") URL.revokeObjectURL(p.preview);
+      }),
+    [photos],
+  );
 
   const onPickFiles = (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -71,7 +132,7 @@ const CreateListing = () => {
         toast({ title: `${file.name} is too large`, description: "Max 5 MB", variant: "destructive" });
         continue;
       }
-      next.push({ file, preview: URL.createObjectURL(file) });
+      next.push({ kind: "new", file, preview: URL.createObjectURL(file) });
     }
     setPhotos((cur) => [...cur, ...next]);
   };
@@ -80,9 +141,41 @@ const CreateListing = () => {
     setPhotos((cur) => {
       const copy = [...cur];
       const [removed] = copy.splice(i, 1);
-      if (removed) URL.revokeObjectURL(removed.preview);
+      if (removed?.kind === "new") URL.revokeObjectURL(removed.preview);
+      if (removed?.kind === "existing") setRemovedExistingIds((p) => [...p, removed.id]);
       return copy;
     });
+  };
+
+  const onAiHelp = async () => {
+    if (title.trim().length < 4) {
+      toast({ title: "Add a title first", description: "Few words is enough — boat pe bharosa rakho.", variant: "destructive" });
+      return;
+    }
+    setAiBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-listing-description", {
+        body: { title, category, condition, area, price },
+      });
+      if (error) throw error;
+      const text = (data as { description?: string; error?: string })?.description;
+      const errMsg = (data as { error?: string })?.error;
+      if (errMsg) {
+        toast({ title: "AI helper", description: errMsg, variant: "destructive" });
+        return;
+      }
+      if (!text) {
+        toast({ title: "AI helper", description: "Empty response, try again.", variant: "destructive" });
+        return;
+      }
+      setDescription(text);
+      toast({ title: "Description added", description: "Edit it however you like." });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Try again in a moment";
+      toast({ title: "AI helper unavailable", description: message, variant: "destructive" });
+    } finally {
+      setAiBusy(false);
+    }
   };
 
   const onSubmit = async (e: FormEvent) => {
@@ -112,53 +205,87 @@ const CreateListing = () => {
 
     setSubmitting(true);
     try {
-      const { data: created, error: insertErr } = await supabase
-        .from("listings")
-        .insert({
-          seller_id: user.id,
-          title: parsed.data.title,
-          description: parsed.data.description,
-          price: parsed.data.price,
-          category: parsed.data.category,
-          condition: parsed.data.condition as ListingCondition,
-          area: parsed.data.area,
-          city: "Port Blair",
-        })
-        .select("id")
-        .single();
-      if (insertErr) throw insertErr;
+      let listingId = editId ?? "";
 
-      const listingId = created.id;
+      if (isEdit) {
+        const { error: updErr } = await supabase
+          .from("listings")
+          .update({
+            title: parsed.data.title,
+            description: parsed.data.description,
+            price: parsed.data.price,
+            category: parsed.data.category,
+            condition: parsed.data.condition as ListingCondition,
+            area: parsed.data.area,
+          })
+          .eq("id", editId!);
+        if (updErr) throw updErr;
+      } else {
+        const { data: created, error: insertErr } = await supabase
+          .from("listings")
+          .insert({
+            seller_id: user.id,
+            title: parsed.data.title,
+            description: parsed.data.description,
+            price: parsed.data.price,
+            category: parsed.data.category,
+            condition: parsed.data.condition as ListingCondition,
+            area: parsed.data.area,
+            city: "Port Blair",
+          })
+          .select("id")
+          .single();
+        if (insertErr) throw insertErr;
+        listingId = created.id;
+      }
+
+      // Delete removed existing images
+      if (removedExistingIds.length > 0) {
+        await supabase.from("listing_images").delete().in("id", removedExistingIds);
+      }
+
+      // Update display_order for kept existing images
+      const existingKept = photos.filter((p): p is ExistingPhoto => p.kind === "existing");
+      for (let i = 0; i < existingKept.length; i++) {
+        const p = existingKept[i];
+        const order = photos.findIndex((x) => x === p);
+        await supabase.from("listing_images").update({ display_order: order }).eq("id", p.id);
+      }
+
+      // Upload new images
+      const newPhotos = photos.filter((p): p is NewPhoto => p.kind === "new");
       const uploaded: { image_url: string; display_order: number; listing_id: string }[] = [];
-
-      for (let i = 0; i < photos.length; i++) {
-        const { file } = photos[i];
-        const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+      for (let i = 0; i < newPhotos.length; i++) {
+        const p = newPhotos[i];
+        const order = photos.findIndex((x) => x === p);
+        const ext = p.file.name.split(".").pop()?.toLowerCase() ?? "jpg";
         const path = `${user.id}/${listingId}/${Date.now()}-${i}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from("listing-images")
-          .upload(path, file, { contentType: file.type, upsert: false });
+          .upload(path, p.file, { contentType: p.file.type, upsert: false });
         if (upErr) throw upErr;
         const { data: pub } = supabase.storage.from("listing-images").getPublicUrl(path);
-        uploaded.push({ image_url: pub.publicUrl, display_order: i, listing_id: listingId });
+        uploaded.push({ image_url: pub.publicUrl, display_order: order, listing_id: listingId });
       }
-
       if (uploaded.length > 0) {
         const { error: imgErr } = await supabase.from("listing_images").insert(uploaded);
         if (imgErr) throw imgErr;
       }
 
-      toast({ title: "Listing posted", description: "It's live for buyers to see." });
+      toast({
+        title: isEdit ? "Listing updated" : "Listing posted",
+        description: isEdit ? "Changes are live." : "It's live for buyers to see.",
+      });
       navigate(`/listings/${listingId}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Something went wrong";
-      toast({ title: "Could not post listing", description: message, variant: "destructive" });
+      toast({ title: isEdit ? "Could not update" : "Could not post listing", description: message, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (authLoading) {
+  if (authLoading || fetching) {
     return (
       <div className="flex justify-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -168,9 +295,13 @@ const CreateListing = () => {
 
   return (
     <section className="mx-auto max-w-2xl py-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Post a listing</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">
+        {isEdit ? "Edit listing" : "Post a listing"}
+      </h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Share what you want to sell. Add clear photos and an honest description.
+        {isEdit
+          ? "Update details, swap photos, save when ready."
+          : "Share what you want to sell. Add clear photos and an honest description."}
       </p>
 
       <form onSubmit={onSubmit} className="mt-6 space-y-5 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
@@ -179,8 +310,15 @@ const CreateListing = () => {
           <p className="mt-0.5 text-xs text-muted-foreground">First photo is the cover. Up to {MAX_PHOTOS}.</p>
           <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
             {photos.map((p, i) => (
-              <div key={p.preview} className="relative aspect-square overflow-hidden rounded-lg border border-border">
-                <img src={p.preview} alt="" className="h-full w-full object-cover" />
+              <div
+                key={p.kind === "new" ? p.preview : p.id}
+                className="relative aspect-square overflow-hidden rounded-lg border border-border"
+              >
+                <img
+                  src={p.kind === "new" ? p.preview : p.image_url}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
                 <button
                   type="button"
                   onClick={() => removePhoto(i)}
@@ -255,7 +393,24 @@ const CreateListing = () => {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="description">Description</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="description">Description</Label>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onAiHelp}
+              disabled={aiBusy}
+              className="h-7 gap-1.5 text-xs text-primary hover:text-primary"
+            >
+              {aiBusy ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="h-3.5 w-3.5" />
+              )}
+              Help me write
+            </Button>
+          </div>
           <Textarea
             id="description"
             value={description}
@@ -269,11 +424,11 @@ const CreateListing = () => {
 
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="outline" asChild>
-            <Link to="/listings">Cancel</Link>
+            <Link to={isEdit ? `/listings/${editId}` : "/listings"}>Cancel</Link>
           </Button>
           <Button type="submit" disabled={submitting}>
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Post listing
+            {isEdit ? "Save changes" : "Post listing"}
           </Button>
         </div>
       </form>

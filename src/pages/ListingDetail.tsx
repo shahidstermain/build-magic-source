@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Eye, Heart, Loader2, MapPin, MessageCircle, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Eye, Heart, Loader2, MapPin, MessageCircle, Pencil, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -229,6 +229,16 @@ const ListingDetail = () => {
                   <MessageCircle className="mr-2 h-4 w-4" />
                 )}
                 Message seller
+              </Button>
+            )}
+            {isOwner && (
+              <Button
+                size="lg"
+                className="flex-1"
+                onClick={() => navigate(`/sell?edit=${listing.id}`)}
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit listing
               </Button>
             )}
             <Button
