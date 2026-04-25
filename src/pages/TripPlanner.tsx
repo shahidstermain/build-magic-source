@@ -14,6 +14,7 @@ import {
   Wand2,
   Edit3,
   Users,
+  Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
