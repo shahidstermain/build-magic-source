@@ -49,7 +49,7 @@ const ListingDetail = () => {
       const { data, error } = await supabase
         .from("listings")
         .select(
-          "id, title, description, price, category, condition, city, area, views_count, created_at, seller_id, listing_images(image_url, display_order), profiles!listings_seller_id_fkey(id, name, photo_url, is_location_verified, total_listings)",
+          "id, title, description, price, category, condition, city, area, views_count, created_at, seller_id, listing_images(image_url, display_order), profiles!listings_seller_profile_fkey(id, name, photo_url, is_location_verified, total_listings)",
         )
         .eq("id", id)
         .maybeSingle();
