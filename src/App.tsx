@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -7,27 +8,28 @@ import { Layout } from "@/components/Layout";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SiteMetaProvider } from "@/hooks/useSiteMeta";
 import Index from "./pages/Index.tsx";
-import NotFound from "./pages/NotFound.tsx";
-import Listings from "./pages/Listings.tsx";
-import ListingDetail from "./pages/ListingDetail.tsx";
-import CreateListing from "./pages/CreateListing.tsx";
-import ChatList from "./pages/ChatList.tsx";
-import ChatRoom from "./pages/ChatRoom.tsx";
-import Profile from "./pages/Profile.tsx";
-import Dashboard from "./pages/Dashboard.tsx";
-import AuthView from "./pages/AuthView.tsx";
-import ResetPassword from "./pages/ResetPassword.tsx";
-import PrivacyPolicy from "./pages/PrivacyPolicy.tsx";
-import TermsOfService from "./pages/TermsOfService.tsx";
-import Brand from "./pages/Brand.tsx";
-import Favorites from "./pages/Favorites.tsx";
-import PaymentTestChecklist from "./pages/PaymentTestChecklist.tsx";
-import TripPlanner from "./pages/TripPlanner.tsx";
-import MyTrips from "./pages/MyTrips.tsx";
-import AdminEmails from "./pages/AdminEmails.tsx";
-import AdminAffiliates from "./pages/AdminAffiliates.tsx";
-import AdminAffiliateRevenue from "./pages/AdminAffiliateRevenue.tsx";
-import Contact from "./pages/Contact.tsx";
+
+const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+const Listings = lazy(() => import("./pages/Listings.tsx"));
+const ListingDetail = lazy(() => import("./pages/ListingDetail.tsx"));
+const CreateListing = lazy(() => import("./pages/CreateListing.tsx"));
+const ChatList = lazy(() => import("./pages/ChatList.tsx"));
+const ChatRoom = lazy(() => import("./pages/ChatRoom.tsx"));
+const Profile = lazy(() => import("./pages/Profile.tsx"));
+const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
+const AuthView = lazy(() => import("./pages/AuthView.tsx"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy.tsx"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService.tsx"));
+const Brand = lazy(() => import("./pages/Brand.tsx"));
+const Favorites = lazy(() => import("./pages/Favorites.tsx"));
+const PaymentTestChecklist = lazy(() => import("./pages/PaymentTestChecklist.tsx"));
+const TripPlanner = lazy(() => import("./pages/TripPlanner.tsx"));
+const MyTrips = lazy(() => import("./pages/MyTrips.tsx"));
+const AdminEmails = lazy(() => import("./pages/AdminEmails.tsx"));
+const AdminAffiliates = lazy(() => import("./pages/AdminAffiliates.tsx"));
+const AdminAffiliateRevenue = lazy(() => import("./pages/AdminAffiliateRevenue.tsx"));
+const Contact = lazy(() => import("./pages/Contact.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -39,6 +41,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <Suspense fallback={null}>
           <Routes>
             <Route element={<Layout />}>
               <Route path="/" element={<Index />} />
@@ -66,6 +69,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
+          </Suspense>
         </TooltipProvider>
         </SiteMetaProvider>
       </AuthProvider>
