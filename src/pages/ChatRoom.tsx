@@ -46,6 +46,32 @@ const ChatRoom = () => {
   const [notFound, setNotFound] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [signedImages, setSignedImages] = useState<Record<string, string>>({});
+
+  // Resolve storage paths in messages to short-lived signed URLs
+  useEffect(() => {
+    const paths = messages
+      .map((m) => m.image_url)
+      .filter((u): u is string => !!u && !/^https?:\/\//.test(u) && !signedImages[u]);
+    if (paths.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.storage
+        .from("chat-images")
+        .createSignedUrls(paths, 60 * 60);
+      if (cancelled || !data) return;
+      setSignedImages((prev) => {
+        const next = { ...prev };
+        data.forEach((d) => {
+          if (d.path && d.signedUrl) next[d.path] = d.signedUrl;
+        });
+        return next;
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [messages, signedImages]);
 
   useEffect(() => {
     if (!user || !id) return;
@@ -74,7 +100,7 @@ const ChatRoom = () => {
       }
       const otherId = chat.buyer_id === user.id ? chat.seller_id : chat.buyer_id;
       const { data: profile } = await supabase
-        .from("profiles")
+        .from("public_profiles" as never)
         .select("id, name, photo_url")
         .eq("id", otherId)
         .maybeSingle();
@@ -176,7 +202,8 @@ const ChatRoom = () => {
     let imageUrl: string | null = null;
     if (pendingImage) {
       const ext = pendingImage.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${user.id}/${id}/${Date.now()}.${ext}`;
+      // Folder must start with chat id so storage RLS can validate participation
+      const path = `${id}/${user.id}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("chat-images")
         .upload(path, pendingImage, { contentType: pendingImage.type, upsert: false });
@@ -185,7 +212,8 @@ const ChatRoom = () => {
         toast({ title: "Image upload fail", description: upErr.message, variant: "destructive" });
         return;
       }
-      imageUrl = supabase.storage.from("chat-images").getPublicUrl(path).data.publicUrl;
+      // Store the storage path; we generate short-lived signed URLs at render time
+      imageUrl = path;
     }
     const { data, error } = await supabase
       .from("messages")
@@ -283,20 +311,27 @@ const ChatRoom = () => {
                       : "rounded-bl-sm bg-muted text-foreground"
                   }`}
                 >
-                  {m.image_url && (
-                    <a
-                      href={m.image_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mb-1 block overflow-hidden rounded-lg"
-                    >
-                      <img
-                        src={m.image_url}
-                        alt="Shared photo"
-                        className="max-h-64 w-auto object-cover"
-                      />
-                    </a>
-                  )}
+                  {(() => {
+                    if (!m.image_url) return null;
+                    const src = /^https?:\/\//.test(m.image_url)
+                      ? m.image_url
+                      : signedImages[m.image_url];
+                    if (!src) return null;
+                    return (
+                      <a
+                        href={src}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mb-1 block overflow-hidden rounded-lg"
+                      >
+                        <img
+                          src={src}
+                          alt="Shared photo"
+                          className="max-h-64 w-auto object-cover"
+                        />
+                      </a>
+                    );
+                  })()}
                   {m.body}
                   <div
                     className={`mt-1 text-[10px] ${

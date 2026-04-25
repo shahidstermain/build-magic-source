@@ -130,7 +130,7 @@ const ChatList = () => {
     );
     if (userIds.length) {
       const { data: profiles } = await supabase
-        .from("profiles")
+        .from("public_profiles" as never)
         .select("id, name, photo_url")
         .in("id", userIds);
       const map = new Map((profiles ?? []).map((p) => [p.id, p]));
