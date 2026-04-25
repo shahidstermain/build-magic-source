@@ -3,8 +3,7 @@ import { Check, ExternalLink, Rocket, Sparkles, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BOOST_PRICE_INR } from "@/components/BoostListingDialog";
-import { TRIP_PRICE_INR } from "@/lib/tripPlanner";
+import { BOOST_PRICE_INR, TRIP_PRICE_INR } from "@/lib/pricing";
 import {
   LAUNCH_DATE,
   PROMO_CODE,
