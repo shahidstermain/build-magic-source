@@ -377,6 +377,15 @@ export default function TripPlanner() {
               </Button>
             </div>
           </Card>
+
+          {teaserRecs.length > 0 && (
+            <RecommendationsSection
+              recommendations={teaserRecs}
+              title="Book the essentials now"
+              subtitle="Trusted partners hand-picked for this trip. The full list unlocks with the PDF."
+              locked
+            />
+          )}
         </div>
       )}
 
@@ -438,12 +447,22 @@ export default function TripPlanner() {
                 setTripId(null);
                 setPreview(null);
                 setDownloadUrl(null);
+                setTeaserRecs([]);
+                setFullRecs([]);
               }}
             >
               Plan another
             </button>
           </div>
         </Card>
+      )}
+
+      {stage === "ready" && fullRecs.length > 0 && (
+        <RecommendationsSection
+          recommendations={fullRecs}
+          title="Recommended for your trip"
+          subtitle="One-click bookings for stays, ferries and activities that match your itinerary."
+        />
       )}
 
       <PayTripDialog
