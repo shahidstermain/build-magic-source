@@ -493,4 +493,49 @@ function VerificationBadge({
   );
 }
 
+function PhoneVerificationStatus({
+  phone,
+  verifiedAt,
+  phoneEdited,
+}: {
+  phone: string | null;
+  verifiedAt: string | null;
+  phoneEdited: boolean;
+}) {
+  if (!phone) {
+    return (
+      <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 p-2 text-xs text-muted-foreground">
+        <ShieldQuestion className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <span>Add a phone number to enable verification.</span>
+      </div>
+    );
+  }
+  if (verifiedAt && !phoneEdited) {
+    const date = new Date(verifiedAt);
+    const formatted = date.toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    return (
+      <div className="flex items-start gap-2 rounded-lg border border-success/30 bg-success/10 p-2 text-xs">
+        <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success-foreground" />
+        <span className="text-success-foreground">
+          Phone verified on <span className="font-medium">{formatted}</span>.
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-xs">
+      <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700 dark:text-amber-400" />
+      <span className="text-amber-800 dark:text-amber-300">
+        {phoneEdited && verifiedAt
+          ? "Phone number changed — verification will be required again once enabled."
+          : "Phone not verified yet."}
+      </span>
+    </div>
+  );
+}
+
 export default Profile;
