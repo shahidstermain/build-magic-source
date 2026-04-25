@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatChatTime } from "@/lib/chats";
 import { formatPrice, publicImageUrl } from "@/lib/listings";
+import { slang } from "@/lib/slang";
 
 type ChatRow = {
   id: string;
@@ -166,7 +167,7 @@ const ChatList = () => {
           <MessageCircle className="mx-auto h-8 w-8 text-muted-foreground" />
           <p className="mt-3 font-medium">No chats yet</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Start a conversation by tapping <span className="font-medium">Message seller</span> on a listing.
+            {slang("chatsEmpty", user.id)}
           </p>
           <Link to="/listings" className="mt-4 inline-block text-sm font-medium text-primary hover:underline">
             Browse listings

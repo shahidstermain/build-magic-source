@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Search, Smartphone, Sofa, Car, Home as HomeIcon, Briefcase, Bike, Shirt, Dog, MapPin, ShieldCheck } from "lucide-react";
+import { slangOfTheDay } from "@/lib/slang";
 
 const categories = [
   { id: "electronics", label: "Electronics", icon: Smartphone },
@@ -26,6 +27,9 @@ const Index = () => (
         </h1>
         <p className="mt-3 text-base text-primary-foreground/85 sm:text-lg">
           The hyperlocal marketplace for Port Blair, Havelock, Diglipur and beyond.
+        </p>
+        <p className="mt-2 text-sm text-primary-foreground/75 sm:text-base">
+          {slangOfTheDay("homeTagline")}
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
