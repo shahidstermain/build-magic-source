@@ -32,6 +32,12 @@ export function PayTripDialog({ tripId, open, onOpenChange, onPaid }: Props) {
     stage: string;
   } | null>(null);
   const [attempt, setAttempt] = useState(0);
+  // Store the created order so retries reuse it instead of creating a new charge
+  const [pendingOrder, setPendingOrder] = useState<{
+    order_id: string;
+    payment_session_id: string;
+    env: "sandbox" | "production";
+  } | null>(null);
 
   const onConfirm = async () => {
     if (!tripId) return;
@@ -40,7 +46,12 @@ export function PayTripDialog({ tripId, open, onOpenChange, onPaid }: Props) {
     setAttempt((n) => n + 1);
     let stage = "create-order";
     try {
-      const order = await createTripOrder(tripId);
+      // Reuse existing order on retry to avoid double-charge
+      let order = pendingOrder;
+      if (!order) {
+        order = await createTripOrder(tripId);
+        setPendingOrder(order);
+      }
 
       stage = "checkout";
       await loadCashfreeSdk();
@@ -83,6 +94,7 @@ export function PayTripDialog({ tripId, open, onOpenChange, onPaid }: Props) {
     if (!next) {
       setErrorInfo(null);
       setAttempt(0);
+      setPendingOrder(null);
     }
     onOpenChange(next);
   };
