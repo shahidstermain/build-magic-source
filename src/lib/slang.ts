@@ -20,7 +20,8 @@ export type SlangSurface =
   | "notifOrderShipped"
   | "notifNewMessage"
   | "notifFavoriteUpdated"
-  | "notifTrending";
+  | "notifTrending"
+  | "notifEmpty";
 
 const PHRASES: Record<SlangSurface, string[]> = {
   homeHero: [
@@ -80,6 +81,12 @@ const PHRASES: Record<SlangSurface, string[]> = {
   notifTrending: [
     "Ye item fast khatam ho raha hai 👀",
     "Demand me hai — jaldi dekh lo.",
+  ],
+  notifEmpty: [
+    "All caught up 👌 chai pe baith jao.",
+    "Sab shaant hai — koi update nahi abhi.",
+    "Khali inbox, full sukoon 🌴",
+    "Kuch naya nahi… island timing hai 😄",
   ],
 };
 
