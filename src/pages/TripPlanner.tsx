@@ -39,7 +39,6 @@ import {
   ACCOMMODATION_OPTIONS,
   DIET_OPTIONS,
   ISLAND_OPTIONS,
-  TRIP_PRICE_INR,
   type TripInputs,
   type TripPreview,
   type TripRecommendation,
@@ -48,6 +47,7 @@ import {
   getTripDownloadUrl,
   regenerateTrip,
 } from "@/lib/tripPlanner";
+import { TRIP_PRICE_INR } from "@/lib/pricing";
 import { formatPriceLabel } from "@/lib/promo";
 import { saveCollaborativeTrip } from "@/lib/collaborativeTrips";
 import { PayTripDialog } from "@/components/PayTripDialog";

@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
-
-export const TRIP_PRICE_INR = 49;
+// Re-exported for backwards-compatibility. Canonical source: src/lib/pricing.ts
+export { TRIP_PRICE_INR } from "@/lib/pricing";
 
 export const BUDGET_OPTIONS = [
   { id: "low", label: "Low", hint: "Hostels, local food, ferry" },

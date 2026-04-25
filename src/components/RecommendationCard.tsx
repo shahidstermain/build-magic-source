@@ -17,10 +17,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  TRIP_PRICE_INR,
   affiliateTrackingUrl,
   type TripRecommendation,
 } from "@/lib/tripPlanner";
+import { TRIP_PRICE_INR } from "@/lib/pricing";
 import { formatPriceLabel } from "@/lib/promo";
 import { cn } from "@/lib/utils";
 

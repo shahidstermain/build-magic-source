@@ -11,11 +11,11 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
-  TRIP_PRICE_INR,
   createTripOrder,
   loadCashfreeSdk,
   verifyTripPayment,
 } from "@/lib/tripPlanner";
+import { TRIP_PRICE_INR } from "@/lib/pricing";
 import {
   PROMO_CODE,
   PROMO_DISCOUNT_PCT,
