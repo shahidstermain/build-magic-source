@@ -16,14 +16,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Subscribe FIRST, then hydrate the existing session.
+    // onAuthStateChange fires immediately with the current session,
+    // so getSession() is redundant and causes a double state update.
     const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
-      setLoading(false);
-    });
-
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
       setLoading(false);
     });
 
