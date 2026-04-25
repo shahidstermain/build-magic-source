@@ -51,6 +51,7 @@ import { saveCollaborativeTrip } from "@/lib/collaborativeTrips";
 import { PayTripDialog } from "@/components/PayTripDialog";
 import { RecommendationsSection } from "@/components/RecommendationCard";
 import { WhatsAppShare } from "@/components/WhatsAppShare";
+import { TripPlannerLeadForm } from "@/components/TripPlannerLeadForm";
 import { cn } from "@/lib/utils";
 
 type Stage = "form" | "preview" | "generating" | "ready";
@@ -885,6 +886,37 @@ export default function TripPlanner() {
           subtitle="One-click bookings for stays, ferries and activities that match your itinerary."
         />
       )}
+
+      {stage === "ready" && (
+        <section className="pt-2">
+          <TripPlannerLeadForm />
+        </section>
+      )}
+
+      {stage === "form" && (
+        <section className="pt-2">
+          <Card className="rounded-xl border bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-5 shadow-sm">
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <span className="text-3xl" aria-hidden>🚢</span>
+                <div>
+                  <h3 className="text-base font-semibold sm:text-lg">
+                    Want a custom plan built just for you?
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Skip the form — talk to a real Andaman expert and get a tailored plan over a quick call.
+                  </p>
+                </div>
+              </div>
+              <Button onClick={() => setLeadOpen(true)} size="lg" className="w-full shrink-0 sm:w-auto">
+                <Phone className="mr-2 h-4 w-4" /> Request a Callback
+              </Button>
+            </div>
+          </Card>
+        </section>
+      )}
+
+      <LeadCallbackSheet open={leadOpen} onOpenChange={setLeadOpen} />
 
       <PayTripDialog
         tripId={tripId}
