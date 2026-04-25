@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { formatPrice } from "@/lib/listings";
 import { Button } from "@/components/ui/button";
+import { VerifiedLocalBadge } from "@/components/VerifiedLocalBadge";
 
 type FavRow = {
   id: string;
@@ -18,6 +19,7 @@ type FavRow = {
     area: string | null;
     status: string;
     listing_images: { image_url: string; display_order: number }[];
+    seller: { is_location_verified: boolean | null } | null;
   } | null;
 };
 
@@ -42,7 +44,7 @@ const Favorites = () => {
       const { data, error } = await supabase
         .from("favorites")
         .select(
-          "id, listing_id, listings:listing_id(id, title, price, city, area, status, listing_images(image_url, display_order))",
+          "id, listing_id, listings:listing_id(id, title, price, city, area, status, listing_images(image_url, display_order), seller:public_profiles!listings_seller_profile_fkey(is_location_verified))",
         )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
@@ -141,9 +143,12 @@ const Favorites = () => {
                   <div className="p-3">
                     <p className="text-base font-semibold">{formatPrice(l.price)}</p>
                     <p className="line-clamp-1 text-sm text-foreground">{l.title}</p>
-                    <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground">
-                      <MapPin className="h-3 w-3" /> {l.area || l.city}
-                    </p>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <MapPin className="h-3 w-3" /> {l.area || l.city}
+                      </span>
+                      {l.seller?.is_location_verified && <VerifiedLocalBadge />}
+                    </div>
                     {l.status !== "active" && (
                       <p className="mt-1 text-[11px] uppercase tracking-wide text-muted-foreground">
                         {l.status}
