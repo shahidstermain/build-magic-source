@@ -24,6 +24,7 @@ import Favorites from "./pages/Favorites.tsx";
 import PaymentTestChecklist from "./pages/PaymentTestChecklist.tsx";
 import TripPlanner from "./pages/TripPlanner.tsx";
 import MyTrips from "./pages/MyTrips.tsx";
+import AdminEmails from "./pages/AdminEmails.tsx";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/payment-test" element={<PaymentTestChecklist />} />
               <Route path="/trip-planner" element={<TripPlanner />} />
               <Route path="/my-trips" element={<MyTrips />} />
+              <Route path="/admin/emails" element={<AdminEmails />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Route>
