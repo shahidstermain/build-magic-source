@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { ChevronDown, Download, Loader2, MapPin, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -80,7 +80,16 @@ export default function MyTrips() {
     }
   };
 
-  if (authLoading || trips === null) {
+  if (authLoading) {
+    return (
+      <div className="grid place-items-center py-24 text-muted-foreground">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/auth?next=/my-trips" replace />;
+
+  if (trips === null) {
     return (
       <div className="grid place-items-center py-24 text-muted-foreground">
         <Loader2 className="h-6 w-6 animate-spin" />
