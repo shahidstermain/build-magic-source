@@ -117,7 +117,8 @@ export default function AdminTripLeads() {
 
   async function updateStatus(id: string, status: string) {
     const prev = leads;
-    setLeads(leads.map((l) => (l.id === id ? { ...l, status } : l)));
+    const now = new Date().toISOString();
+    setLeads(leads.map((l) => (l.id === id ? { ...l, status, updated_at: now } : l)));
     const { error } = await supabase.from("trip_leads").update({ status }).eq("id", id);
     if (error) {
       setLeads(prev);
