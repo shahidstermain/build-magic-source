@@ -173,6 +173,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "listings_seller_profile_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       messages: {
@@ -496,7 +503,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          area: string | null
+          city: string | null
+          created_at: string | null
+          id: string | null
+          is_location_verified: boolean | null
+          name: string | null
+          photo_url: string | null
+          successful_sales: number | null
+          total_listings: number | null
+        }
+        Insert: {
+          area?: string | null
+          city?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_location_verified?: boolean | null
+          name?: string | null
+          photo_url?: string | null
+          successful_sales?: number | null
+          total_listings?: number | null
+        }
+        Update: {
+          area?: string | null
+          city?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_location_verified?: boolean | null
+          name?: string | null
+          photo_url?: string | null
+          successful_sales?: number | null
+          total_listings?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
