@@ -26,6 +26,7 @@ import TripPlanner from "./pages/TripPlanner.tsx";
 import MyTrips from "./pages/MyTrips.tsx";
 import AdminEmails from "./pages/AdminEmails.tsx";
 import AdminAffiliates from "./pages/AdminAffiliates.tsx";
+import AdminAffiliateRevenue from "./pages/AdminAffiliateRevenue.tsx";
 import Contact from "./pages/Contact.tsx";
 
 const queryClient = new QueryClient();
@@ -59,6 +60,7 @@ const App = () => (
               <Route path="/my-trips" element={<MyTrips />} />
               <Route path="/admin/emails" element={<AdminEmails />} />
               <Route path="/admin/affiliates" element={<AdminAffiliates />} />
+              <Route path="/admin/affiliate-revenue" element={<AdminAffiliateRevenue />} />
               <Route path="/contact" element={<Contact />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
