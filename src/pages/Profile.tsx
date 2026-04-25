@@ -1,6 +1,6 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { Camera, Clock, Loader2, ShieldCheck, ShieldQuestion, ShieldX, X } from "lucide-react";
+import { Camera, Clock, Loader2, ShieldAlert, ShieldCheck, ShieldQuestion, ShieldX, X } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -43,6 +43,7 @@ type ProfileRow = {
   is_location_verified: boolean;
   total_listings: number;
   successful_sales: number;
+  phone_verified_at: string | null;
 };
 
 type VerificationRequest = {
@@ -78,7 +79,7 @@ const Profile = () => {
       const [{ data, error }, { data: vr, error: vrErr }] = await Promise.all([
         supabase
           .from("profiles")
-          .select("id, name, phone, area, city, photo_url, is_location_verified, total_listings, successful_sales")
+          .select("id, name, phone, area, city, photo_url, is_location_verified, total_listings, successful_sales, phone_verified_at")
           .eq("id", user.id)
           .maybeSingle(),
         supabase
@@ -322,6 +323,11 @@ const Profile = () => {
           <p className="text-xs text-muted-foreground">
             Shown only to people you chat with — never public.
           </p>
+          <PhoneVerificationStatus
+            phone={profile?.phone ?? null}
+            verifiedAt={profile?.phone_verified_at ?? null}
+            phoneEdited={(profile?.phone ?? "") !== phone.trim()}
+          />
         </div>
 
         <div className="space-y-2">
