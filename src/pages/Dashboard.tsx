@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { Eye, Heart, Loader2, Pause, Play, Rocket, Sparkles, Trash2, Trophy } from "lucide-react";
+import { Eye, Heart, Loader2, Pause, Play, Receipt, Rocket, Sparkles, Trash2, Trophy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +21,7 @@ import {
 import { formatPrice, publicImageUrl } from "@/lib/listings";
 import { slang } from "@/lib/slang";
 import { BoostListingDialog } from "@/components/BoostListingDialog";
+import { PaymentHistory } from "@/components/PaymentHistory";
 
 type ListingRow = {
   id: string;
@@ -162,6 +163,9 @@ const Dashboard = () => {
         <TabsList>
           <TabsTrigger value="listings">My listings</TabsTrigger>
           <TabsTrigger value="favorites">Saved</TabsTrigger>
+          <TabsTrigger value="payments">
+            <Receipt className="mr-1 h-3.5 w-3.5" /> Payments
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="listings" className="mt-4">
@@ -350,6 +354,10 @@ const Dashboard = () => {
               })}
             </ul>
           )}
+        </TabsContent>
+
+        <TabsContent value="payments" className="mt-4">
+          <PaymentHistory userId={user.id} />
         </TabsContent>
       </Tabs>
 
