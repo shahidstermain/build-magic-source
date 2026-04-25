@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, MapPin, Anchor, Compass, ShieldCheck } from "lucide-react";
+import { Loader2, Anchor, Compass, ShieldCheck } from "lucide-react";
 import logoUrl from "@/assets/logo.webp";
 
 type Mode = "signin" | "signup" | "forgot";
@@ -226,28 +226,30 @@ const AuthView = () => {
       </div>
 
       {/* ── Right panel — form ─────────────────────────────────────────────── */}
-      <div className="flex min-h-screen flex-col justify-center bg-background px-6 py-12 lg:px-10">
+      <div className="relative flex min-h-screen flex-col justify-center bg-background px-6 py-12 lg:px-10">
+        {/* Subtle mobile background tint */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-primary/5 to-transparent lg:hidden" />
 
         {/* Mobile logo */}
-        <Link to="/" className="mb-8 flex items-center gap-2.5 lg:hidden">
-          <img src={logoUrl} alt="AndamanBazaar" className="h-9 w-9 rounded-xl shadow-sm" />
-          <span className="text-lg font-semibold tracking-tight">
+        <Link to="/" className="relative mb-8 flex items-center gap-2.5 lg:hidden">
+          <img src={logoUrl} alt="AndamanBazaar" className="h-10 w-10 rotate-3 rounded-xl bg-card p-1 shadow-card" />
+          <span className="text-lg font-extrabold uppercase tracking-tight">
             Andaman<span className="text-primary">Bazaar</span>
           </span>
         </Link>
 
-        <div className="w-full max-w-sm mx-auto space-y-6">
+        <div className="relative mx-auto w-full max-w-sm space-y-6">
 
           {/* Heading */}
-          <div className="space-y-1">
-            <h2 className="text-2xl font-semibold tracking-tight">
-              {mode === "signup" && "Create your account"}
+          <div className="space-y-1.5">
+            <h2 className="text-3xl font-extrabold tracking-tight">
+              {mode === "signup" && "Join the bazaar"}
               {mode === "signin" && "Welcome back"}
               {mode === "forgot" && "Reset your password"}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {mode === "signup" && "Join the island marketplace — it's free."}
-              {mode === "signin" && "Sign in to keep selling and chatting."}
+              {mode === "signup" && "Create your free account — start selling in minutes."}
+              {mode === "signin" && "Sign in to keep selling, chatting and planning trips."}
               {mode === "forgot" && "We'll email you a link to set a new password."}
             </p>
           </div>
@@ -335,10 +337,10 @@ const AuthView = () => {
               </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={busy}>
+            <Button type="submit" size="lg" className="w-full font-bold shadow-elevated" disabled={busy}>
               {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {mode === "signup" && "Create account"}
-              {mode === "signin" && "Sign in"}
+              {mode === "signup" && "Create my account"}
+              {mode === "signin" && "Enter the bazaar"}
               {mode === "forgot" && "Send reset link"}
             </Button>
           </form>
