@@ -131,7 +131,10 @@ const Profile = () => {
           throw new Error("ID document must be under 5MB.");
         }
         const ext = verifyDocFile.name.split(".").pop()?.toLowerCase() || "jpg";
-        const path = `${user.id}/verify-${Date.now()}.${ext}`;
+        // NOTE: Ideally this should go to a private 'verification-docs' bucket.
+        // Until that bucket is created in Supabase, we store under a restricted
+        // path prefix. Ensure RLS on listing-images restricts this path to admins only.
+        const path = `verification-docs/${user.id}/verify-${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from("listing-images")
           .upload(path, verifyDocFile, { contentType: verifyDocFile.type, upsert: false });
