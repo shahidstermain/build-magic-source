@@ -27,11 +27,14 @@ import {
   TRIP_PRICE_INR,
   type TripInputs,
   type TripPreview,
+  type TripRecommendation,
   createTripPreview,
+  fetchTripRecommendations,
   getTripDownloadUrl,
   regenerateTrip,
 } from "@/lib/tripPlanner";
 import { PayTripDialog } from "@/components/PayTripDialog";
+import { RecommendationsSection } from "@/components/RecommendationCard";
 import { cn } from "@/lib/utils";
 
 type Stage = "form" | "preview" | "generating" | "ready";
@@ -64,6 +67,8 @@ export default function TripPlanner() {
   const [payOpen, setPayOpen] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [genError, setGenError] = useState<string | null>(null);
+  const [teaserRecs, setTeaserRecs] = useState<TripRecommendation[]>([]);
+  const [fullRecs, setFullRecs] = useState<TripRecommendation[]>([]);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth?next=/trip-planner");
@@ -95,6 +100,10 @@ export default function TripPlanner() {
       setTripId(result.trip_id);
       setPreview(result.preview);
       setStage("preview");
+      // Fire-and-forget teaser recommendations (2 items)
+      fetchTripRecommendations(result.trip_id, { teaserOnly: true })
+        .then((recs) => setTeaserRecs(recs))
+        .catch((err) => console.warn("teaser recs failed", err));
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Preview failed";
       toast({ title: "Couldn't build preview", description: msg, variant: "destructive" });
@@ -108,6 +117,10 @@ export default function TripPlanner() {
       const url = await getTripDownloadUrl(id);
       setDownloadUrl(url);
       setStage("ready");
+      // Load full recommendations once the PDF is ready
+      fetchTripRecommendations(id, { force: teaserRecs.length > 0 && fullRecs.length === 0 })
+        .then((recs) => setFullRecs(recs))
+        .catch((err) => console.warn("full recs failed", err));
     } catch (err) {
       console.error(err);
       const msg = err instanceof Error ? err.message : "Couldn't load PDF";
