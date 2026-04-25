@@ -233,6 +233,11 @@ const ListingDetail = () => {
                 <img
                   src={photos[activePhoto].image_url}
                   alt={listing.title}
+                  width={800}
+                  height={800}
+                  sizes="(min-width: 768px) 60vw, 100vw"
+                  fetchPriority="high"
+                  decoding="async"
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -253,7 +258,15 @@ const ListingDetail = () => {
                     i === activePhoto ? "border-primary" : "border-transparent opacity-60 hover:opacity-100"
                   }`}
                 >
-                  <img src={p.image_url} alt="" className="h-full w-full object-cover" />
+                  <img
+                    src={p.image_url}
+                    alt=""
+                    width={64}
+                    height={64}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover"
+                  />
                 </button>
               ))}
             </div>

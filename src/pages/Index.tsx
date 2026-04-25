@@ -175,7 +175,13 @@ export default function Index() {
                         <div className="aspect-square w-full overflow-hidden bg-muted">
                           {cover ? (
                             <img
-                              src={cover} alt={item.title} loading="lazy"
+                              src={cover}
+                              alt={item.title}
+                              width={192}
+                              height={192}
+                              sizes="(min-width: 640px) 192px, 160px"
+                              loading="lazy"
+                              decoding="async"
                               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                             />
                           ) : (
