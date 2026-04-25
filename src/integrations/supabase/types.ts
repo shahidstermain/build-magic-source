@@ -127,7 +127,15 @@ export type Database = {
           updated_at?: string
           views_count?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "listings_seller_profile_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
