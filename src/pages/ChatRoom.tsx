@@ -312,18 +312,24 @@ const ChatRoom = () => {
                   }`}
                 >
                   {m.image_url && (
+                  (() => {
+                    const src = /^https?:\/\//.test(m.image_url) ? m.image_url : signedImages[m.image_url];
+                    if (!src) return null;
+                    return (
                     <a
-                      href={m.image_url}
+                      href={src}
                       target="_blank"
                       rel="noreferrer"
                       className="mb-1 block overflow-hidden rounded-lg"
                     >
                       <img
-                        src={m.image_url}
+                        src={src}
                         alt="Shared photo"
                         className="max-h-64 w-auto object-cover"
                       />
                     </a>
+                    );
+                  })()
                   )}
                   {m.body}
                   <div
