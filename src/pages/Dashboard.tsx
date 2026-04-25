@@ -352,6 +352,18 @@ const Dashboard = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      <BoostListingDialog
+        listingId={boostTarget?.id ?? null}
+        listingTitle={boostTarget?.title}
+        open={!!boostTarget}
+        onOpenChange={(o) => !o && setBoostTarget(null)}
+        onBoosted={() =>
+          setMyListings((rows) =>
+            rows.map((r) => (r.id === boostTarget?.id ? { ...r, is_featured: true } : r)),
+          )
+        }
+      />
     </section>
   );
 };
