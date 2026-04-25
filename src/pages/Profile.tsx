@@ -20,6 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ANDAMAN_AREAS } from "@/lib/listings";
 import { GitHubSyncCard } from "@/components/GitHubSyncCard";
+import { LegalAcceptancesCard } from "@/components/LegalAcceptancesCard";
 
 const profileSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(80),
@@ -454,6 +455,12 @@ const Profile = () => {
       <div className="mt-6">
         <GitHubSyncCard />
       </div>
+
+      {user && (
+        <div className="mt-6">
+          <LegalAcceptancesCard userId={user.id} />
+        </div>
+      )}
     </section>
   );
 };
