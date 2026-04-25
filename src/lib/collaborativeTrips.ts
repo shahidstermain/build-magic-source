@@ -14,7 +14,7 @@ export async function saveCollaborativeTrip(
       return { success: true, collabTripId: null };
     }
 
-    const { data: collabTrip, error: tripError } = await supabase
+    const { data: collabTrip, error: tripError } = await (supabase as any)
       .from("collaborative_trips")
       .insert({
         trip_id: tripId,
@@ -35,7 +35,7 @@ export async function saveCollaborativeTrip(
     }
 
     if (collabTrip && collaborators.length > 0) {
-      const { error: collabError } = await supabase
+      const { error: collabError } = await (supabase as any)
         .from("trip_collaborators")
         .insert(
           collaborators.map(email => ({
@@ -60,7 +60,7 @@ export async function saveCollaborativeTrip(
 
 export async function getCollaborativeTrip(tripId: string) {
   try {
-    const { data: collabTrip, error: tripError } = await supabase
+    const { data: collabTrip, error: tripError } = await (supabase as any)
       .from("collaborative_trips")
       .select(`
         id,

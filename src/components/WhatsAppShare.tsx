@@ -49,13 +49,13 @@ export function WhatsAppShare({
     
     // Track the share (best-effort — doesn't block the share action)
     if (user) {
-      supabase.from("whatsapp_shares").insert({
+      (supabase as any).from("whatsapp_shares").insert({
         user_id: user.id,
         listing_id: type === "listing" || type === "experience" ? listingId : null,
         trip_id: type === "trip" ? tripId : null,
         share_type: type,
         message_template: decodeURIComponent(message),
-      }).then(({ error }) => {
+      }).then(({ error }: { error: any }) => {
         if (error && error.code !== "42P01") {
           console.warn("Failed to track share:", error.message);
         }
