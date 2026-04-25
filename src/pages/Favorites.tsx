@@ -132,6 +132,11 @@ const Favorites = () => {
                       <img
                         src={cover.image_url}
                         alt={l.title}
+                        width={400}
+                        height={300}
+                        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                        loading="lazy"
+                        decoding="async"
                         className="h-full w-full object-cover transition group-hover:scale-[1.02]"
                       />
                     ) : (
