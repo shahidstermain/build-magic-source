@@ -206,7 +206,7 @@ const ChatRoom = () => {
       const path = `${id}/${user.id}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("chat-images")
-        .upload(path, pendingImage, { contentType: pendingImage.type, upsert: false });
+        .upload(path, pendingImage, { contentType: pendingImage.type, upsert: false, cacheControl: "31536000" });
       if (upErr) {
         setSending(false);
         toast({ title: "Image upload fail", description: upErr.message, variant: "destructive" });

@@ -281,7 +281,7 @@ const CreateListing = () => {
         const path = `${user.id}/${listingId}/${Date.now()}-${i}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from("listing-images")
-          .upload(path, p.file, { contentType: p.file.type, upsert: false });
+          .upload(path, p.file, { contentType: p.file.type, upsert: false, cacheControl: "31536000" });
         if (upErr) throw upErr;
         const { data: pub } = supabase.storage.from("listing-images").getPublicUrl(path);
         uploaded.push({ image_url: pub.publicUrl, display_order: order, listing_id: listingId });
