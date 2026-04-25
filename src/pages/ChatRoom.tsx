@@ -176,7 +176,8 @@ const ChatRoom = () => {
     let imageUrl: string | null = null;
     if (pendingImage) {
       const ext = pendingImage.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${user.id}/${id}/${Date.now()}.${ext}`;
+      // Folder must start with chat id so storage RLS can validate participation
+      const path = `${id}/${user.id}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("chat-images")
         .upload(path, pendingImage, { contentType: pendingImage.type, upsert: false });
@@ -185,7 +186,8 @@ const ChatRoom = () => {
         toast({ title: "Image upload fail", description: upErr.message, variant: "destructive" });
         return;
       }
-      imageUrl = supabase.storage.from("chat-images").getPublicUrl(path).data.publicUrl;
+      // Store the storage path; we generate short-lived signed URLs at render time
+      imageUrl = path;
     }
     const { data, error } = await supabase
       .from("messages")
