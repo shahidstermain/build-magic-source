@@ -74,7 +74,7 @@ const ChatRoom = () => {
       }
       const otherId = chat.buyer_id === user.id ? chat.seller_id : chat.buyer_id;
       const { data: profile } = await supabase
-        .from("profiles")
+        .from("public_profiles" as never)
         .select("id, name, photo_url")
         .eq("id", otherId)
         .maybeSingle();
