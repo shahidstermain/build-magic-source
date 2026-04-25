@@ -35,6 +35,7 @@ type Lead = {
   preferred_call_time: string | null;
   status: string;
   created_at: string;
+  updated_at: string;
 };
 
 const STATUS_OPTIONS = ["new", "called", "converted", "not_interested"] as const;
@@ -116,7 +117,8 @@ export default function AdminTripLeads() {
 
   async function updateStatus(id: string, status: string) {
     const prev = leads;
-    setLeads(leads.map((l) => (l.id === id ? { ...l, status } : l)));
+    const now = new Date().toISOString();
+    setLeads(leads.map((l) => (l.id === id ? { ...l, status, updated_at: now } : l)));
     const { error } = await supabase.from("trip_leads").update({ status }).eq("id", id);
     if (error) {
       setLeads(prev);
@@ -132,12 +134,12 @@ export default function AdminTripLeads() {
   function exportCsv() {
     const headers = [
       "Name", "WhatsApp", "Travel from", "Travel to", "Travelers",
-      "Budget", "Query", "Call time", "Status", "Submitted at",
+      "Budget", "Query", "Call time", "Status", "Submitted at", "Last updated",
     ];
     const rows = filtered.map((l) => [
       l.name, l.whatsapp, l.travel_from, l.travel_to, l.travelers,
       l.budget_range, l.query ?? "", l.preferred_call_time ?? "",
-      STATUS_LABEL[l.status] ?? l.status, l.created_at,
+      STATUS_LABEL[l.status] ?? l.status, l.created_at, l.updated_at,
     ]);
     const csv = [headers, ...rows].map((r) => r.map(csvCell).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -211,6 +213,7 @@ export default function AdminTripLeads() {
                     <TableHead>Call time</TableHead>
                     <TableHead>Submitted</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Last updated</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -248,6 +251,12 @@ export default function AdminTripLeads() {
                             </SelectContent>
                           </Select>
                         </div>
+                      </TableCell>
+                      <TableCell
+                        className="whitespace-nowrap text-xs text-muted-foreground"
+                        title={new Date(l.updated_at).toLocaleString()}
+                      >
+                        {new Date(l.updated_at).toLocaleString()}
                       </TableCell>
                     </TableRow>
                   ))}
