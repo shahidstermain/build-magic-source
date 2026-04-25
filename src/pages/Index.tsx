@@ -1,5 +1,8 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Smartphone, Sofa, Car, Home as HomeIcon, Briefcase, Bike, Shirt, Dog, MapPin, ShieldCheck } from "lucide-react";
+import { Search, Smartphone, Sofa, Car, Home as HomeIcon, Briefcase, Bike, Shirt, Dog, MapPin, ShieldCheck, Sparkles } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { formatPrice } from "@/lib/listings";
 import { slangOfTheDay } from "@/lib/slang";
 
 const categories = [
@@ -13,8 +16,54 @@ const categories = [
   { id: "pets", label: "Pets", icon: Dog },
 ];
 
-const Index = () => (
-  <div className="space-y-10 py-2">
+type FeaturedItem = {
+  id: string;
+  title: string;
+  price: number;
+  area: string | null;
+  city: string;
+  listing_images: { image_url: string; display_order: number }[];
+};
+
+const Index = () => {
+  const [featured, setFeatured] = useState<FeaturedItem[]>([]);
+  const [loadingFeatured, setLoadingFeatured] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      // Featured first; fall back to most-viewed active listings if none flagged
+      const { data: flagged } = await supabase
+        .from("listings")
+        .select("id, title, price, area, city, listing_images(image_url, display_order)")
+        .eq("status", "active")
+        .eq("is_featured", true)
+        .order("created_at", { ascending: false })
+        .limit(8);
+
+      let rows = (flagged ?? []) as FeaturedItem[];
+      if (rows.length === 0) {
+        const { data: top } = await supabase
+          .from("listings")
+          .select("id, title, price, area, city, listing_images(image_url, display_order)")
+          .eq("status", "active")
+          .order("views_count", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(8);
+        rows = (top ?? []) as FeaturedItem[];
+      }
+      if (!cancelled) {
+        setFeatured(rows);
+        setLoadingFeatured(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <div className="space-y-10 py-2">
     {/* Hero */}
     <section className="relative overflow-hidden rounded-2xl bg-[image:var(--gradient-hero)] p-6 text-primary-foreground shadow-[var(--shadow-elevated)] sm:p-10">
       <div className="relative z-10 max-w-2xl">
@@ -50,6 +99,74 @@ const Index = () => (
       <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 right-10 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
     </section>
+
+    {/* Featured rail */}
+    {(loadingFeatured || featured.length > 0) && (
+      <section>
+        <div className="mb-4 flex items-end justify-between">
+          <h2 className="inline-flex items-center gap-2 text-xl font-semibold tracking-tight">
+            <Sparkles className="h-5 w-5 text-accent" />
+            Featured on the bazaar
+          </h2>
+          <Link to="/listings" className="text-sm font-medium text-primary hover:underline">
+            See all
+          </Link>
+        </div>
+        {loadingFeatured ? (
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-56 w-44 flex-none animate-pulse rounded-2xl bg-muted"
+              />
+            ))}
+          </div>
+        ) : (
+          <ul className="flex snap-x gap-3 overflow-x-auto pb-2">
+            {featured.map((item) => {
+              const cover = [...item.listing_images].sort(
+                (a, b) => a.display_order - b.display_order,
+              )[0]?.image_url;
+              return (
+                <li key={item.id} className="w-44 flex-none snap-start sm:w-52">
+                  <Link
+                    to={`/listings/${item.id}`}
+                    className="group block overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition-shadow hover:shadow-[var(--shadow-elevated)]"
+                  >
+                    <div className="aspect-square w-full overflow-hidden bg-muted">
+                      {cover ? (
+                        <img
+                          src={cover}
+                          alt={item.title}
+                          loading="lazy"
+                          className="h-full w-full object-cover transition-transform group-hover:scale-[1.03]"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                          No photo
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <p className="font-semibold text-foreground">
+                        {formatPrice(item.price)}
+                      </p>
+                      <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
+                        {item.title}
+                      </p>
+                      <p className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <MapPin className="h-3 w-3" />
+                        {item.area || item.city}
+                      </p>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+    )}
 
     {/* Categories */}
     <section>
@@ -99,7 +216,8 @@ const Index = () => (
         </p>
       </div>
     </section>
-  </div>
-);
+    </div>
+  );
+};
 
 export default Index;

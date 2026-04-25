@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Eye, Flag, Heart, Loader2, MapPin, MessageCircle, Pencil, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Eye, Flag, Heart, Loader2, MapPin, MessageCircle, Pencil, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { CONDITIONS, formatPrice } from "@/lib/listings";
 import { getOrCreateChat } from "@/lib/chats";
 import { DeliveryEstimator } from "@/components/DeliveryEstimator";
 import { ReportListingDialog } from "@/components/ReportListingDialog";
+import { TrustBadge } from "@/components/TrustBadge";
 
 type Listing = {
   id: string;
@@ -32,6 +33,7 @@ type Listing = {
     photo_url: string | null;
     is_location_verified: boolean;
     total_listings: number;
+    successful_sales: number;
   } | null;
 };
 
@@ -56,7 +58,7 @@ const ListingDetail = () => {
       const { data, error } = await supabase
         .from("listings")
         .select(
-          "id, title, description, price, category, condition, city, area, views_count, created_at, seller_id, status, listing_images(image_url, display_order), profiles!listings_seller_profile_fkey(id, name, photo_url, is_location_verified, total_listings)",
+          "id, title, description, price, category, condition, city, area, views_count, created_at, seller_id, status, listing_images(image_url, display_order), profiles!listings_seller_profile_fkey(id, name, photo_url, is_location_verified, total_listings, successful_sales)",
         )
         .eq("id", id)
         .maybeSingle();
@@ -157,6 +159,22 @@ const ListingDetail = () => {
     }
     setListing({ ...listing, status: "sold" });
     toast({ title: "Marked as sold", description: "Mubarak ho! Boat pe bharosa rakho." });
+  };
+
+  const onShare = async () => {
+    if (!listing) return;
+    const url = window.location.href;
+    const text = `${listing.title} — ${formatPrice(listing.price)}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: listing.title, text, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast({ title: "Link copied", description: "Share kar do dost ke saath." });
+      }
+    } catch (e) {
+      // user cancelled — silent
+    }
   };
 
   const onMessageSeller = async () => {
@@ -289,6 +307,14 @@ const ListingDetail = () => {
             >
               <Heart className={`h-5 w-5 ${isFav ? "fill-accent text-accent" : ""}`} />
             </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={onShare}
+              aria-label="Share listing"
+            >
+              <Share2 className="h-5 w-5" />
+            </Button>
           </div>
 
           {listing.profiles && (
@@ -302,14 +328,10 @@ const ListingDetail = () => {
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">{listing.profiles.name ?? "Seller"}</p>
                 <p className="text-xs text-muted-foreground">
-                  {listing.profiles.total_listings} listings
+                  {listing.profiles.total_listings} listings · {listing.profiles.successful_sales} sold
                 </p>
               </div>
-              {listing.profiles.is_location_verified && (
-                <Badge className="bg-success text-success-foreground">
-                  <ShieldCheck className="mr-1 h-3 w-3" /> Island verified
-                </Badge>
-              )}
+              <TrustBadge profile={listing.profiles} />
             </div>
           )}
 
