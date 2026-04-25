@@ -1215,6 +1215,32 @@ export type Database = {
           revenue_inr: number
         }[]
       }
+      affiliate_link_revenue_stats: {
+        Args: {
+          _from: string
+          _item_type?: string
+          _to: string
+          _vendor_id?: string
+        }
+        Returns: {
+          affiliate_url: string
+          clicks: number
+          conversion_rate: number
+          conversions: number
+          item_name: string
+          item_type: string
+          link_created_at: string
+          merchant_name: string
+          pending_conversions: number
+          pending_revenue_inr: number
+          recommendation_id: string
+          vendor_id: string
+          verified_commission_inr: number
+          verified_conversions: number
+          verified_revenue_inr: number
+          zero_revenue_30d: boolean
+        }[]
+      }
       affiliate_vendor_stats: {
         Args: { _from: string; _to: string }
         Returns: {
