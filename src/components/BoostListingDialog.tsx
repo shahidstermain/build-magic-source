@@ -11,6 +11,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  PROMO_CODE,
+  PROMO_DISCOUNT_PCT,
+  effectivePrice,
+  isPromoActive,
+  listPrice,
+} from "@/lib/promo";
 
 export const BOOST_PRICE_INR = 99;
 
@@ -194,10 +201,30 @@ export function BoostListingDialog({
 
         <div className="rounded-2xl border border-accent/30 bg-accent/5 p-4 text-center">
           <p className="text-xs uppercase tracking-wider text-muted-foreground">One-time</p>
-          <p className="mt-1 text-3xl font-semibold tracking-tight">
-            ₹{BOOST_PRICE_INR.toLocaleString("en-IN")}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">per listing · no recurring charge</p>
+          {isPromoActive() ? (
+            <>
+              <p className="mt-1 flex items-baseline justify-center gap-2">
+                <span className="text-sm text-muted-foreground line-through">
+                  ₹{listPrice(BOOST_PRICE_INR).toLocaleString("en-IN")}
+                </span>
+                <span className="text-3xl font-semibold tracking-tight">
+                  ₹{effectivePrice(BOOST_PRICE_INR).toLocaleString("en-IN")}
+                </span>
+              </p>
+              <p className="mt-1 text-xs font-medium text-accent">
+                {PROMO_DISCOUNT_PCT}% off auto-applied with{" "}
+                <span className="font-mono">{PROMO_CODE}</span>
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">per listing · no recurring charge</p>
+            </>
+          ) : (
+            <>
+              <p className="mt-1 text-3xl font-semibold tracking-tight">
+                ₹{listPrice(BOOST_PRICE_INR).toLocaleString("en-IN")}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">per listing · no recurring charge</p>
+            </>
+          )}
         </div>
 
         {errorInfo && (
