@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Home, Search, PlusSquare, MessageCircle, User, LogOut, LayoutDashboard, Heart } from "lucide-react";
+import { Home, Search, PlusSquare, MessageCircle, User, LogOut, LayoutDashboard, Heart, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -84,6 +84,9 @@ export function Layout() {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/dashboard")}>
                     <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/my-trips")}>
+                    <Sparkles className="mr-2 h-4 w-4" /> My trips
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

@@ -22,6 +22,8 @@ import TermsOfService from "./pages/TermsOfService.tsx";
 import Brand from "./pages/Brand.tsx";
 import Favorites from "./pages/Favorites.tsx";
 import PaymentTestChecklist from "./pages/PaymentTestChecklist.tsx";
+import TripPlanner from "./pages/TripPlanner.tsx";
+import MyTrips from "./pages/MyTrips.tsx";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +52,8 @@ const App = () => (
               <Route path="/brand" element={<Brand />} />
               <Route path="/favorites" element={<Favorites />} />
               <Route path="/payment-test" element={<PaymentTestChecklist />} />
+              <Route path="/trip-planner" element={<TripPlanner />} />
+              <Route path="/my-trips" element={<MyTrips />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Route>
