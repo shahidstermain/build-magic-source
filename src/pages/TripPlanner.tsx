@@ -60,6 +60,34 @@ export default function TripPlanner() {
   const [interests, setInterests] = useState<string[]>(["relaxation", "snorkeling"]);
   const [islands, setIslands] = useState<string[]>([]);
 
+  // Keep days in sync with date range
+  const syncDaysFromDates = (start: string, end: string) => {
+    if (start && end) {
+      const diff = Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000);
+      if (diff > 0) setDays(diff);
+    }
+  };
+
+  const onStartDateChange = (val: string) => {
+    setStartDate(val);
+    syncDaysFromDates(val, endDate);
+  };
+
+  const onEndDateChange = (val: string) => {
+    setEndDate(val);
+    syncDaysFromDates(startDate, val);
+  };
+
+  const onDaysChange = (val: number) => {
+    setDays(val);
+    if (startDate && val > 0) {
+      const end = new Date(new Date(startDate).getTime() + val * 86400000)
+        .toISOString()
+        .slice(0, 10);
+      setEndDate(end);
+    }
+  };
+
   const [stage, setStage] = useState<Stage>("form");
   const [submitting, setSubmitting] = useState(false);
   const [tripId, setTripId] = useState<string | null>(null);
@@ -80,6 +108,10 @@ export default function TripPlanner() {
   const onPreview = async () => {
     if (!startDate || !endDate || days < 1) {
       toast({ title: "Please fill all fields", variant: "destructive" });
+      return;
+    }
+    if (new Date(endDate) <= new Date(startDate)) {
+      toast({ title: "End date must be after start date", variant: "destructive" });
       return;
     }
     if (interests.length === 0) {
@@ -220,7 +252,7 @@ export default function TripPlanner() {
                 min={1}
                 max={14}
                 value={days}
-                onChange={(e) => setDays(Number(e.target.value))}
+                onChange={(e) => onDaysChange(Number(e.target.value))}
               />
             </div>
             <div className="space-y-1.5">
@@ -250,7 +282,7 @@ export default function TripPlanner() {
                 id="start"
                 type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => onStartDateChange(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
@@ -259,7 +291,8 @@ export default function TripPlanner() {
                 id="end"
                 type="date"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                min={startDate}
+                onChange={(e) => onEndDateChange(e.target.value)}
               />
             </div>
           </div>
