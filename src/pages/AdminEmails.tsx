@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Navigate } from "react-router-dom";
-import { Loader2, Mail, RefreshCw, Send } from "lucide-react";
+import { CheckCircle2, Loader2, Mail, RefreshCw, Send, ShieldCheck, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -52,6 +52,14 @@ const AdminEmails = () => {
   const [sending, setSending] = useState(false);
   const [logs, setLogs] = useState<EmailLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [checkingWebhook, setCheckingWebhook] = useState(false);
+  const [webhookCheck, setWebhookCheck] = useState<
+    | { ok: true; status: number; checkedAt: string }
+    | { ok: false; status: number | null; message: string; checkedAt: string }
+    | null
+  >(null);
+  const [lastWebhookAt, setLastWebhookAt] = useState<string | null>(null);
+  const [lastWebhookEvent, setLastWebhookEvent] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -89,6 +97,74 @@ const AdminEmails = () => {
   useEffect(() => {
     if (isAdmin) loadLogs();
   }, [isAdmin, loadLogs]);
+
+  const loadLastWebhook = useCallback(async () => {
+    // Webhook handler is the only writer that sets metadata.event.
+    const { data, error } = await supabase
+      .from("email_logs")
+      .select("created_at, metadata")
+      .not("metadata->>event", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      console.error(error);
+      return;
+    }
+    if (data) {
+      setLastWebhookAt(data.created_at);
+      const meta = data.metadata as { event?: string } | null;
+      setLastWebhookEvent(meta?.event ?? null);
+    } else {
+      setLastWebhookAt(null);
+      setLastWebhookEvent(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAdmin) loadLastWebhook();
+  }, [isAdmin, loadLastWebhook]);
+
+  const checkWebhook = async () => {
+    setCheckingWebhook(true);
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const url = `https://${projectId}.functions.supabase.co/resend-webhook`;
+    const checkedAt = new Date().toISOString();
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ probe: true }),
+      });
+      // 401 = endpoint is up and signature verification is enforced (expected without a real Svix signature).
+      // 200 = endpoint accepted (only happens if signature verification is misconfigured).
+      if (res.status === 401 || res.status === 200) {
+        setWebhookCheck({ ok: true, status: res.status, checkedAt });
+        toast({
+          title: "Webhook reachable",
+          description:
+            res.status === 401
+              ? "Endpoint responded 401 (signature verification active) — healthy."
+              : "Endpoint responded 200 — reachable, but signature check may be off.",
+        });
+      } else {
+        const text = await res.text().catch(() => "");
+        setWebhookCheck({ ok: false, status: res.status, message: text || `HTTP ${res.status}`, checkedAt });
+        toast({
+          title: "Webhook check failed",
+          description: `HTTP ${res.status}`,
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setWebhookCheck({ ok: false, status: null, message, checkedAt });
+      toast({ title: "Webhook unreachable", description: message, variant: "destructive" });
+    } finally {
+      setCheckingWebhook(false);
+      loadLastWebhook();
+    }
+  };
 
   const sendSample = async () => {
     const trimmed = email.trim();
@@ -155,6 +231,65 @@ const AdminEmails = () => {
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             Send sample email
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5" /> Resend webhook
+          </CardTitle>
+          <CardDescription>
+            Pings the resend-webhook endpoint and shows when Supabase last received a real event.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-md border p-3">
+              <div className="text-xs text-muted-foreground">Last received event</div>
+              <div className="mt-1 text-sm font-medium">
+                {lastWebhookAt ? new Date(lastWebhookAt).toLocaleString() : "No webhook events yet"}
+              </div>
+              {lastWebhookEvent && (
+                <Badge variant="secondary" className="mt-2">
+                  {lastWebhookEvent}
+                </Badge>
+              )}
+            </div>
+            <div className="rounded-md border p-3">
+              <div className="text-xs text-muted-foreground">Connectivity check</div>
+              {webhookCheck ? (
+                <div className="mt-1 flex items-center gap-2 text-sm font-medium">
+                  {webhookCheck.ok ? (
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                  ) : (
+                    <XCircle className="h-4 w-4 text-destructive" />
+                  )}
+                  {webhookCheck.ok
+                    ? `Reachable (HTTP ${webhookCheck.status})`
+                    : `Failed${webhookCheck.status ? ` (HTTP ${webhookCheck.status})` : ""}`}
+                </div>
+              ) : (
+                <div className="mt-1 text-sm text-muted-foreground">Not checked yet</div>
+              )}
+              {webhookCheck && (
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {new Date(webhookCheck.checkedAt).toLocaleString()}
+                </div>
+              )}
+              {webhookCheck && !webhookCheck.ok && (
+                <div className="mt-1 text-xs text-destructive truncate">{webhookCheck.message}</div>
+              )}
+            </div>
+          </div>
+          <Button onClick={checkWebhook} disabled={checkingWebhook} variant="outline">
+            {checkingWebhook ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+            Check webhook
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            A healthy endpoint returns <code>401 invalid signature</code> for this unsigned probe — that means
+            the function is up and signature verification is active.
+          </p>
         </CardContent>
       </Card>
 
