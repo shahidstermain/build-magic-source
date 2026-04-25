@@ -14,6 +14,7 @@ import {
   Wand2,
   Edit3,
   Users,
+  Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -51,6 +52,8 @@ import { saveCollaborativeTrip } from "@/lib/collaborativeTrips";
 import { PayTripDialog } from "@/components/PayTripDialog";
 import { RecommendationsSection } from "@/components/RecommendationCard";
 import { WhatsAppShare } from "@/components/WhatsAppShare";
+import { TripPlannerLeadForm } from "@/components/TripPlannerLeadForm";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 type Stage = "form" | "preview" | "generating" | "ready";
@@ -131,6 +134,7 @@ export default function TripPlanner() {
   const [genError, setGenError] = useState<string | null>(null);
   const [teaserRecs, setTeaserRecs] = useState<TripRecommendation[]>([]);
   const [fullRecs, setFullRecs] = useState<TripRecommendation[]>([]);
+  const [leadOpen, setLeadOpen] = useState(false);
   
   // Enhanced features
   const [isEditing, setIsEditing] = useState(false);
@@ -886,6 +890,37 @@ export default function TripPlanner() {
         />
       )}
 
+      {stage === "ready" && (
+        <section className="pt-2">
+          <TripPlannerLeadForm />
+        </section>
+      )}
+
+      {stage === "form" && (
+        <section className="pt-2">
+          <Card className="rounded-xl border bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-5 shadow-sm">
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <span className="text-3xl" aria-hidden>🚢</span>
+                <div>
+                  <h3 className="text-base font-semibold sm:text-lg">
+                    Want a custom plan built just for you?
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Skip the form — talk to a real Andaman expert and get a tailored plan over a quick call.
+                  </p>
+                </div>
+              </div>
+              <Button onClick={() => setLeadOpen(true)} size="lg" className="w-full shrink-0 sm:w-auto">
+                <Phone className="mr-2 h-4 w-4" /> Request a Callback
+              </Button>
+            </div>
+          </Card>
+        </section>
+      )}
+
+      <LeadCallbackSheet open={leadOpen} onOpenChange={setLeadOpen} />
+
       <PayTripDialog
         tripId={tripId}
         open={payOpen}
@@ -893,5 +928,29 @@ export default function TripPlanner() {
         onPaid={onPaid}
       />
     </div>
+  );
+}
+
+function LeadCallbackSheet({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="bottom"
+        className="max-h-[92vh] overflow-y-auto rounded-t-2xl p-0 sm:max-w-2xl sm:mx-auto"
+      >
+        <SheetHeader className="sr-only">
+          <SheetTitle>Talk to an Andaman Travel Expert</SheetTitle>
+        </SheetHeader>
+        <div className="p-4 sm:p-6">
+          <TripPlannerLeadForm className="border-0 shadow-none" />
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

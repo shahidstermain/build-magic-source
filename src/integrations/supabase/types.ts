@@ -1047,6 +1047,51 @@ export type Database = {
         }
         Relationships: []
       }
+      trip_leads: {
+        Row: {
+          budget_range: string
+          created_at: string
+          id: string
+          name: string
+          preferred_call_time: string | null
+          query: string | null
+          status: string
+          travel_from: string
+          travel_to: string
+          travelers: number
+          updated_at: string
+          whatsapp: string
+        }
+        Insert: {
+          budget_range: string
+          created_at?: string
+          id?: string
+          name: string
+          preferred_call_time?: string | null
+          query?: string | null
+          status?: string
+          travel_from: string
+          travel_to: string
+          travelers: number
+          updated_at?: string
+          whatsapp: string
+        }
+        Update: {
+          budget_range?: string
+          created_at?: string
+          id?: string
+          name?: string
+          preferred_call_time?: string | null
+          query?: string | null
+          status?: string
+          travel_from?: string
+          travel_to?: string
+          travelers?: number
+          updated_at?: string
+          whatsapp?: string
+        }
+        Relationships: []
+      }
       trip_pdfs: {
         Row: {
           created_at: string
