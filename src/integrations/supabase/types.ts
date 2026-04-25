@@ -237,6 +237,81 @@ export type Database = {
           },
         ]
       }
+      email_logs: {
+        Row: {
+          attempt: number
+          created_at: string
+          error: string | null
+          id: string
+          metadata: Json
+          provider: string
+          provider_message_id: string | null
+          recipient: string
+          status: string
+          subject: string | null
+          template: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          attempt?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          metadata?: Json
+          provider?: string
+          provider_message_id?: string | null
+          recipient: string
+          status?: string
+          subject?: string | null
+          template: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          attempt?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          metadata?: Json
+          provider?: string
+          provider_message_id?: string | null
+          recipient?: string
+          status?: string
+          subject?: string | null
+          template?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      email_suppressions: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          metadata: Json
+          reason: string
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          metadata?: Json
+          reason: string
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          metadata?: Json
+          reason?: string
+          source?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
