@@ -12,12 +12,14 @@ import {
   type TripRecommendation,
 } from "@/lib/tripPlanner";
 import { RecommendationsSection } from "@/components/RecommendationCard";
+import { TripDayFeedback } from "@/components/TripDayFeedback";
 
 type TripRow = {
   id: string;
   status: string;
   inputs: any;
   preview: any;
+  itinerary: any;
   created_at: string;
 };
 
@@ -35,7 +37,7 @@ export default function MyTrips() {
     (async () => {
       const { data } = await supabase
         .from("trip_requests")
-        .select("id, status, inputs, preview, created_at")
+        .select("id, status, inputs, preview, itinerary, created_at")
         .order("created_at", { ascending: false });
       setTrips((data ?? []) as TripRow[]);
     })();
@@ -171,6 +173,11 @@ export default function MyTrips() {
                 </div>
                 {isOpen && (
                   <div className="border-t border-border bg-muted/20 p-4">
+                    {Array.isArray(t.itinerary?.days) && t.itinerary.days.length > 0 && (
+                      <div className="mb-4">
+                        <TripDayFeedback tripId={t.id} days={t.itinerary.days} />
+                      </div>
+                    )}
                     {recsLoading === t.id ? (
                       <div className="flex items-center justify-center py-6 text-muted-foreground">
                         <Loader2 className="h-5 w-5 animate-spin" />
