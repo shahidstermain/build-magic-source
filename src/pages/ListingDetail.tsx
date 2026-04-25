@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { CONDITIONS, formatPrice } from "@/lib/listings";
 import { getOrCreateChat } from "@/lib/chats";
+import { DeliveryEstimator } from "@/components/DeliveryEstimator";
 
 type Listing = {
   id: string;
@@ -269,6 +270,10 @@ const ListingDetail = () => {
             <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-foreground">
               {listing.description || "No description provided."}
             </p>
+          </div>
+
+          <div className="mt-6">
+            <DeliveryEstimator fromArea={listing.area || listing.city} />
           </div>
         </div>
       </div>
