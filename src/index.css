@@ -2,109 +2,122 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    /* AndamanBazaar — clean marketplace palette
-       Background: warm off-white. Primary: lagoon teal. Accent: coral.
-       All values are HSL components (no hsl() wrapper). */
-    --background: 40 33% 98%;
-    --foreground: 200 30% 12%;
+    /* ── AndamanBazaar Design System ──────────────────────────────────────
+       Deep ocean navy + coral sunrise + lagoon teal.
+       Inspired by the Andaman Sea at golden hour.
+    ─────────────────────────────────────────────────────────────────────── */
 
-    --card: 0 0% 100%;
-    --card-foreground: 200 30% 12%;
+    --background:    220 20% 97%;
+    --foreground:    220 35% 10%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 200 30% 12%;
+    --card:          0 0% 100%;
+    --card-foreground: 220 35% 10%;
 
-    --primary: 182 65% 38%;
+    --popover:       0 0% 100%;
+    --popover-foreground: 220 35% 10%;
+
+    /* Teal — primary brand colour */
+    --primary:       185 72% 34%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 182 70% 55%;
+    --primary-glow:  185 80% 50%;
+    --primary-subtle: 185 60% 95%;
 
-    --secondary: 195 40% 94%;
-    --secondary-foreground: 200 30% 18%;
+    --secondary:     220 20% 94%;
+    --secondary-foreground: 220 35% 18%;
 
-    --muted: 200 25% 95%;
-    --muted-foreground: 200 12% 42%;
+    --muted:         220 18% 93%;
+    --muted-foreground: 220 12% 46%;
 
-    --accent: 14 90% 62%;
+    /* Coral — accent / CTA */
+    --accent:        16 92% 58%;
     --accent-foreground: 0 0% 100%;
+    --accent-subtle: 16 90% 95%;
 
-    --success: 152 60% 38%;
+    --success:       155 58% 36%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning:       40 95% 50%;
     --warning-foreground: 30 40% 12%;
 
-    --destructive: 0 75% 55%;
+    --destructive:   0 72% 52%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 200 20% 88%;
-    --input: 200 20% 88%;
-    --ring: 182 65% 38%;
+    --border:        220 18% 88%;
+    --input:         220 18% 88%;
+    --ring:          185 72% 34%;
 
-    --radius: 0.75rem;
+    --radius: 0.875rem;
 
-    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 100%);
-    --gradient-coral: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(14 95% 70%) 100%);
-    --shadow-card: 0 1px 3px hsl(200 30% 12% / 0.06), 0 4px 16px hsl(200 30% 12% / 0.04);
-    --shadow-elevated: 0 8px 24px hsl(200 30% 12% / 0.08);
+    /* ── Gradients ─────────────────────────────────────────────────────── */
+    --gradient-hero:   linear-gradient(135deg, hsl(210 60% 18%) 0%, hsl(185 72% 28%) 60%, hsl(185 80% 38%) 100%);
+    --gradient-coral:  linear-gradient(135deg, hsl(16 92% 58%) 0%, hsl(30 95% 65%) 100%);
+    --gradient-ocean:  linear-gradient(180deg, hsl(185 72% 34% / 0.08) 0%, transparent 100%);
+    --gradient-card:   linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(220 20% 98%) 100%);
+
+    /* ── Shadows ───────────────────────────────────────────────────────── */
+    --shadow-xs:       0 1px 2px hsl(220 35% 10% / 0.05);
+    --shadow-card:     0 1px 3px hsl(220 35% 10% / 0.06), 0 4px 12px hsl(220 35% 10% / 0.04);
+    --shadow-elevated: 0 8px 24px hsl(220 35% 10% / 0.10), 0 2px 6px hsl(220 35% 10% / 0.06);
+    --shadow-glow:     0 0 0 3px hsl(185 72% 34% / 0.15);
+    --shadow-accent:   0 8px 24px hsl(16 92% 58% / 0.25);
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    --background: 200 35% 7%;
-    --foreground: 200 15% 94%;
+    --background:    215 30% 8%;
+    --foreground:    210 20% 92%;
 
-    --card: 200 30% 10%;
-    --card-foreground: 200 15% 94%;
+    --card:          215 28% 11%;
+    --card-foreground: 210 20% 92%;
 
-    --popover: 200 30% 10%;
-    --popover-foreground: 200 15% 94%;
+    --popover:       215 28% 11%;
+    --popover-foreground: 210 20% 92%;
 
-    --primary: 182 65% 48%;
-    --primary-foreground: 200 35% 7%;
-    --primary-glow: 182 75% 60%;
+    --primary:       185 72% 46%;
+    --primary-foreground: 215 30% 8%;
+    --primary-glow:  185 80% 58%;
+    --primary-subtle: 185 60% 12%;
 
-    --secondary: 200 25% 16%;
-    --secondary-foreground: 200 15% 94%;
+    --secondary:     215 25% 16%;
+    --secondary-foreground: 210 20% 92%;
 
-    --muted: 200 22% 14%;
-    --muted-foreground: 200 10% 65%;
+    --muted:         215 22% 14%;
+    --muted-foreground: 215 12% 58%;
 
-    --accent: 14 85% 60%;
+    --accent:        16 88% 58%;
     --accent-foreground: 0 0% 100%;
+    --accent-subtle: 16 80% 12%;
 
-    --success: 152 55% 45%;
+    --success:       155 55% 42%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 90% 55%;
+    --warning:       40 90% 52%;
     --warning-foreground: 30 40% 12%;
 
-    --destructive: 0 70% 50%;
+    --destructive:   0 68% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 200 22% 18%;
-    --input: 200 22% 18%;
-    --ring: 182 65% 48%;
+    --border:        215 22% 18%;
+    --input:         215 22% 18%;
+    --ring:          185 72% 46%;
+
+    --gradient-hero:   linear-gradient(135deg, hsl(215 40% 10%) 0%, hsl(200 50% 16%) 60%, hsl(185 60% 22%) 100%);
+    --gradient-ocean:  linear-gradient(180deg, hsl(185 72% 46% / 0.06) 0%, transparent 100%);
+    --gradient-card:   linear-gradient(145deg, hsl(215 28% 12%) 0%, hsl(215 28% 10%) 100%);
+
+    --shadow-card:     0 1px 3px hsl(0 0% 0% / 0.20), 0 4px 12px hsl(0 0% 0% / 0.15);
+    --shadow-elevated: 0 8px 24px hsl(0 0% 0% / 0.30), 0 2px 6px hsl(0 0% 0% / 0.20);
+
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -117,21 +130,92 @@ All colors MUST be HSL.
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
+
+  html { scroll-behavior: smooth; }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Smooth focus rings */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 }
 
 @layer utilities {
+  /* Hide scrollbar but keep scroll */
   .scrollbar-none {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  .scrollbar-none::-webkit-scrollbar {
-    display: none;
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+
+  /* Thin styled scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar { width: 4px; height: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 99px;
+  }
+
+  /* Glass morphism */
+  .glass {
+    background: hsl(0 0% 100% / 0.7);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid hsl(0 0% 100% / 0.3);
+  }
+  .dark .glass {
+    background: hsl(215 28% 11% / 0.8);
+    border-color: hsl(215 22% 22% / 0.5);
+  }
+
+  /* Text gradient */
+  .text-gradient {
+    background: var(--gradient-hero);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Shimmer animation for skeletons */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--secondary)) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Floating animation */
+  .float {
+    animation: float 6s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-8px); }
+  }
+
+  /* Pulse glow */
+  .glow-primary {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.35);
+  }
+  .glow-accent {
+    box-shadow: 0 0 20px hsl(var(--accent) / 0.35);
   }
 }
