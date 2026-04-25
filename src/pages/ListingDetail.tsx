@@ -13,6 +13,7 @@ import { ReportListingDialog } from "@/components/ReportListingDialog";
 import { TrustBadge } from "@/components/TrustBadge";
 import { BoostListingDialog } from "@/components/BoostListingDialog";
 import { ReviewSystem } from "@/components/ReviewSystem";
+import { MessageSellerPanel } from "@/components/MessageSellerPanel";
 
 type Listing = {
   id: string;
@@ -318,21 +319,30 @@ const ListingDetail = () => {
 
           {/* Seller card */}
           {listing.profiles && (
-            <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
-              <Avatar className="h-11 w-11 shrink-0">
-                <AvatarImage src={listing.profiles.photo_url ?? undefined} alt="" />
-                <AvatarFallback className="bg-primary/10 font-semibold text-primary">
-                  {(listing.profiles.name ?? "?").slice(0, 1).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-medium">{listing.profiles.name ?? "Seller"}</p>
-                <p className="text-xs text-muted-foreground">
-                  {listing.profiles.total_listings} listings · {listing.profiles.successful_sales} sold
-                </p>
+            !isOwner && !isSold ? (
+              <MessageSellerPanel
+                listingId={listing.id}
+                listingTitle={listing.title}
+                listingPrice={listing.price}
+                seller={listing.profiles}
+              />
+            ) : (
+              <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
+                <Avatar className="h-11 w-11 shrink-0">
+                  <AvatarImage src={listing.profiles.photo_url ?? undefined} alt="" />
+                  <AvatarFallback className="bg-primary/10 font-semibold text-primary">
+                    {(listing.profiles.name ?? "?").slice(0, 1).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{listing.profiles.name ?? "Seller"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {listing.profiles.total_listings} listings · {listing.profiles.successful_sales} sold
+                  </p>
+                </div>
+                <TrustBadge profile={listing.profiles} />
               </div>
-              <TrustBadge profile={listing.profiles} />
-            </div>
+            )
           )}
 
           {/* Description */}
