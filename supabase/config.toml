@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.affiliate-click]
 verify_jwt = false
+
+[functions.affiliate-conversion]
+verify_jwt = false
