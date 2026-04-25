@@ -42,10 +42,15 @@ Deno.serve(async (req) => {
   const rawBody = await req.text();
   const signature = req.headers.get("x-webhook-signature") ?? "";
   const timestamp = req.headers.get("x-webhook-timestamp") ?? "";
-  const secret = Deno.env.get("CASHFREE_WEBHOOK_SECRET");
+  // Cashfree webhook signature (API version 2022-09-01+) is signed with your
+  // Cashfree Secret Key (same as order creation). Fall back to the legacy
+  // CASHFREE_WEBHOOK_SECRET if it was configured manually.
+  const secret =
+    Deno.env.get("CASHFREE_SECRET_KEY") ??
+    Deno.env.get("CASHFREE_WEBHOOK_SECRET");
 
   if (!secret) {
-    console.error("CASHFREE_WEBHOOK_SECRET not configured");
+    console.error("CASHFREE_SECRET_KEY not configured");
     return new Response("Server misconfigured", { status: 500, headers: corsHeaders });
   }
   if (!signature || !timestamp) {
