@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.resend-webhook]
 verify_jwt = false
+
+[functions.send-contact-message]
+verify_jwt = false
