@@ -287,6 +287,7 @@ export type Database = {
           razorpay_payment_id: string | null
           razorpay_signature: string | null
           status: Database["public"]["Enums"]["payment_status"]
+          trip_id: string | null
           updated_at: string
           user_id: string
         }
@@ -302,6 +303,7 @@ export type Database = {
           razorpay_payment_id?: string | null
           razorpay_signature?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
+          trip_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -317,6 +319,7 @@ export type Database = {
           razorpay_payment_id?: string | null
           razorpay_signature?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
+          trip_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -435,6 +438,66 @@ export type Database = {
           site_title?: string
           updated_at?: string
           updated_by?: string | null
+        }
+        Relationships: []
+      }
+      trip_pdfs: {
+        Row: {
+          created_at: string
+          id: string
+          storage_path: string
+          trip_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          storage_path: string
+          trip_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          storage_path?: string
+          trip_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      trip_requests: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          inputs: Json
+          itinerary: Json | null
+          preview: Json | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          inputs: Json
+          itinerary?: Json | null
+          preview?: Json | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          inputs?: Json
+          itinerary?: Json | null
+          preview?: Json | null
+          status?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

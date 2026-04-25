@@ -1,159 +1,153 @@
+## AI Andaman Trip Planner — Implementation Plan
 
-# AndamanBazaar → Lovable Migration Plan
-
-Porting the [shahidstermain/AndamanBazaarApp](https://github.com/shahidstermain/AndamanBazaarApp) hyperlocal marketplace (Andaman & Nicobar Islands) into this Lovable project. Same React + Vite + Tailwind foundation, swapping Supabase-direct → Lovable Cloud, Gemini SDK → Lovable AI Gateway, and refreshing the visual style from the dark "VoltAgent" terminal look to a clean, friendly marketplace UI.
-
----
-
-## What's being built
-
-A mobile-first classifieds marketplace where islanders can:
-- Sign up / sign in (email + Google), with auto-created profile and trust level (newbie / verified / legend)
-- Browse listings by category, search, and filter by area within Port Blair and other islands
-- View a listing detail page with photo gallery, seller card, favorite, and report actions
-- Post a new listing with photos, category, condition, price, and area; AI-assisted description writer
-- Chat 1:1 with sellers in realtime, with unread badges and last-message previews
-- Manage their own profile, photo, and "Island Verified" geolocation badge
-- See a seller dashboard with views, active/sold listings, conversion, and a small chart
-- Read Privacy Policy and Terms of Service
+Adapted to the existing AndamanBazaar stack: **React + Vite + Tailwind + shadcn/ui + Supabase + Cashfree** (not React Native/Razorpay). AI via **Lovable AI Gateway** (`google/gemini-2.5-pro`). Price **₹49**. Preview = teaser (Day 1 morning + summary, rest locked).
 
 ---
 
-## Visual design
+### 1. Database (migration)
 
-A clean marketplace look — light surface, friendly typography, island-flavored accents (no monospace/terminal vibe).
+**Table `trip_requests`**
+- `id uuid pk default gen_random_uuid()`
+- `user_id uuid not null` (auth.users.id, no FK per project rules)
+- `inputs jsonb not null` — `{ days, budget: 'low'|'medium'|'high', start_date, end_date, interests: text[], islands: text[] }`
+- `status text not null default 'pending'` — `pending | paid | generating | generated | failed`
+- `preview jsonb` — small teaser blob generated pre-payment
+- `itinerary jsonb` — full structured output (post-payment)
+- `error text`
+- `created_at`, `updated_at` timestamptz
 
-- **Palette**: warm off-white background, deep ink text, **teal/aqua primary** (#0EA5A5-range, evokes lagoon water), coral accent for CTAs/badges, soft slate borders. All defined as HSL design tokens in `index.css`; dark mode supported via the existing `.dark` block.
-- **Typography**: Inter for UI, slightly larger headings, generous line-height. No monospace except for prices and IDs if helpful.
-- **Components**: shadcn/ui (Button, Card, Input, Tabs, Sheet, Dialog, Drawer for mobile filters, Avatar, Badge, Toast). lucide-react icons. Card-based listing grid (2-col mobile, 3–4 col desktop).
-- **Mobile-first**: bottom tab nav on small screens (Home / Browse / Post / Chat / Profile), top app-bar with search.
+**Table `trip_pdfs`**
+- `id uuid pk`
+- `trip_id uuid not null`
+- `user_id uuid not null`
+- `storage_path text not null` (e.g. `trip-pdfs/<user>/<trip>.pdf`)
+- `created_at` timestamptz
 
----
+**Reuse `payments` table** with new `purpose = 'trip_plan'`. Add `trip_id uuid` nullable column (the `listing_id` column stays unused for this purpose).
 
-## Pages & routes
-
-| Route | View | Purpose |
-|---|---|---|
-| `/` | Home | Hero + categories + featured + nearby listings |
-| `/listings` | Listings | Browse, search, filter (category, area, price, condition) |
-| `/listings/:id` | ListingDetail | Photo gallery, description, seller card, fav/report/contact |
-| `/sell` | CreateListing | New listing form with photo upload + AI description helper |
-| `/chats` | ChatList | Inbox with unread counts |
-| `/chats/:id` | ChatRoom | Realtime 1:1 messaging |
-| `/profile` | Profile | Edit profile, photo, location verify |
-| `/dashboard` | Dashboard | Seller insights (views, active, sold, chart) |
-| `/auth` | AuthView | Sign up / sign in / forgot password |
-| `/reset-password` | ResetPassword | New password form (required for reset flow) |
-| `/privacy` | PrivacyPolicy | Static |
-| `/terms` | TermsOfService | Static |
-| `*` | NotFound | Existing |
-
-A `Layout` component wraps authenticated routes with the top app-bar + bottom tab nav.
+**RLS**
+- `trip_requests`: SELECT/UPDATE/INSERT only where `auth.uid() = user_id`.
+- `trip_pdfs`: SELECT only where `auth.uid() = user_id`. INSERT only via service role (edge function).
+- Storage bucket **`trip-pdfs`** — **private**. Policy: users can SELECT objects whose first folder segment equals their `auth.uid()::text`.
 
 ---
 
-## Backend (Lovable Cloud)
+### 2. Edge functions (Deno, follow existing Cashfree pattern)
 
-Lovable Cloud is enabled, the original Supabase schema ports over near-1:1.
+1. **`trip-preview`** — auth required. Inserts `trip_requests` row (status `pending`), calls Lovable AI for a short teaser (summary + Day 1 morning only), stores in `preview`, returns `{ trip_id, preview }`. No PDF, no payment yet.
 
-### Tables (with RLS)
-- **profiles** — id (FK auth.users), name, email, phone, photo_url, city, area, is_location_verified, total_listings, successful_sales. Auto-created on signup via trigger.
-- **user_roles** — id, user_id, role (`admin` | `moderator` | `user`). Roles live in their own table (never on profiles) with a `has_role()` security-definer function. Trust level (`newbie` / `verified` / `legend`) stays on profiles since it's a derived stat, not a privilege.
-- **listings** — title, description, price, category_id, subcategory_id, condition, city, area, status, views_count, is_featured.
-- **listing_images** — listing_id, image_url, display_order.
-- **favorites** — user_id + listing_id (unique).
-- **chats** — listing_id, buyer_id, seller_id, last_message, last_message_at, buyer/seller_unread_count.
-- **messages** — chat_id, sender_id, message_text, image_url, is_read.
-- **reports** — reporter_id, listing_id, reason, details, status.
+2. **`cashfree-create-trip-order`** — mirrors `cashfree-create-order` but for a `trip_id`. Amount ₹49. Stores `payments` row with `purpose='trip_plan'`, `trip_id` in `notes`. Returns `payment_session_id`.
 
-### RLS policies
-Public read on profiles/listings/listing_images. Owners-only insert/update/delete on their own listings, images, favorites. Chat participants only on chats/messages. Reports: anyone authenticated can create.
+3. **`cashfree-verify-trip-payment`** — mirrors existing verify. On `paid`: marks payment paid, sets `trip_requests.status='paid'`, then **inline triggers** `trip-generate` (await). Returns `{ status, trip_id, pdf_path? }`.
 
-### Functions & triggers
-- `handle_new_user()` — auto-insert profile on signup.
-- `increment_listing_views(listing_id)` — atomic view counter (called from ListingDetail).
-- `handle_new_message()` — update chat's last_message + bump recipient's unread_count.
-- Realtime publication on `messages` and `chats` for live chat.
+4. **`trip-generate`** — auth required (or service-role internal call). Loads paid `trip_requests` row, calls Lovable AI Gateway with a strict tool-calling JSON schema for the full itinerary (cover, overview, days[], ferry_logistics, budget, recommendations, packing, emergency). Renders PDF server-side (see §3), uploads to `trip-pdfs/<user_id>/<trip_id>.pdf`, inserts `trip_pdfs` row, sets `status='generated'`. Returns `{ storage_path }`.
 
-### Storage
-Two buckets:
-- `listing-images` (public read, owner write)
-- `avatars` (public read, owner write)
+5. **`trip-download-url`** — auth required. Verifies caller owns the trip; returns a short-lived signed URL (`createSignedUrl`, 10 min) for the PDF.
 
-### Edge functions (Lovable AI Gateway)
-- `generate-listing-description` — given title + category + condition, returns a polished 2-sentence description. Uses default `google/gemini-3-flash-preview`. CTA in CreateListing: "Help me write".
-- `moderate-listing` — quick safety check on title/description/images for prohibited items. Runs server-side on submit; flags get queued in `reports` for moderators.
-
-Both functions are JWT-verified, validate input with Zod, and surface 429/402 errors to the client as toasts.
+All functions: CORS headers, Zod-style input validation, structured error logging, surface 402/429 from Lovable AI as friendly toasts on the client. `verify_jwt` left at default (in-code auth check via `getUser()`).
 
 ---
 
-## Migration mapping
+### 3. PDF generation (server-side, Deno)
 
-| Original | Replacement |
-|---|---|
-| `@supabase/supabase-js` direct from client | Same client, but pointed at Lovable Cloud (auto-wired) |
-| `@google/genai` / `@google/generative-ai` | Edge functions calling Lovable AI Gateway |
-| Firebase Hosting | Lovable Publish |
-| Capacitor (Android APK) | **Dropped**. Keep `manifest.json` + service-worker-friendly setup so it installs as a PWA on Android home screen |
-| `HashRouter` | `BrowserRouter` (already wired in `App.tsx`) |
-| Inline VoltAgent styles, `btn-premium`, `shadow-glow`, monospace | shadcn/ui components + new design tokens |
-| `lucide-react`, `recharts` | Same — already supported |
-| Custom `ConfigRequiredView` for missing env | Removed — Lovable Cloud handles env automatically |
+Use **`pdf-lib`** (`https://esm.sh/pdf-lib@1.17.1`) inside `trip-generate`. Pure JS, no native deps, works in Deno. Layout:
 
----
+- Cover: AndamanBazaar logo block, trip title, dates, days, traveller type, budget tier.
+- Overview page: 2–3 sentence trip thesis + at-a-glance day summaries.
+- Per-day pages: heading, morning / afternoon / evening blocks, ferry hops (with timing notes), travel-time buffers, weather backup, "local insider" tip.
+- Ferry & logistics page (consolidated table).
+- Budget breakdown (table + total).
+- Local recommendations (food, hidden spots, marketplace cross-links to relevant categories like bike rentals).
+- Packing checklist.
+- Emergency & practical tips.
+- Closing summary + share line.
 
-## Build phases
+Design: clean sans, generous spacing, primary color accent strip, page numbers, footer with `andamanbazaar.in`.
 
-1. **Foundation**
-   - Connect this project to GitHub (one-time, via Connectors).
-   - Define the new design tokens (palette, radii, typography) in `index.css` and `tailwind.config.ts`.
-   - Build `Layout` with top app-bar + bottom tab nav.
-   - Set up routes and stub each view.
-
-2. **Auth + profiles**
-   - Email/password + Google sign-in via Lovable Cloud.
-   - `AuthView`, `/reset-password` page, profile auto-creation trigger.
-   - `user_roles` table, `has_role()` function, admin role wired but unused in UI yet.
-
-3. **Listings core (browse + detail + post)**
-   - Schema for listings, listing_images, favorites; storage bucket; RLS.
-   - `Home` (hero, categories, featured rail).
-   - `Listings` (grid, search, filter drawer).
-   - `ListingDetail` (gallery, seller card, fav button, report dialog, view-count RPC).
-   - `CreateListing` (multi-step form, photo upload, "Help me write" AI button).
-
-4. **Chat**
-   - `chats` + `messages` schema, RLS, realtime publication, `handle_new_message` trigger.
-   - `ChatList` inbox with unread badges.
-   - `ChatRoom` realtime stream, optimistic send, image messages.
-
-5. **Profile + dashboard + static pages**
-   - `Profile` edit + avatar upload + geolocation "Island Verified" badge (browser geolocation, marks `is_location_verified` if within Andaman bounds).
-   - `Dashboard` recharts area/bar of views over time, KPI cards, top-performing listings.
-   - `PrivacyPolicy`, `TermsOfService` ported as static MDX-style content.
-
-6. **AI features + moderation**
-   - `generate-listing-description` edge function.
-   - `moderate-listing` edge function called on submit.
-   - Hook AI helper into CreateListing UX.
-
-7. **Polish + PWA**
-   - Empty/loading/error states across all data views.
-   - Toast notifications on success/failure.
-   - PWA manifest + install prompt.
-   - Mobile QA on the 384px viewport.
+The AI returns structured JSON (tool-calling) so layout is deterministic and not parsed from prose.
 
 ---
 
-## Out of scope (can be added later)
+### 4. AI prompt strategy (`trip-generate`)
 
-- Capacitor/native Android build (Lovable doesn't host native builds).
-- Push notifications (would need Firebase Cloud Messaging or OneSignal as a separate integration).
-- Payments / paid promotions.
-- Admin moderation console UI (the `user_roles` + `reports` tables are ready; a `/admin` view can be added in a follow-up).
-- Multi-language (English-only for v1).
+System prompt establishes the persona: *"You are an Andaman local insider, ferry logistics expert, and budget optimizer. Produce realistic, conservative itineraries grounded in real Andaman geography (Port Blair, Havelock/Swaraj Dweep, Neil/Shaheed Dweep, Baratang, Long Island, Diglipur). Never schedule impossible ferry sequences. Always include weather backups. Avoid generic tourist fluff."*
+
+Hard rules embedded:
+- Inter-island days require an explicit ferry slot (Makruzz/Green Ocean/Nautika typical morning/afternoon windows) and a 90-minute buffer.
+- Max one inter-island transfer per day.
+- Day 1 = Port Blair arrival logistics (no Havelock same-day unless flight lands before 10:00).
+- Last day = back to Port Blair before 18:00.
+- Budget tier maps to ₹/day ranges: low ≈ ₹1.5–2.5k, medium ≈ ₹3–5k, high ≈ ₹6k+ (excluding flights).
+- Marketplace cross-sell: when the itinerary needs a scooter, snorkel gear, etc., include a suggestion line linking to `/listings?category=...`.
+
+Tool schema enforces `{ cover, overview, days[{ date, island, morning, afternoon, evening, ferry, weather_backup, insider_tip }], ferry_logistics[], budget{items[],total}, recommendations{food[],hidden[],marketplace[]}, packing[], emergency[] }`.
+
+Model: `google/gemini-2.5-pro`, `reasoning.effort='medium'`.
 
 ---
 
-After you approve, I'll start with phase 1 (design tokens + layout + routes) so you see the new look in the preview quickly, then move through the phases.
+### 5. Frontend
+
+**New route `/trip-planner`** added to `App.tsx`, plus a top-level entry point on `Index.tsx` (hero CTA "Plan your Andaman trip with AI — ₹49") and a `Sparkles` icon item in the header/dropdown.
+
+**Pages / components**
+- `src/pages/TripPlanner.tsx` — multi-step wizard:
+  1. Form (days, dates with shadcn DatePicker, budget tier, interests checkboxes, optional islands).
+  2. Loading → preview screen with teaser + locked sections (blurred cards with lock icon + "Unlock full plan ₹49").
+  3. `PayTripDialog` (mirrors `BoostListingDialog`: Cashfree SDK modal, error UI with stage/attempt, retry button).
+  4. Generating spinner (calls `trip-download-url` once `status='generated'`; polls every 2s up to 60s).
+  5. Success: download button + share (Web Share API with fallback to copying signed URL) + "Plan another".
+- `src/pages/MyTrips.tsx` — list of past trips for the user (status badges, redownload button that re-signs URL).
+- `src/components/TripPreviewCard.tsx`, `src/components/LockedSection.tsx`, `src/components/PayTripDialog.tsx`.
+- `src/lib/tripPlanner.ts` — typed wrappers around the 5 edge functions; clean separation from UI.
+
+Add **My Trips** link to user dropdown in `Layout.tsx`.
+
+All states covered: loading, empty (no past trips), error (with retry), rate-limit (`429` → friendly toast), credits (`402` → friendly toast), payment-cancelled, generation-failed (refundable note + retry generate without re-paying).
+
+---
+
+### 6. Validation, security, hygiene
+
+- Zod schema for form inputs both client- and server-side.
+- Server enforces: caller owns trip, payment status = `paid` before generation, generation idempotent (skip if `status='generated'`).
+- Signed URLs only — never expose public storage paths.
+- Secrets stay server-side (`LOVABLE_API_KEY`, `CASHFREE_*`).
+- Strict CORS headers matching existing functions.
+- All edge functions log structured errors; client-side `PayTripDialog` shows stage + attempt details like `BoostListingDialog`.
+
+---
+
+### 7. Files to add / edit
+
+**New**
+- `supabase/migrations/<ts>_trip_planner.sql`
+- `supabase/functions/trip-preview/index.ts`
+- `supabase/functions/cashfree-create-trip-order/index.ts`
+- `supabase/functions/cashfree-verify-trip-payment/index.ts`
+- `supabase/functions/trip-generate/index.ts`
+- `supabase/functions/trip-download-url/index.ts`
+- `src/pages/TripPlanner.tsx`
+- `src/pages/MyTrips.tsx`
+- `src/components/PayTripDialog.tsx`
+- `src/components/TripPreviewCard.tsx`
+- `src/components/LockedSection.tsx`
+- `src/lib/tripPlanner.ts`
+
+**Edit**
+- `src/App.tsx` — add `/trip-planner` and `/my-trips` routes.
+- `src/pages/Index.tsx` — add hero CTA card.
+- `src/components/Layout.tsx` — add "My Trips" dropdown item.
+
+No changes to existing payment/Cashfree code — new functions live alongside, sharing the same secrets.
+
+---
+
+### 8. Out of scope (called out)
+
+- React Native app (project is web).
+- Razorpay (project standardised on Cashfree).
+- Refund automation (manual support note in failure UI).
+- Multi-language PDFs (English only v1).
+
+Approve and I'll implement end-to-end in default mode.
