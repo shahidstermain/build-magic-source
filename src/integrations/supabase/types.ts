@@ -237,6 +237,44 @@ export type Database = {
           },
         ]
       }
+      collaborative_trips: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          id: string
+          name: string
+          shared_notes: string | null
+          trip_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          id?: string
+          name: string
+          shared_notes?: string | null
+          trip_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          name?: string
+          shared_notes?: string | null
+          trip_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaborative_trips_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trip_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_logs: {
         Row: {
           attempt: number
@@ -366,6 +404,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "listing_images_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listing_reviews: {
+        Row: {
+          comment: string
+          created_at: string | null
+          helpful_count: number | null
+          id: string
+          is_verified: boolean | null
+          listing_id: string
+          ratings: Json
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string | null
+          helpful_count?: number | null
+          id?: string
+          is_verified?: boolean | null
+          listing_id: string
+          ratings: Json
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string | null
+          helpful_count?: number | null
+          id?: string
+          is_verified?: boolean | null
+          listing_id?: string
+          ratings?: Json
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_reviews_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: false
             referencedRelation: "listings"
@@ -677,6 +759,38 @@ export type Database = {
           },
         ]
       }
+      review_helpfulness: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_helpful: boolean
+          review_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_helpful: boolean
+          review_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_helpful?: boolean
+          review_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_helpfulness_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "listing_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_settings: {
         Row: {
           id: boolean
@@ -700,6 +814,44 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: []
+      }
+      trip_collaborators: {
+        Row: {
+          collaborative_trip_id: string
+          email: string
+          id: string
+          invited_at: string | null
+          joined_at: string | null
+          role: string | null
+          user_id: string | null
+        }
+        Insert: {
+          collaborative_trip_id: string
+          email: string
+          id?: string
+          invited_at?: string | null
+          joined_at?: string | null
+          role?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          collaborative_trip_id?: string
+          email?: string
+          id?: string
+          invited_at?: string | null
+          joined_at?: string | null
+          role?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_collaborators_collaborative_trip_id_fkey"
+            columns: ["collaborative_trip_id"]
+            isOneToOne: false
+            referencedRelation: "collaborative_trips"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trip_pdfs: {
         Row: {
@@ -905,6 +1057,51 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_shares: {
+        Row: {
+          created_at: string | null
+          id: string
+          listing_id: string | null
+          message_template: string | null
+          share_type: string
+          trip_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          listing_id?: string | null
+          message_template?: string | null
+          share_type: string
+          trip_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          listing_id?: string | null
+          message_template?: string | null
+          share_type?: string
+          trip_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_shares_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_shares_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trip_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       public_profiles: {
@@ -969,6 +1166,13 @@ export type Database = {
           revenue_inr: number
           vendor_id: string
           vendor_name: string
+        }[]
+      }
+      calculate_listing_rating: {
+        Args: { listing_uuid: string }
+        Returns: {
+          average_rating: number
+          total_reviews: number
         }[]
       }
       has_role: {
