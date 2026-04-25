@@ -133,6 +133,7 @@ export default function TripPlanner() {
   const [genError, setGenError] = useState<string | null>(null);
   const [teaserRecs, setTeaserRecs] = useState<TripRecommendation[]>([]);
   const [fullRecs, setFullRecs] = useState<TripRecommendation[]>([]);
+  const [leadOpen, setLeadOpen] = useState(false);
   
   // Enhanced features
   const [isEditing, setIsEditing] = useState(false);
