@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Anchor, Compass, ShieldCheck } from "lucide-react";
+import { Loader2, Anchor, Compass, ShieldCheck, Phone, Info } from "lucide-react";
 import logoUrl from "@/assets/logo.webp";
 import {
   Dialog,
@@ -52,6 +52,10 @@ type Mode = "signin" | "signup" | "forgot";
 const emailSchema = z.string().trim().email("Enter a valid email").max(255);
 const passwordSchema = z.string().min(8, "At least 8 characters").max(72);
 const nameSchema = z.string().trim().min(2, "Tell us your name").max(80);
+const phoneSchema = z
+  .string()
+  .trim()
+  .regex(/^[+]?[0-9\s-]{7,20}$/, "Enter a valid phone number");
 
 const ISLAND_FACTS = [
   {
@@ -87,6 +91,7 @@ const AuthView = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const { session, loading } = useAuth();
   const navigate = useNavigate();
@@ -108,6 +113,10 @@ const AuthView = () => {
       const p = passwordSchema.safeParse(password);
       if (!p.success) return p.error.issues[0].message;
     }
+    if (mode === "signup" && phone.trim().length > 0) {
+      const ph = phoneSchema.safeParse(phone);
+      if (!ph.success) return ph.error.issues[0].message;
+    }
     return null;
   };
 
@@ -126,7 +135,7 @@ const AuthView = () => {
           password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { name },
+            data: { name, phone: phone.trim() || null },
           },
         });
         if (error) throw error;
