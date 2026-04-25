@@ -23,6 +23,7 @@ import { slang } from "@/lib/slang";
 import { BoostListingDialog } from "@/components/BoostListingDialog";
 import { PaymentHistory } from "@/components/PaymentHistory";
 import { SiteSettingsCard } from "@/components/SiteSettingsCard";
+import { VerifiedLocalBadge } from "@/components/VerifiedLocalBadge";
 
 type ListingRow = {
   id: string;
@@ -45,6 +46,7 @@ type FavoriteRow = {
     area: string | null;
     city: string;
     listing_images: { image_url: string; display_order: number }[];
+    seller: { is_location_verified: boolean | null } | null;
   } | null;
 };
 
@@ -68,7 +70,7 @@ const Dashboard = () => {
       supabase
         .from("favorites")
         .select(
-          "listing_id, listing:listings(id, title, price, status, area, city, listing_images(image_url, display_order))",
+          "listing_id, listing:listings(id, title, price, status, area, city, listing_images(image_url, display_order), seller:public_profiles!listings_seller_profile_fkey(is_location_verified))",
         )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false }),
@@ -342,6 +344,11 @@ const Dashboard = () => {
                       <p className="text-sm text-muted-foreground">
                         {formatPrice(f.listing.price)} · {f.listing.area || f.listing.city}
                       </p>
+                      {f.listing.seller?.is_location_verified && (
+                        <div className="mt-1">
+                          <VerifiedLocalBadge />
+                        </div>
+                      )}
                     </div>
                     <Button
                       size="sm"

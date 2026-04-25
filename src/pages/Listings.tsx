@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ANDAMAN_AREAS, CATEGORIES, formatPrice } from "@/lib/listings";
 import { slang } from "@/lib/slang";
+import { VerifiedLocalBadge } from "@/components/VerifiedLocalBadge";
 
 type ListingRow = {
   id: string;
@@ -28,6 +29,7 @@ type ListingRow = {
   condition: string;
   created_at: string;
   listing_images: { image_url: string; display_order: number }[];
+  seller: { is_location_verified: boolean | null } | null;
 };
 
 const Listings = () => {
@@ -47,7 +49,9 @@ const Listings = () => {
       setLoading(true);
       let q = supabase
         .from("listings")
-        .select("id, title, price, area, city, category, condition, created_at, listing_images(image_url, display_order)")
+        .select(
+          "id, title, price, area, city, category, condition, created_at, listing_images(image_url, display_order), seller:public_profiles!listings_seller_profile_fkey(is_location_verified)",
+        )
         .eq("status", "active");
 
       if (category !== "all") q = q.eq("category", category);
@@ -186,10 +190,13 @@ const Listings = () => {
                   <div className="p-3">
                     <p className="font-semibold text-foreground">{formatPrice(item.price)}</p>
                     <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{item.title}</p>
-                    <p className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
-                      {item.area || item.city}
-                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <MapPin className="h-3 w-3" />
+                        {item.area || item.city}
+                      </span>
+                      {item.seller?.is_location_verified && <VerifiedLocalBadge />}
+                    </div>
                   </div>
                 </Link>
               </li>
