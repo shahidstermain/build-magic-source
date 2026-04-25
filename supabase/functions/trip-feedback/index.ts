@@ -20,10 +20,11 @@ Deno.serve(async (req) => {
     const trip_id = String(body?.trip_id ?? "");
     const day_number = Number(body?.day_number);
     const comment = typeof body?.comment === "string" ? body.comment.slice(0, 500) : null;
+    const is_helpful = body?.is_helpful === true;
     if (!trip_id || !Number.isInteger(day_number)) throw new Error("trip_id and day_number required");
 
     const { error } = await userClient.from("trip_day_feedback").upsert({
-      trip_id, user_id: user.id, day_number, is_helpful: false, comment,
+      trip_id, user_id: user.id, day_number, is_helpful, comment,
     }, { onConflict: "trip_id,user_id,day_number" });
     if (error) throw error;
 
