@@ -870,6 +870,32 @@ export type Database = {
       }
     }
     Functions: {
+      affiliate_daily_stats: {
+        Args: {
+          _from: string
+          _to: string
+          _trip_id?: string
+          _vendor_id?: string
+        }
+        Returns: {
+          clicks: number
+          commission_inr: number
+          conversions: number
+          day: string
+          revenue_inr: number
+        }[]
+      }
+      affiliate_vendor_stats: {
+        Args: { _from: string; _to: string }
+        Returns: {
+          clicks: number
+          commission_inr: number
+          conversions: number
+          revenue_inr: number
+          vendor_id: string
+          vendor_name: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -880,6 +906,19 @@ export type Database = {
       increment_listing_views: {
         Args: { _listing_id: string }
         Returns: undefined
+      }
+      record_affiliate_conversion: {
+        Args: {
+          _amount_inr: number
+          _click_id: string
+          _commission_inr: number
+          _external_order_id: string
+          _raw_payload: Json
+          _recommendation_id: string
+          _status: string
+          _user_id: string
+        }
+        Returns: string
       }
     }
     Enums: {
