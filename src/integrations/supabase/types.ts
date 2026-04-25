@@ -267,6 +267,54 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          listing_id: string | null
+          notes: Json
+          purpose: string
+          razorpay_order_id: string
+          razorpay_payment_id: string | null
+          razorpay_signature: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          listing_id?: string | null
+          notes?: Json
+          purpose?: string
+          razorpay_order_id: string
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          listing_id?: string | null
+          notes?: Json
+          purpose?: string
+          razorpay_order_id?: string
+          razorpay_payment_id?: string | null
+          razorpay_signature?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           area: string | null
@@ -449,6 +497,7 @@ export type Database = {
         | "listing_status"
         | "verification"
         | "system"
+      payment_status: "created" | "paid" | "failed"
       report_status: "pending" | "reviewed" | "dismissed" | "actioned"
       verification_status: "pending" | "approved" | "rejected" | "cancelled"
     }
@@ -588,6 +637,7 @@ export const Constants = {
         "verification",
         "system",
       ],
+      payment_status: ["created", "paid", "failed"],
       report_status: ["pending", "reviewed", "dismissed", "actioned"],
       verification_status: ["pending", "approved", "rejected", "cancelled"],
     },
