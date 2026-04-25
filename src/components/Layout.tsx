@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NotificationBell } from "@/components/NotificationBell";
+import { PromoBanner } from "@/components/PromoBanner";
 import { supabase } from "@/integrations/supabase/client";
 import logoUrl from "@/assets/logo.webp";
 
@@ -69,6 +70,9 @@ export function Layout() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* ── Launch promo banner ───────────────────────────────────────────── */}
+      <PromoBanner />
+
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/90 backdrop-blur-lg">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
