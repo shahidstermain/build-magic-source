@@ -79,9 +79,9 @@ const ListingDetail = () => {
       }
       setListing(withSeller);
       setLoading(false);
-      // Only authenticated users can increment views (RLS-guarded)
+      // Only increment views for non-owners with an active session
       const { data: { session } } = await supabase.auth.getSession();
-      if (data && session) {
+      if (data && session && session.user.id !== data.seller_id) {
         supabase.rpc("increment_listing_views", { _listing_id: id });
       }
     };
