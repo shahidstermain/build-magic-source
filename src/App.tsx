@@ -29,6 +29,7 @@ const MyTrips = lazy(() => import("./pages/MyTrips.tsx"));
 const AdminEmails = lazy(() => import("./pages/AdminEmails.tsx"));
 const AdminAffiliates = lazy(() => import("./pages/AdminAffiliates.tsx"));
 const AdminAffiliateRevenue = lazy(() => import("./pages/AdminAffiliateRevenue.tsx"));
+const AdminKnowledge = lazy(() => import("./pages/AdminKnowledge.tsx"));
 const Contact = lazy(() => import("./pages/Contact.tsx"));
 
 const queryClient = new QueryClient();
@@ -64,6 +65,7 @@ const App = () => (
               <Route path="/admin/emails" element={<AdminEmails />} />
               <Route path="/admin/affiliates" element={<AdminAffiliates />} />
               <Route path="/admin/affiliate-revenue" element={<AdminAffiliateRevenue />} />
+              <Route path="/admin/knowledge" element={<AdminKnowledge />} />
               <Route path="/contact" element={<Contact />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
