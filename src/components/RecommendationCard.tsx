@@ -16,7 +16,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { affiliateTrackingUrl, type TripRecommendation } from "@/lib/tripPlanner";
+import {
+  TRIP_PRICE_INR,
+  affiliateTrackingUrl,
+  type TripRecommendation,
+} from "@/lib/tripPlanner";
+import { formatPriceLabel } from "@/lib/promo";
 import { cn } from "@/lib/utils";
 
 const TYPE_META: Record<
@@ -162,7 +167,7 @@ export function RecommendationsSection({
         Some links above are affiliate links. We may earn a small commission if
         you book through them — at no extra cost to you. This helps keep
         AndamanBazaar free.
-        {locked && " Pay ₹49 to unlock the full curated list."}
+        {locked && ` Pay ${formatPriceLabel(TRIP_PRICE_INR)} to unlock the full curated list.`}
       </p>
     </section>
   );
