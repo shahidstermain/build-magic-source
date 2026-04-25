@@ -60,7 +60,7 @@ const ListingDetail = () => {
       const { data, error } = await supabase
         .from("listings")
         .select(
-          "id, title, description, price, category, condition, city, area, views_count, created_at, seller_id, status, is_featured, listing_images(image_url, display_order), profiles!listings_seller_profile_fkey(id, name, photo_url, is_location_verified, total_listings, successful_sales)",
+          "id, title, description, price, category, condition, city, area, views_count, created_at, seller_id, status, is_featured, listing_images(image_url, display_order)",
         )
         .eq("id", id)
         .maybeSingle();
@@ -68,9 +68,20 @@ const ListingDetail = () => {
       if (error) {
         toast({ title: "Could not load listing", description: error.message, variant: "destructive" });
       }
-      setListing((data as unknown as Listing) ?? null);
+      let withSeller: Listing | null = (data as unknown as Listing) ?? null;
+      if (withSeller?.seller_id) {
+        const { data: seller } = await supabase
+          .from("public_profiles" as never)
+          .select("id, name, photo_url, is_location_verified, total_listings, successful_sales")
+          .eq("id", withSeller.seller_id)
+          .maybeSingle();
+        withSeller = { ...withSeller, profiles: (seller as never) ?? null };
+      }
+      setListing(withSeller);
       setLoading(false);
-      if (data) {
+      // Only authenticated users can increment views (RLS-guarded)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (data && session) {
         supabase.rpc("increment_listing_views", { _listing_id: id });
       }
     };
