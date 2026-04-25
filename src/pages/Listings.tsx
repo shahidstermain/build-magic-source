@@ -32,10 +32,14 @@ type ListingRow = {
   seller: { is_location_verified: boolean | null } | null;
 };
 
+const PAGE_SIZE = 24;
+
 const Listings = () => {
   const [params, setParams] = useSearchParams();
   const [items, setItems] = useState<ListingRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [search, setSearch] = useState(params.get("q") ?? "");
   const { toast } = useToast();
 
@@ -47,6 +51,7 @@ const Listings = () => {
     let cancelled = false;
     const load = async () => {
       setLoading(true);
+      setHasMore(false);
       let q = supabase
         .from("listings")
         .select(
@@ -62,13 +67,15 @@ const Listings = () => {
       else if (sort === "price_desc") q = q.order("price", { ascending: false });
       else q = q.order("created_at", { ascending: false });
 
-      const { data, error } = await q.limit(60);
+      const { data, error } = await q.limit(PAGE_SIZE + 1);
       if (cancelled) return;
       if (error) {
         toast({ title: "Could not load listings", description: error.message, variant: "destructive" });
         setItems([]);
       } else {
-        setItems((data as ListingRow[]) ?? []);
+        const rows = (data as ListingRow[]) ?? [];
+        setHasMore(rows.length > PAGE_SIZE);
+        setItems(rows.slice(0, PAGE_SIZE));
       }
       setLoading(false);
     };
@@ -78,10 +85,41 @@ const Listings = () => {
     };
   }, [category, area, sort, params, toast]);
 
+  const loadMore = async () => {
+    setLoadingMore(true);
+    let q = supabase
+      .from("listings")
+      .select(
+        "id, title, price, area, city, category, condition, created_at, listing_images(image_url, display_order), seller:public_profiles!listings_seller_profile_fkey(is_location_verified)",
+      )
+      .eq("status", "active");
+
+    if (category !== "all") q = q.eq("category", category);
+    if (area !== "all") q = q.eq("area", area);
+    if (params.get("q")) q = q.ilike("title", `%${params.get("q")}%`);
+
+    if (sort === "price_asc") q = q.order("price", { ascending: true });
+    else if (sort === "price_desc") q = q.order("price", { ascending: false });
+    else q = q.order("created_at", { ascending: false });
+
+    const { data, error } = await q.range(items.length, items.length + PAGE_SIZE);
+    if (!error && data) {
+      const rows = data as ListingRow[];
+      setHasMore(rows.length === PAGE_SIZE + 1);
+      setItems((prev) => [...prev, ...rows.slice(0, PAGE_SIZE)]);
+    }
+    setLoadingMore(false);
+  };
+
   const setParam = (key: string, value: string) => {
     const next = new URLSearchParams(params);
     if (value === "all" || !value) next.delete(key);
     else next.set(key, value);
+    // Clear search query when category or area filter changes
+    if (key === "category" || key === "area") {
+      next.delete("q");
+      setSearch("");
+    }
     setParams(next);
   };
 
@@ -203,6 +241,14 @@ const Listings = () => {
             );
           })}
         </ul>
+        {hasMore && (
+          <div className="mt-6 flex justify-center">
+            <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
+              {loadingMore ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Load more
+            </Button>
+          </div>
+        )}
       )}
     </section>
   );
