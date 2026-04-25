@@ -181,6 +181,7 @@ export type Database = {
           chat_id: string
           created_at: string
           id: string
+          image_url: string | null
           read_at: string | null
           sender_id: string
         }
@@ -189,6 +190,7 @@ export type Database = {
           chat_id: string
           created_at?: string
           id?: string
+          image_url?: string | null
           read_at?: string | null
           sender_id: string
         }
@@ -197,6 +199,7 @@ export type Database = {
           chat_id?: string
           created_at?: string
           id?: string
+          image_url?: string | null
           read_at?: string | null
           sender_id?: string
         }
@@ -309,6 +312,53 @@ export type Database = {
         }
         Relationships: []
       }
+      reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          listing_id: string
+          reason: string
+          reporter_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["report_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          listing_id: string
+          reason: string
+          reporter_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          listing_id?: string
+          reason?: string
+          reporter_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -399,6 +449,7 @@ export type Database = {
         | "listing_status"
         | "verification"
         | "system"
+      report_status: "pending" | "reviewed" | "dismissed" | "actioned"
       verification_status: "pending" | "approved" | "rejected" | "cancelled"
     }
     CompositeTypes: {
@@ -537,6 +588,7 @@ export const Constants = {
         "verification",
         "system",
       ],
+      report_status: ["pending", "reviewed", "dismissed", "actioned"],
       verification_status: ["pending", "approved", "rejected", "cancelled"],
     },
   },

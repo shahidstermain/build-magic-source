@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Eye, Heart, Loader2, MapPin, MessageCircle, Pencil, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Eye, Flag, Heart, Loader2, MapPin, MessageCircle, Pencil, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CONDITIONS, formatPrice } from "@/lib/listings";
 import { getOrCreateChat } from "@/lib/chats";
 import { DeliveryEstimator } from "@/components/DeliveryEstimator";
+import { ReportListingDialog } from "@/components/ReportListingDialog";
 
 type Listing = {
   id: string;
@@ -23,6 +24,7 @@ type Listing = {
   views_count: number;
   created_at: string;
   seller_id: string;
+  status: string;
   listing_images: { image_url: string; display_order: number }[];
   profiles: {
     id: string;
@@ -43,6 +45,8 @@ const ListingDetail = () => {
   const [activePhoto, setActivePhoto] = useState(0);
   const [isFav, setIsFav] = useState(false);
   const [startingChat, setStartingChat] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [marking, setMarking] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -52,7 +56,7 @@ const ListingDetail = () => {
       const { data, error } = await supabase
         .from("listings")
         .select(
-          "id, title, description, price, category, condition, city, area, views_count, created_at, seller_id, listing_images(image_url, display_order), profiles!listings_seller_profile_fkey(id, name, photo_url, is_location_verified, total_listings)",
+          "id, title, description, price, category, condition, city, area, views_count, created_at, seller_id, status, listing_images(image_url, display_order), profiles!listings_seller_profile_fkey(id, name, photo_url, is_location_verified, total_listings)",
         )
         .eq("id", id)
         .maybeSingle();
@@ -137,6 +141,23 @@ const ListingDetail = () => {
   const photos = [...listing.listing_images].sort((a, b) => a.display_order - b.display_order);
   const conditionLabel = CONDITIONS.find((c) => c.value === listing.condition)?.label ?? listing.condition;
   const isOwner = user?.id === listing.seller_id;
+  const isSold = listing.status === "sold";
+
+  const onMarkSold = async () => {
+    if (!listing) return;
+    setMarking(true);
+    const { error } = await supabase
+      .from("listings")
+      .update({ status: "sold" })
+      .eq("id", listing.id);
+    setMarking(false);
+    if (error) {
+      toast({ title: "Could not update", description: error.message, variant: "destructive" });
+      return;
+    }
+    setListing({ ...listing, status: "sold" });
+    toast({ title: "Marked as sold", description: "Mubarak ho! Boat pe bharosa rakho." });
+  };
 
   const onMessageSeller = async () => {
     if (!user) {
@@ -213,10 +234,11 @@ const ListingDetail = () => {
           <div className="mt-3 flex flex-wrap gap-2">
             <Badge variant="secondary" className="capitalize">{listing.category}</Badge>
             <Badge variant="outline">{conditionLabel}</Badge>
+            {isSold && <Badge className="bg-success text-success-foreground">Sold</Badge>}
           </div>
 
           <div className="mt-5 flex gap-2">
-            {!isOwner && (
+            {!isOwner && !isSold && (
               <Button
                 size="lg"
                 className="flex-1"
@@ -232,14 +254,32 @@ const ListingDetail = () => {
               </Button>
             )}
             {isOwner && (
-              <Button
-                size="lg"
-                className="flex-1"
-                onClick={() => navigate(`/sell?edit=${listing.id}`)}
-              >
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit listing
-              </Button>
+              <>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => navigate(`/sell?edit=${listing.id}`)}
+                >
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+                </Button>
+                {!isSold && (
+                  <Button
+                    size="lg"
+                    className="flex-1"
+                    onClick={onMarkSold}
+                    disabled={marking}
+                  >
+                    {marking ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                    )}
+                    Mark as sold
+                  </Button>
+                )}
+              </>
             )}
             <Button
               variant="outline"
@@ -285,8 +325,23 @@ const ListingDetail = () => {
           <div className="mt-6">
             <DeliveryEstimator fromArea={listing.area || listing.city} />
           </div>
+
+          {!isOwner && (
+            <button
+              onClick={() => (user ? setReportOpen(true) : navigate("/auth"))}
+              className="mt-6 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"
+            >
+              <Flag className="h-3.5 w-3.5" /> Report this listing
+            </button>
+          )}
         </div>
       </div>
+
+      <ReportListingDialog
+        listingId={listing.id}
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+      />
     </article>
   );
 };
