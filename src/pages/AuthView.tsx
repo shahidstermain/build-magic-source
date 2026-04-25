@@ -19,24 +19,28 @@ const nameSchema = z.string().trim().min(2, "Tell us your name").max(80);
 
 const ISLAND_FACTS = [
   {
+    badge: "01",
+    badgeClass: "bg-warning text-warning-foreground",
+    rotate: "-rotate-1 hover:rotate-0",
     icon: Anchor,
-    heading: "Hyperlocal to A&N",
-    body: "Every listing is tagged to an island — Port Blair, Havelock, Neil, Diglipur and beyond. No mainland middlemen.",
+    heading: "Hyperlocal Commerce",
+    body: "Buy fresh catches from Havelock or sell handicrafts from Port Blair — no mainland middlemen.",
   },
   {
+    badge: "02",
+    badgeClass: "bg-success text-success-foreground",
+    rotate: "rotate-1 hover:rotate-0",
     icon: ShieldCheck,
-    heading: "Island Verified sellers",
-    body: "GPS-checked locals earn a trust badge. You always know you're dealing with a real islander.",
+    heading: "Island Verified Trust",
+    body: "GPS-authenticated sellers verified by locals. Real people, real products, real bharosa.",
   },
   {
+    badge: "03",
+    badgeClass: "bg-accent text-accent-foreground",
+    rotate: "-rotate-1 hover:rotate-0",
     icon: Compass,
-    heading: "AI Trip Planner",
-    body: "Ferry-aware, weather-backed, day-by-day PDF itineraries built with a local insider mindset.",
-  },
-  {
-    icon: MapPin,
-    heading: "Experiences by locals",
-    body: "Scuba diving, sea walks, limestone caves, mangrove tours — booked directly with the people who run them.",
+    heading: "Ferry-Aware Planning",
+    body: "Our AI plans itineraries around real Makruzz & Green Ocean schedules. Never miss a boat.",
   },
 ];
 
