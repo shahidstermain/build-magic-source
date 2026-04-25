@@ -210,6 +210,60 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string | null
+          chat_id: string | null
+          created_at: string
+          id: string
+          link: string | null
+          listing_id: string | null
+          read_at: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          chat_id?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          listing_id?: string | null
+          read_at?: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          chat_id?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          listing_id?: string | null
+          read_at?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_chat_id_fkey"
+            columns: ["chat_id"]
+            isOneToOne: false
+            referencedRelation: "chats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           area: string | null
@@ -339,6 +393,12 @@ export type Database = {
       app_role: "admin" | "moderator" | "user"
       listing_condition: "new" | "like_new" | "good" | "fair"
       listing_status: "active" | "sold" | "paused" | "removed"
+      notification_type:
+        | "message"
+        | "favorite_update"
+        | "listing_status"
+        | "verification"
+        | "system"
       verification_status: "pending" | "approved" | "rejected" | "cancelled"
     }
     CompositeTypes: {
@@ -470,6 +530,13 @@ export const Constants = {
       app_role: ["admin", "moderator", "user"],
       listing_condition: ["new", "like_new", "good", "fair"],
       listing_status: ["active", "sold", "paused", "removed"],
+      notification_type: [
+        "message",
+        "favorite_update",
+        "listing_status",
+        "verification",
+        "system",
+      ],
       verification_status: ["pending", "approved", "rejected", "cancelled"],
     },
   },

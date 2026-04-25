@@ -16,6 +16,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ANDAMAN_AREAS, CATEGORIES, formatPrice } from "@/lib/listings";
+import { slang } from "@/lib/slang";
 
 type ListingRow = {
   id: string;
@@ -150,7 +151,9 @@ const Listings = () => {
         </div>
       ) : items.length === 0 ? (
         <div className="mt-10 rounded-2xl border border-dashed border-border bg-card p-10 text-center">
-          <p className="text-muted-foreground">No listings match your filters yet.</p>
+          <p className="text-muted-foreground">
+            {slang("browseEmpty", `${category}-${area}`)}
+          </p>
           <Link to="/sell" className="mt-3 inline-block font-medium text-primary hover:underline">
             Be the first to post →
           </Link>

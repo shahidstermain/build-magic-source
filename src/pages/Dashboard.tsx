@@ -19,6 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { formatPrice, publicImageUrl } from "@/lib/listings";
+import { slang } from "@/lib/slang";
 
 type ListingRow = {
   id: string;
@@ -165,7 +166,7 @@ const Dashboard = () => {
             <Loader />
           ) : myListings.length === 0 ? (
             <Empty
-              title="No listings yet"
+              title={slang("dashboardEmpty", user.id)}
               cta={<Link to="/sell" className="text-primary hover:underline">Post your first item</Link>}
             />
           ) : (
@@ -267,7 +268,7 @@ const Dashboard = () => {
             <Loader />
           ) : favorites.length === 0 ? (
             <Empty
-              title="No saved items"
+              title={slang("favoritesEmpty", user.id)}
               cta={<Link to="/listings" className="text-primary hover:underline">Browse listings</Link>}
             />
           ) : (

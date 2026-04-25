@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatPrice, publicImageUrl } from "@/lib/listings";
+import { slang } from "@/lib/slang";
 
 type Message = {
   id: string;
@@ -224,7 +225,7 @@ const ChatRoom = () => {
           </div>
         ) : messages.length === 0 ? (
           <p className="py-10 text-center text-sm text-muted-foreground">
-            No messages yet. Say hello 👋
+            {slang("chatRoomEmpty", id)}
           </p>
         ) : (
           messages.map((m) => {

@@ -10,6 +10,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ANDAMAN_AREAS, formatPrice } from "@/lib/listings";
+import { slang } from "@/lib/slang";
 import {
   estimateDelivery,
   PACKAGE_SIZES,
@@ -112,6 +113,9 @@ export function DeliveryEstimator({ fromArea, defaultSize = "small" }: Props) {
 
       <p className="mt-3 text-[11px] text-muted-foreground">
         Estimate only — actual cost &amp; ETA depend on ferry schedules and weather.
+      </p>
+      <p className="mt-1 text-[11px] italic text-muted-foreground">
+        {slang("deliveryHumor", `${fromArea}-${toArea}`)}
       </p>
     </div>
   );
