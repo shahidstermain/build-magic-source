@@ -18,8 +18,10 @@ import {
   isPromoActive,
   listPrice,
 } from "@/lib/promo";
+import { BOOST_PRICE_INR } from "@/lib/pricing";
 
-export const BOOST_PRICE_INR = 99;
+// Re-exported for backwards-compatibility. Canonical source: src/lib/pricing.ts
+export { BOOST_PRICE_INR };
 
 const CASHFREE_SDK_URL = "https://sdk.cashfree.com/js/v3/cashfree.js";
 
