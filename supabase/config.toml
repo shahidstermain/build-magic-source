@@ -2,3 +2,6 @@ project_id = "tsduibmoqntxqdaswbef"
 
 [functions.cashfree-webhook]
 verify_jwt = false
+
+[functions.affiliate-click]
+verify_jwt = false

@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Download, Loader2, MapPin, Sparkles } from "lucide-react";
+import { ChevronDown, Download, Loader2, MapPin, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { getTripDownloadUrl } from "@/lib/tripPlanner";
+import {
+  fetchTripRecommendations,
+  getTripDownloadUrl,
+  type TripRecommendation,
+} from "@/lib/tripPlanner";
+import { RecommendationsSection } from "@/components/RecommendationCard";
 
 type TripRow = {
   id: string;
@@ -21,6 +26,9 @@ export default function MyTrips() {
   const { toast } = useToast();
   const [trips, setTrips] = useState<TripRow[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [recsByTrip, setRecsByTrip] = useState<Record<string, TripRecommendation[]>>({});
+  const [recsLoading, setRecsLoading] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -46,6 +54,29 @@ export default function MyTrips() {
       });
     } finally {
       setBusy(null);
+    }
+  };
+
+  const toggleRecs = async (id: string) => {
+    if (openId === id) {
+      setOpenId(null);
+      return;
+    }
+    setOpenId(id);
+    if (!recsByTrip[id]) {
+      setRecsLoading(id);
+      try {
+        const recs = await fetchTripRecommendations(id);
+        setRecsByTrip((prev) => ({ ...prev, [id]: recs }));
+      } catch (err) {
+        toast({
+          title: "Couldn't load recommendations",
+          description: err instanceof Error ? err.message : "Unknown error",
+          variant: "destructive",
+        });
+      } finally {
+        setRecsLoading(null);
+      }
     }
   };
 
@@ -86,31 +117,67 @@ export default function MyTrips() {
         <div className="space-y-3">
           {trips.map((t) => {
             const title = t.preview?.trip_title ?? `Trip · ${t.inputs?.days} days`;
+            const isOpen = openId === t.id;
+            const recs = recsByTrip[t.id] ?? [];
             return (
-              <Card key={t.id} className="flex items-center gap-4 p-4">
-                <div className="flex-1">
-                  <p className="font-medium">{title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t.inputs?.start_date} → {t.inputs?.end_date} ·{" "}
-                    <span className="capitalize">{t.inputs?.budget}</span> budget · {t.status}
-                  </p>
+              <Card key={t.id} className="overflow-hidden">
+                <div className="flex items-center gap-4 p-4">
+                  <div className="flex-1">
+                    <p className="font-medium">{title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t.inputs?.start_date} → {t.inputs?.end_date} ·{" "}
+                      <span className="capitalize">{t.inputs?.budget}</span> budget · {t.status}
+                    </p>
+                  </div>
+                  {t.status === "generated" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleRecs(t.id)}
+                    >
+                      <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                      Bookings
+                      <ChevronDown
+                        className={`ml-1 h-3.5 w-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                      />
+                    </Button>
+                  )}
+                  {t.status === "generated" ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onDownload(t.id)}
+                      disabled={busy === t.id}
+                    >
+                      {busy === t.id ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download className="mr-2 h-4 w-4" />
+                      )}
+                      PDF
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">{t.status}</span>
+                  )}
                 </div>
-                {t.status === "generated" ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onDownload(t.id)}
-                    disabled={busy === t.id}
-                  >
-                    {busy === t.id ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {isOpen && (
+                  <div className="border-t border-border bg-muted/20 p-4">
+                    {recsLoading === t.id ? (
+                      <div className="flex items-center justify-center py-6 text-muted-foreground">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      </div>
+                    ) : recs.length > 0 ? (
+                      <RecommendationsSection
+                        recommendations={recs}
+                        title="Book your trip"
+                        subtitle="One-click partner bookings for this itinerary."
+                      />
                     ) : (
-                      <Download className="mr-2 h-4 w-4" />
+                      <p className="py-4 text-center text-sm text-muted-foreground">
+                        No recommendations yet. They generate after the PDF is ready.
+                      </p>
                     )}
-                    PDF
-                  </Button>
-                ) : (
-                  <span className="text-xs text-muted-foreground">{t.status}</span>
+                  </div>
                 )}
               </Card>
             );

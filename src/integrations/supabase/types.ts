@@ -14,6 +14,191 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_clicks: {
+        Row: {
+          affiliate_url: string
+          created_at: string
+          id: string
+          ip_hash: string | null
+          recommendation_id: string | null
+          referer: string | null
+          trip_id: string | null
+          user_agent: string | null
+          user_id: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          affiliate_url: string
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          recommendation_id?: string | null
+          referer?: string | null
+          trip_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          affiliate_url?: string
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          recommendation_id?: string | null
+          referer?: string | null
+          trip_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_clicks_recommendation_id_fkey"
+            columns: ["recommendation_id"]
+            isOneToOne: false
+            referencedRelation: "trip_recommendations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_clicks_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trip_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_clicks_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_conversions: {
+        Row: {
+          amount_inr: number | null
+          click_id: string | null
+          commission_inr: number | null
+          created_at: string
+          external_order_id: string | null
+          id: string
+          raw_payload: Json
+          recommendation_id: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          amount_inr?: number | null
+          click_id?: string | null
+          commission_inr?: number | null
+          created_at?: string
+          external_order_id?: string | null
+          id?: string
+          raw_payload?: Json
+          recommendation_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          amount_inr?: number | null
+          click_id?: string | null
+          commission_inr?: number | null
+          created_at?: string
+          external_order_id?: string | null
+          id?: string
+          raw_payload?: Json
+          recommendation_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_conversions_click_id_fkey"
+            columns: ["click_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_clicks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_conversions_recommendation_id_fkey"
+            columns: ["recommendation_id"]
+            isOneToOne: false
+            referencedRelation: "trip_recommendations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_conversions_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_vendors: {
+        Row: {
+          active: boolean
+          affiliate_url_template: string
+          category: string
+          commission_type: string | null
+          commission_value: string | null
+          created_at: string
+          description: string | null
+          disclosure_text: string
+          homepage_url: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          priority: number
+          slug: string
+          trusted: boolean
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          affiliate_url_template: string
+          category: string
+          commission_type?: string | null
+          commission_value?: string | null
+          created_at?: string
+          description?: string | null
+          disclosure_text?: string
+          homepage_url?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          priority?: number
+          slug: string
+          trusted?: boolean
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          affiliate_url_template?: string
+          category?: string
+          commission_type?: string | null
+          commission_value?: string | null
+          created_at?: string
+          description?: string | null
+          disclosure_text?: string
+          homepage_url?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          priority?: number
+          slug?: string
+          trusted?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chats: {
         Row: {
           buyer_id: string
@@ -464,6 +649,87 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      trip_recommendations: {
+        Row: {
+          affiliate_url: string
+          click_count: number
+          conversion_count: number
+          created_at: string
+          cta_label: string
+          disclosure_text: string
+          id: string
+          is_affiliate: boolean
+          item_name: string
+          item_type: string
+          merchant_name: string
+          meta: Json
+          price_inr: number | null
+          price_label: string | null
+          rank: number
+          short_description: string | null
+          trip_id: string
+          user_id: string
+          vendor_id: string | null
+        }
+        Insert: {
+          affiliate_url: string
+          click_count?: number
+          conversion_count?: number
+          created_at?: string
+          cta_label?: string
+          disclosure_text?: string
+          id?: string
+          is_affiliate?: boolean
+          item_name: string
+          item_type: string
+          merchant_name: string
+          meta?: Json
+          price_inr?: number | null
+          price_label?: string | null
+          rank?: number
+          short_description?: string | null
+          trip_id: string
+          user_id: string
+          vendor_id?: string | null
+        }
+        Update: {
+          affiliate_url?: string
+          click_count?: number
+          conversion_count?: number
+          created_at?: string
+          cta_label?: string
+          disclosure_text?: string
+          id?: string
+          is_affiliate?: boolean
+          item_name?: string
+          item_type?: string
+          merchant_name?: string
+          meta?: Json
+          price_inr?: number | null
+          price_label?: string | null
+          rank?: number
+          short_description?: string | null
+          trip_id?: string
+          user_id?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_recommendations_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trip_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_recommendations_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trip_requests: {
         Row: {
