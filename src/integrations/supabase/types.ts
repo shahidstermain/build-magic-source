@@ -828,6 +828,45 @@ export type Database = {
         }
         Relationships: []
       }
+      release_notes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          highlights: Json
+          id: string
+          is_published: boolean
+          published_at: string | null
+          summary: string | null
+          title: string
+          updated_at: string
+          version: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          highlights?: Json
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          summary?: string | null
+          title: string
+          updated_at?: string
+          version?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          highlights?: Json
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          version?: string | null
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           created_at: string
@@ -1296,6 +1335,39 @@ export type Database = {
         }
         Relationships: []
       }
+      visitor_events: {
+        Row: {
+          country: string | null
+          created_at: string
+          id: string
+          path: string | null
+          referer: string | null
+          session_id: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          id?: string
+          path?: string | null
+          referer?: string | null
+          session_id: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          id?: string
+          path?: string | null
+          referer?: string | null
+          session_id?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       whatsapp_shares: {
         Row: {
           created_at: string | null
@@ -1495,6 +1567,15 @@ export type Database = {
           _user_id: string
         }
         Returns: string
+      }
+      record_visitor: {
+        Args: {
+          _path: string
+          _referer: string
+          _session_id: string
+          _user_agent: string
+        }
+        Returns: boolean
       }
     }
     Enums: {
