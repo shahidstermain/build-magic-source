@@ -146,6 +146,15 @@ export async function fetchTripRecommendations(
  */
 export function affiliateTrackingUrl(recommendationId: string): string {
   const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  if (!projectId) {
+    // Fallback: use the Supabase URL from the client env var which is always set
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+    if (supabaseUrl) {
+      return `${supabaseUrl}/functions/v1/affiliate-click?rec=${encodeURIComponent(recommendationId)}`;
+    }
+    console.warn("affiliateTrackingUrl: VITE_SUPABASE_PROJECT_ID not set");
+    return "#";
+  }
   return `https://${projectId}.supabase.co/functions/v1/affiliate-click?rec=${encodeURIComponent(recommendationId)}`;
 }
 
