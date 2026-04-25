@@ -930,3 +930,27 @@ export default function TripPlanner() {
     </div>
   );
 }
+
+function LeadCallbackSheet({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="bottom"
+        className="max-h-[92vh] overflow-y-auto rounded-t-2xl p-0 sm:max-w-2xl sm:mx-auto"
+      >
+        <SheetHeader className="sr-only">
+          <SheetTitle>Talk to an Andaman Travel Expert</SheetTitle>
+        </SheetHeader>
+        <div className="p-4 sm:p-6">
+          <TripPlannerLeadForm className="border-0 shadow-none" />
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
