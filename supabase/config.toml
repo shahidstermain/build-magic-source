@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.affiliate-conversion]
 verify_jwt = false
+
+[functions.send-auth-email]
+verify_jwt = false
+
+[functions.resend-webhook]
+verify_jwt = false
