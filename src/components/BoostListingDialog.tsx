@@ -14,6 +14,42 @@ import {
 
 export const BOOST_PRICE_INR = 99;
 
+const CASHFREE_SDK_URL = "https://sdk.cashfree.com/js/v3/cashfree.js";
+
+type Cashfree = {
+  checkout: (opts: {
+    paymentSessionId: string;
+    redirectTarget?: "_self" | "_blank" | "_modal";
+  }) => Promise<{ error?: { message?: string }; redirect?: boolean; paymentDetails?: unknown }>;
+};
+
+declare global {
+  interface Window {
+    Cashfree?: (opts: { mode: "sandbox" | "production" }) => Cashfree;
+  }
+}
+
+function loadCashfreeSdk(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined") return reject(new Error("No window"));
+    if (window.Cashfree) return resolve();
+    const existing = document.querySelector<HTMLScriptElement>(
+      `script[src="${CASHFREE_SDK_URL}"]`
+    );
+    if (existing) {
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", () => reject(new Error("Cashfree SDK load failed")));
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = CASHFREE_SDK_URL;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Cashfree SDK load failed"));
+    document.head.appendChild(script);
+  });
+}
+
 type Props = {
   listingId: string | null;
   listingTitle?: string;
@@ -35,22 +71,53 @@ export function BoostListingDialog({
   const onConfirm = async () => {
     if (!listingId) return;
     setSubmitting(true);
-    // Mock payment — flip the is_featured flag (matches original repo's local-state boost)
-    const { error } = await supabase
-      .from("listings")
-      .update({ is_featured: true })
-      .eq("id", listingId);
-    setSubmitting(false);
-    if (error) {
-      toast({ title: "Boost failed", description: error.message, variant: "destructive" });
-      return;
+    try {
+      // 1. Create Cashfree order via edge function
+      const { data: orderData, error: orderErr } = await supabase.functions.invoke(
+        "cashfree-create-order",
+        { body: { listing_id: listingId } }
+      );
+      if (orderErr) throw orderErr;
+      if (!orderData?.payment_session_id) {
+        throw new Error(orderData?.error ?? "Order creation failed");
+      }
+
+      // 2. Load SDK and open checkout modal
+      await loadCashfreeSdk();
+      if (!window.Cashfree) throw new Error("Cashfree SDK unavailable");
+      const cashfree = window.Cashfree({
+        mode: orderData.env === "production" ? "production" : "sandbox",
+      });
+      const result = await cashfree.checkout({
+        paymentSessionId: orderData.payment_session_id,
+        redirectTarget: "_modal",
+      });
+      if (result?.error) {
+        throw new Error(result.error.message ?? "Payment cancelled");
+      }
+
+      // 3. Verify on backend
+      const { data: verifyData, error: verifyErr } = await supabase.functions.invoke(
+        "cashfree-verify-payment",
+        { body: { order_id: orderData.order_id } }
+      );
+      if (verifyErr) throw verifyErr;
+      if (verifyData?.status !== "paid") {
+        throw new Error("Payment not confirmed. Agar paise kat gaye hain, support se baat karo.");
+      }
+
+      toast({
+        title: "Boost active!",
+        description: "Listing ab Featured rail mein dikh rahi hai. Boat pe bharosa rakho.",
+      });
+      onBoosted?.();
+      onOpenChange(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Boost failed";
+      toast({ title: "Boost failed", description: message, variant: "destructive" });
+    } finally {
+      setSubmitting(false);
     }
-    toast({
-      title: "Boost active!",
-      description: "Listing ab Featured rail mein dikh rahi hai. Boat pe bharosa rakho.",
-    });
-    onBoosted?.();
-    onOpenChange(false);
   };
 
   return (
