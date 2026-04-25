@@ -954,6 +954,12 @@ export type Database = {
           site_title: string
           updated_at: string
           updated_by: string | null
+          visitor_alert_email: string | null
+          visitor_alert_webhook_url: string | null
+          visitor_alerts_email_enabled: boolean
+          visitor_alerts_enabled: boolean
+          visitor_alerts_in_app: boolean
+          visitor_alerts_webhook_enabled: boolean
         }
         Insert: {
           github_repo_url?: string | null
@@ -962,6 +968,12 @@ export type Database = {
           site_title?: string
           updated_at?: string
           updated_by?: string | null
+          visitor_alert_email?: string | null
+          visitor_alert_webhook_url?: string | null
+          visitor_alerts_email_enabled?: boolean
+          visitor_alerts_enabled?: boolean
+          visitor_alerts_in_app?: boolean
+          visitor_alerts_webhook_enabled?: boolean
         }
         Update: {
           github_repo_url?: string | null
@@ -970,6 +982,12 @@ export type Database = {
           site_title?: string
           updated_at?: string
           updated_by?: string | null
+          visitor_alert_email?: string | null
+          visitor_alert_webhook_url?: string | null
+          visitor_alerts_email_enabled?: boolean
+          visitor_alerts_enabled?: boolean
+          visitor_alerts_in_app?: boolean
+          visitor_alerts_webhook_enabled?: boolean
         }
         Relationships: []
       }

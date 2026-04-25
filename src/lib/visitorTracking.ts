@@ -35,12 +35,23 @@ export async function recordVisitorOnce() {
   const user_agent = navigator.userAgent || "";
 
   try {
-    await supabase.rpc("record_visitor", {
+    const { data: recorded } = await supabase.rpc("record_visitor", {
       _session_id: session_id,
       _path: path,
       _referer: referer,
       _user_agent: user_agent,
     });
+
+    // Only dispatch external alerts when this is a new session (RPC returned true).
+    if (recorded === true) {
+      try {
+        await supabase.functions.invoke("visitor-alert", {
+          body: { session_id, path, referer, user_agent },
+        });
+      } catch {
+        // best-effort
+      }
+    }
   } catch {
     // best-effort; ignore failures
   }
