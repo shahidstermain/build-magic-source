@@ -276,6 +276,48 @@ export type Database = {
         }
         Relationships: []
       }
+      verification_requests: {
+        Row: {
+          created_at: string
+          id: string
+          id_document_url: string | null
+          note: string | null
+          requested_area: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewer_note: string | null
+          status: Database["public"]["Enums"]["verification_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          id_document_url?: string | null
+          note?: string | null
+          requested_area: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_note?: string | null
+          status?: Database["public"]["Enums"]["verification_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          id_document_url?: string | null
+          note?: string | null
+          requested_area?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_note?: string | null
+          status?: Database["public"]["Enums"]["verification_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -297,6 +339,7 @@ export type Database = {
       app_role: "admin" | "moderator" | "user"
       listing_condition: "new" | "like_new" | "good" | "fair"
       listing_status: "active" | "sold" | "paused" | "removed"
+      verification_status: "pending" | "approved" | "rejected" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -427,6 +470,7 @@ export const Constants = {
       app_role: ["admin", "moderator", "user"],
       listing_condition: ["new", "like_new", "good", "fair"],
       listing_status: ["active", "sold", "paused", "removed"],
+      verification_status: ["pending", "approved", "rejected", "cancelled"],
     },
   },
 } as const
