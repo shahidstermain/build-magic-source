@@ -12,6 +12,7 @@ import { getOrCreateChat } from "@/lib/chats";
 import { ReportListingDialog } from "@/components/ReportListingDialog";
 import { TrustBadge } from "@/components/TrustBadge";
 import { BoostListingDialog } from "@/components/BoostListingDialog";
+import { ReviewSystem } from "@/components/ReviewSystem";
 
 type Listing = {
   id: string;
@@ -213,37 +214,43 @@ const ListingDetail = () => {
   };
 
   return (
-    <article className="py-4">
+    <article className="pb-28 md:pb-6">
+      {/* Back */}
       <button
         onClick={() => navigate(-1)}
-        className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" /> Back
       </button>
 
       <div className="grid gap-6 md:grid-cols-[1.4fr_1fr]">
+        {/* ── Photos ─────────────────────────────────────────────────────── */}
         <div>
-          <div className="aspect-square w-full overflow-hidden rounded-2xl bg-muted">
-            {photos[activePhoto] ? (
-              <img
-                src={photos[activePhoto].image_url}
-                alt={listing.title}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                No photo
-              </div>
-            )}
+          {/* Main image — full bleed on mobile */}
+          <div className="-mx-4 overflow-hidden bg-muted md:mx-0 md:rounded-2xl">
+            <div className="aspect-square w-full">
+              {photos[activePhoto] ? (
+                <img
+                  src={photos[activePhoto].image_url}
+                  alt={listing.title}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                  No photo
+                </div>
+              )}
+            </div>
           </div>
+          {/* Thumbnails */}
           {photos.length > 1 && (
-            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1 px-4 md:px-0">
               {photos.map((p, i) => (
                 <button
                   key={p.image_url}
                   onClick={() => setActivePhoto(i)}
-                  className={`h-16 w-16 flex-none overflow-hidden rounded-lg border-2 ${
-                    i === activePhoto ? "border-primary" : "border-transparent"
+                  className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition-colors ${
+                    i === activePhoto ? "border-primary" : "border-transparent opacity-60 hover:opacity-100"
                   }`}
                 >
                   <img src={p.image_url} alt="" className="h-full w-full object-cover" />
@@ -253,93 +260,55 @@ const ListingDetail = () => {
           )}
         </div>
 
-        <div>
-          <p className="text-3xl font-semibold tracking-tight">{formatPrice(listing.price)}</p>
-          <h1 className="mt-1 text-xl font-medium text-foreground">{listing.title}</h1>
-          <p className="mt-2 inline-flex items-center gap-1 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4" /> {listing.area || listing.city}
-            <span className="mx-2">•</span>
-            <Eye className="h-4 w-4" /> {listing.views_count} views
-          </p>
+        {/* ── Details ────────────────────────────────────────────────────── */}
+        <div className="space-y-5">
+          {/* Price + title */}
+          <div>
+            <p className="text-3xl font-bold tracking-tight">{formatPrice(listing.price)}</p>
+            <h1 className="mt-1 text-lg font-medium leading-snug">{listing.title}</h1>
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5" /> {listing.area || listing.city}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <Eye className="h-3.5 w-3.5" /> {listing.views_count} views
+              </span>
+            </div>
+          </div>
 
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Badge variant="secondary" className="capitalize">{listing.category}</Badge>
-            <Badge variant="outline">{conditionLabel}</Badge>
-            {isSold && <Badge className="bg-success text-success-foreground">Sold</Badge>}
+          {/* Badges */}
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary" className="capitalize rounded-full">{listing.category}</Badge>
+            <Badge variant="outline" className="rounded-full">{conditionLabel}</Badge>
+            {isSold && <Badge className="rounded-full bg-success text-success-foreground">Sold</Badge>}
             {listing.is_featured && (
-              <Badge className="bg-accent text-accent-foreground">
+              <Badge className="rounded-full bg-accent text-accent-foreground">
                 <Sparkles className="mr-1 h-3 w-3" /> Boosted
               </Badge>
             )}
           </div>
 
-          <div className="mt-5 flex gap-2">
-            {!isOwner && !isSold && (
-              <Button
-                size="lg"
-                className="flex-1"
-                onClick={onMessageSeller}
-                disabled={startingChat}
-              >
-                {startingChat ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <MessageCircle className="mr-2 h-4 w-4" />
-                )}
-                Message seller
-              </Button>
-            )}
-            {isOwner && (
-              <>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => navigate(`/sell?edit=${listing.id}`)}
-                >
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Edit
-                </Button>
-                {!isSold && (
-                  <Button
-                    size="lg"
-                    className="flex-1"
-                    onClick={onMarkSold}
-                    disabled={marking}
-                  >
-                    {marking ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                    )}
-                    Mark as sold
-                  </Button>
-                )}
-              </>
-            )}
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={onToggleFavorite}
-              aria-label={isFav ? "Remove favorite" : "Save"}
-            >
-              <Heart className={`h-5 w-5 ${isFav ? "fill-accent text-accent" : ""}`} />
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={onShare}
-              aria-label="Share listing"
-            >
-              <Share2 className="h-5 w-5" />
-            </Button>
+          {/* Desktop CTA buttons */}
+          <div className="hidden gap-2 md:flex">
+            <CTAButtons
+              isOwner={isOwner} isSold={isSold} isFav={isFav}
+              startingChat={startingChat} marking={marking}
+              listing={listing}
+              onMessageSeller={onMessageSeller}
+              onToggleFavorite={onToggleFavorite}
+              onShare={onShare}
+              onMarkSold={onMarkSold}
+              navigate={navigate}
+              setBoostOpen={setBoostOpen}
+            />
           </div>
 
+          {/* Seller card */}
           {listing.profiles && (
-            <div className="mt-6 flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
-              <Avatar className="h-12 w-12">
+            <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
+              <Avatar className="h-11 w-11 shrink-0">
                 <AvatarImage src={listing.profiles.photo_url ?? undefined} alt="" />
-                <AvatarFallback>
+                <AvatarFallback className="bg-primary/10 font-semibold text-primary">
                   {(listing.profiles.name ?? "?").slice(0, 1).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -353,19 +322,19 @@ const ListingDetail = () => {
             </div>
           )}
 
-          <div className="mt-6">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Description
-            </h2>
-            <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-foreground">
+          {/* Description */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Description</p>
+            <p className="mt-2 whitespace-pre-line text-sm leading-relaxed">
               {listing.description || "No description provided."}
             </p>
           </div>
 
+          {/* Report */}
           {!isOwner && (
             <button
               onClick={() => (user ? setReportOpen(true) : navigate("/auth"))}
-              className="mt-6 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-destructive"
             >
               <Flag className="h-3.5 w-3.5" /> Report this listing
             </button>
@@ -373,37 +342,77 @@ const ListingDetail = () => {
         </div>
       </div>
 
+      {/* Reviews */}
+      {(listing.category === "experiences" || listing.category === "accommodation") && (
+        <div className="mt-8">
+          <ReviewSystem listingId={listing.id} category={listing.category} />
+        </div>
+      )}
+
+      {/* Boost banner */}
       {isOwner && !isSold && !listing.is_featured && (
         <div className="mt-6 flex flex-col items-start justify-between gap-3 rounded-2xl border border-accent/30 bg-accent/5 p-4 sm:flex-row sm:items-center">
           <div className="flex items-start gap-3">
-            <div className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-accent/15 text-accent">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent/15 text-accent">
               <Rocket className="h-5 w-5" />
             </div>
             <div>
               <p className="text-sm font-semibold">Boost this listing</p>
-              <p className="text-xs text-muted-foreground">
-                Featured rail pe top spot · ~3× views · ₹99 one-time
-              </p>
+              <p className="text-xs text-muted-foreground">Featured rail · ~3× views · ₹99 one-time</p>
             </div>
           </div>
-          <Button onClick={() => setBoostOpen(true)} className="w-full sm:w-auto">
-            <Rocket className="mr-2 h-4 w-4" />
-            Boost for ₹99
+          <Button onClick={() => setBoostOpen(true)} className="w-full rounded-xl sm:w-auto">
+            <Rocket className="mr-2 h-4 w-4" /> Boost for ₹99
           </Button>
         </div>
       )}
 
-      <ReportListingDialog
-        listingId={listing.id}
-        open={reportOpen}
-        onOpenChange={setReportOpen}
-      />
+      {/* ── Mobile sticky CTA bar ───────────────────────────────────────── */}
+      {!isOwner && !isSold && (
+        <div className="fixed bottom-16 left-0 right-0 z-30 border-t border-border/60 bg-background/95 px-4 py-3 backdrop-blur-lg md:hidden">
+          <div className="mx-auto flex max-w-6xl gap-2">
+            <Button
+              size="lg"
+              className="flex-1 rounded-xl"
+              onClick={onMessageSeller}
+              disabled={startingChat}
+            >
+              {startingChat ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageCircle className="mr-2 h-4 w-4" />}
+              Message seller
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="rounded-xl"
+              onClick={onToggleFavorite}
+              aria-label={isFav ? "Remove favorite" : "Save"}
+            >
+              <Heart className={`h-5 w-5 ${isFav ? "fill-accent text-accent" : ""}`} />
+            </Button>
+            <Button variant="outline" size="lg" className="rounded-xl" onClick={onShare} aria-label="Share">
+              <Share2 className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      )}
+      {isOwner && !isSold && (
+        <div className="fixed bottom-16 left-0 right-0 z-30 border-t border-border/60 bg-background/95 px-4 py-3 backdrop-blur-lg md:hidden">
+          <div className="mx-auto flex max-w-6xl gap-2">
+            <Button variant="outline" size="lg" className="flex-1 rounded-xl" onClick={() => navigate(`/sell?edit=${listing.id}`)}>
+              <Pencil className="mr-2 h-4 w-4" /> Edit
+            </Button>
+            <Button size="lg" className="flex-1 rounded-xl" onClick={onMarkSold} disabled={marking}>
+              {marking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+              Mark sold
+            </Button>
+          </div>
+        </div>
+      )}
 
+      <ReportListingDialog listingId={listing.id} open={reportOpen} onOpenChange={setReportOpen} />
       <BoostListingDialog
-        listingId={listing.id}
-        listingTitle={listing.title}
-        open={boostOpen}
-        onOpenChange={setBoostOpen}
+        listingId={listing.id} listingTitle={listing.title}
+        open={boostOpen} onOpenChange={setBoostOpen}
         onBoosted={() => setListing({ ...listing, is_featured: true })}
       />
     </article>
@@ -411,3 +420,47 @@ const ListingDetail = () => {
 };
 
 export default ListingDetail;
+
+// ── Desktop CTA buttons (reused in detail panel) ──────────────────────────────
+function CTAButtons({
+  isOwner, isSold, isFav, startingChat, marking, listing,
+  onMessageSeller, onToggleFavorite, onShare, onMarkSold, navigate, setBoostOpen,
+}: {
+  isOwner: boolean; isSold: boolean; isFav: boolean;
+  startingChat: boolean; marking: boolean;
+  listing: { id: string };
+  onMessageSeller: () => void; onToggleFavorite: () => void;
+  onShare: () => void; onMarkSold: () => void;
+  navigate: (to: string) => void;
+  setBoostOpen: (v: boolean) => void;
+}) {
+  return (
+    <>
+      {!isOwner && !isSold && (
+        <Button size="lg" className="flex-1 rounded-xl" onClick={onMessageSeller} disabled={startingChat}>
+          {startingChat ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageCircle className="mr-2 h-4 w-4" />}
+          Message seller
+        </Button>
+      )}
+      {isOwner && (
+        <>
+          <Button size="lg" variant="outline" className="flex-1 rounded-xl" onClick={() => navigate(`/sell?edit=${listing.id}`)}>
+            <Pencil className="mr-2 h-4 w-4" /> Edit
+          </Button>
+          {!isSold && (
+            <Button size="lg" className="flex-1 rounded-xl" onClick={onMarkSold} disabled={marking}>
+              {marking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+              Mark sold
+            </Button>
+          )}
+        </>
+      )}
+      <Button variant="outline" size="lg" className="rounded-xl" onClick={onToggleFavorite} aria-label={isFav ? "Remove" : "Save"}>
+        <Heart className={`h-5 w-5 ${isFav ? "fill-accent text-accent" : ""}`} />
+      </Button>
+      <Button variant="outline" size="lg" className="rounded-xl" onClick={onShare} aria-label="Share">
+        <Share2 className="h-5 w-5" />
+      </Button>
+    </>
+  );
+}

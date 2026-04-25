@@ -1,6 +1,6 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ImagePlus, Loader2, Sparkles, X } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { ImagePlus, Info, Loader2, Sparkles, X } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,15 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { ANDAMAN_AREAS, CATEGORIES, CONDITIONS, ListingCondition } from "@/lib/listings";
+import {
+  ANDAMAN_AREAS,
+  CATEGORIES,
+  CONDITIONS,
+  EXPERIENCE_SUBCATEGORIES,
+  EXPERIENCE_SEASON_NOTE,
+  DIVE_SITES,
+  ListingCondition,
+} from "@/lib/listings";
 
 const MAX_PHOTOS = 6;
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -51,11 +59,15 @@ const CreateListing = () => {
   const [category, setCategory] = useState("");
   const [condition, setCondition] = useState<ListingCondition>("good");
   const [area, setArea] = useState("Port Blair");
+  const [subcategory, setSubcategory] = useState("");
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [removedExistingIds, setRemovedExistingIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [fetching, setFetching] = useState(isEdit);
+
+  const isExperience = category === "experiences";
+  const diveSites = DIVE_SITES[area] ?? [];
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -93,6 +105,7 @@ const CreateListing = () => {
       setCategory(data.category);
       setCondition(data.condition as ListingCondition);
       setArea(data.area ?? "Port Blair");
+      setSubcategory((data as any).subcategory ?? "");
       const sorted = [...(data.listing_images ?? [])].sort(
         (a, b) => a.display_order - b.display_order,
       );
@@ -198,6 +211,10 @@ const CreateListing = () => {
       });
       return;
     }
+    if (isExperience && !subcategory) {
+      toast({ title: "Pick an activity type", variant: "destructive" });
+      return;
+    }
     if (photos.length === 0) {
       toast({ title: "Add at least one photo", variant: "destructive" });
       return;
@@ -217,6 +234,7 @@ const CreateListing = () => {
             category: parsed.data.category,
             condition: parsed.data.condition as ListingCondition,
             area: parsed.data.area,
+            subcategory: isExperience ? subcategory : null,
           })
           .eq("id", editId!);
         if (updErr) throw updErr;
@@ -232,6 +250,7 @@ const CreateListing = () => {
             condition: parsed.data.condition as ListingCondition,
             area: parsed.data.area,
             city: "Port Blair",
+            subcategory: isExperience ? subcategory : null,
           })
           .select("id")
           .single();
@@ -370,7 +389,7 @@ const CreateListing = () => {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label>Category</Label>
-            <Select value={category} onValueChange={setCategory}>
+            <Select value={category} onValueChange={(v) => { setCategory(v); setSubcategory(""); }}>
               <SelectTrigger><SelectValue placeholder="Pick one" /></SelectTrigger>
               <SelectContent>
                 {CATEGORIES.map((c) => (
@@ -391,6 +410,40 @@ const CreateListing = () => {
             </Select>
           </div>
         </div>
+
+        {/* Experience-specific fields */}
+        {isExperience && (
+          <div className="space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
+            <p className="text-xs font-medium text-primary">Experience details</p>
+
+            <div className="space-y-1.5">
+              <Label>Activity type <span className="text-destructive">*</span></Label>
+              <Select value={subcategory} onValueChange={setSubcategory}>
+                <SelectTrigger><SelectValue placeholder="Select activity" /></SelectTrigger>
+                <SelectContent>
+                  {EXPERIENCE_SUBCATEGORIES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                      <span className="ml-2 text-xs text-muted-foreground">{s.priceHint}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {diveSites.length > 0 && (
+              <div className="rounded-lg border border-border bg-background p-3 text-xs text-muted-foreground">
+                <p className="font-medium text-foreground mb-1">Popular spots in {area}</p>
+                <p>{diveSites.join(" · ")}</p>
+              </div>
+            )}
+
+            <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+              <Info className="h-3.5 w-3.5 mt-0.5 flex-none" />
+              <span>{EXPERIENCE_SEASON_NOTE}</span>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
