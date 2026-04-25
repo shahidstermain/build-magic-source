@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const tabs = [
   { to: "/", label: "Home", icon: Home, end: true },
@@ -56,7 +57,9 @@ export function Layout() {
               + Post
             </Link>
             {user ? (
-              <DropdownMenu>
+              <>
+                <NotificationBell />
+                <DropdownMenu>
                 <DropdownMenuTrigger className="ml-1 rounded-full outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring">
                   <Avatar className="h-9 w-9 border border-border">
                     <AvatarImage src={user.user_metadata?.avatar_url} alt="" />
@@ -87,6 +90,7 @@ export function Layout() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              </>
             ) : (
               <Link
                 to="/auth"
