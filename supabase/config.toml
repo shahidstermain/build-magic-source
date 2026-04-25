@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.affiliate-weekly-summary]
 verify_jwt = false
+
+[functions.visitor-alert]
+verify_jwt = false
