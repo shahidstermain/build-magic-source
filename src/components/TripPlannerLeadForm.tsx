@@ -141,17 +141,17 @@ export function TripPlannerLeadForm({ className, compact = false }: LeadFormProp
     return (
       <Card
         className={cn(
-          "rounded-xl border-2 border-emerald-200 bg-emerald-50 p-6 shadow-md dark:border-emerald-900/50 dark:bg-emerald-950/30",
+          "rounded-xl border-2 border-primary/30 bg-primary/5 p-6 shadow-md",
           className,
         )}
       >
         <div className="flex items-start gap-3">
-          <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-emerald-600 dark:text-emerald-400" />
+          <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-primary" />
           <div>
-            <h3 className="text-lg font-semibold text-emerald-900 dark:text-emerald-100">
+            <h3 className="text-lg font-semibold text-foreground">
               ✅ Got it! Our Andaman expert will call you within 24 hours.
             </h3>
-            <p className="mt-1 text-sm text-emerald-800 dark:text-emerald-200">
+            <p className="mt-1 text-sm text-muted-foreground">
               Keep your WhatsApp handy 🏝️
             </p>
           </div>
