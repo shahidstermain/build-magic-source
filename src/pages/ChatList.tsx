@@ -107,11 +107,13 @@ const ChatList = () => {
   async function hydrateLastMessages(rows: ChatRow[]) {
     if (!rows.length) return;
     const ids = rows.map((r) => r.id);
+    // Fetch only a bounded set of recent messages to avoid loading entire history
     const { data } = await supabase
       .from("messages")
       .select("chat_id, body, sender_id, created_at")
       .in("chat_id", ids)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(ids.length * 3);
     const seen = new Set<string>();
     const lastByChat = new Map<string, { body: string; sender_id: string; created_at: string }>();
     for (const m of data ?? []) {
