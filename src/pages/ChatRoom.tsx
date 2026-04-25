@@ -395,6 +395,7 @@ const ChatRoom = () => {
             maxLength={2000}
             className="flex-1"
           />
+          <span className="flex-none text-[10px] text-muted-foreground">{draft.length}/2000</span>
           <Button
             type="submit"
             size="icon"
