@@ -412,9 +412,40 @@ const AuthView = () => {
           {/* Legal */}
           <p className="text-center text-xs text-muted-foreground">
             By continuing you agree to our{" "}
-            <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">Terms</Link>
+            <LegalDialog
+              trigger={
+                <button type="button" className="underline underline-offset-2 hover:text-foreground">
+                  Terms
+                </button>
+              }
+              title="Terms of Service"
+              description="Preview of our Terms — opens the full page in a new tab from the link below."
+            >
+              <TermsOfService />
+              <p className="mt-4 text-xs text-muted-foreground">
+                <Link to="/terms" target="_blank" rel="noopener" className="underline">
+                  Open full page in a new tab ↗
+                </Link>
+              </p>
+            </LegalDialog>
             {" "}and{" "}
-            <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">Privacy Policy</Link>.
+            <LegalDialog
+              trigger={
+                <button type="button" className="underline underline-offset-2 hover:text-foreground">
+                  Privacy Policy
+                </button>
+              }
+              title="Privacy Policy"
+              description="Preview of our Privacy Policy — opens the full page in a new tab from the link below."
+            >
+              <PrivacyPolicy />
+              <p className="mt-4 text-xs text-muted-foreground">
+                <Link to="/privacy" target="_blank" rel="noopener" className="underline">
+                  Open full page in a new tab ↗
+                </Link>
+              </p>
+            </LegalDialog>
+            .
           </p>
         </div>
       </div>
