@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CheckCircle2, Loader2, Phone } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,19 +74,26 @@ export function TripPlannerLeadForm({ className, compact = false }: LeadFormProp
   const [callTime, setCallTime] = useState<string>("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const parsedLive = useMemo(
+    () =>
+      leadSchema.safeParse({
+        name,
+        whatsapp,
+        travel_from: from,
+        travel_to: to,
+        travelers: typeof travelers === "number" ? travelers : Number(travelers),
+        budget_range: budget,
+        query,
+        preferred_call_time: callTime,
+      }),
+    [name, whatsapp, from, to, travelers, budget, query, callTime],
+  );
+  const isValid = parsedLive.success;
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErrors({});
-    const parsed = leadSchema.safeParse({
-      name,
-      whatsapp,
-      travel_from: from,
-      travel_to: to,
-      travelers: typeof travelers === "number" ? travelers : Number(travelers),
-      budget_range: budget,
-      query,
-      preferred_call_time: callTime,
-    });
+    const parsed = parsedLive;
     if (!parsed.success) {
       const fieldErrors: Record<string, string> = {};
       for (const issue of parsed.error.issues) {
@@ -302,7 +309,8 @@ export function TripPlannerLeadForm({ className, compact = false }: LeadFormProp
           type="submit"
           size="lg"
           className="w-full rounded-lg"
-          disabled={submitting}
+          disabled={submitting || !isValid}
+          aria-disabled={submitting || !isValid}
         >
           {submitting ? (
             <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting…</>
