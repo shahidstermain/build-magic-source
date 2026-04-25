@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/Layout";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SiteMetaProvider } from "@/hooks/useSiteMeta";
+import { recordVisitorOnce } from "@/lib/visitorTracking";
 import Index from "./pages/Index.tsx";
 
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
@@ -32,10 +33,16 @@ const AdminAffiliateRevenue = lazy(() => import("./pages/AdminAffiliateRevenue.t
 const AdminKnowledge = lazy(() => import("./pages/AdminKnowledge.tsx"));
 const AdminTripLeads = lazy(() => import("./pages/AdminTripLeads.tsx"));
 const Contact = lazy(() => import("./pages/Contact.tsx"));
+const WhatsNew = lazy(() => import("./pages/WhatsNew.tsx"));
+const AdminReleaseNotes = lazy(() => import("./pages/AdminReleaseNotes.tsx"));
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  useEffect(() => {
+    void recordVisitorOnce();
+  }, []);
+  return (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AuthProvider>
@@ -69,6 +76,8 @@ const App = () => (
               <Route path="/admin/knowledge" element={<AdminKnowledge />} />
               <Route path="/admin/trip-leads" element={<AdminTripLeads />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/whats-new" element={<WhatsNew />} />
+              <Route path="/admin/release-notes" element={<AdminReleaseNotes />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Route>
@@ -79,6 +88,7 @@ const App = () => (
       </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
