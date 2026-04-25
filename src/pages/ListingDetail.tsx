@@ -351,10 +351,6 @@ const ListingDetail = () => {
             </p>
           </div>
 
-          <div className="mt-6">
-            <DeliveryEstimator fromArea={listing.area || listing.city} />
-          </div>
-
           {!isOwner && (
             <button
               onClick={() => (user ? setReportOpen(true) : navigate("/auth"))}
