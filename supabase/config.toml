@@ -17,3 +17,9 @@ verify_jwt = false
 
 [functions.send-contact-message]
 verify_jwt = false
+
+[functions.affiliate-merchant-webhook]
+verify_jwt = false
+
+[functions.affiliate-utm-return]
+verify_jwt = false

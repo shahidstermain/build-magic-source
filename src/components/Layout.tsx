@@ -1,4 +1,5 @@
-import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Home, Search, PlusSquare, MessageCircle, User,
   LogOut, LayoutDashboard, Heart, Sparkles, Mail, Wand2,
@@ -11,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NotificationBell } from "@/components/NotificationBell";
+import { supabase } from "@/integrations/supabase/client";
 import logoUrl from "@/assets/logo.png";
 
 const tabs = [
@@ -25,7 +27,43 @@ export function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const hideChrome = ["/auth", "/reset-password"].some((p) => location.pathname.startsWith(p));
+
+  // ── Affiliate UTM return tracking ────────────────────────────────────────
+  // If a shopper returns to the site with `?ab_click=<id>&ab_amount=<inr>&ab_order=<ext>`,
+  // record a soft (pending) conversion and strip those params from the URL.
+  useEffect(() => {
+    const clickId = searchParams.get("ab_click");
+    if (!clickId) return;
+    const amountParam = searchParams.get("ab_amount");
+    const externalOrderId = searchParams.get("ab_order");
+    const amount_inr = amountParam ? Number(amountParam) : null;
+
+    // Dedupe across reloads using sessionStorage
+    const dedupeKey = `ab_utm_${clickId}_${externalOrderId ?? ""}`;
+    if (sessionStorage.getItem(dedupeKey)) {
+      // already recorded — just strip params
+    } else {
+      sessionStorage.setItem(dedupeKey, "1");
+      supabase.functions
+        .invoke("affiliate-utm-return", {
+          body: {
+            click_id: clickId,
+            external_order_id: externalOrderId,
+            amount_inr,
+          },
+        })
+        .catch((err) => console.warn("affiliate-utm-return failed", err));
+    }
+
+    // Strip ab_* params so they don't pollute analytics or sharing
+    const next = new URLSearchParams(searchParams);
+    next.delete("ab_click");
+    next.delete("ab_amount");
+    next.delete("ab_order");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   if (hideChrome) return <Outlet />;
 
