@@ -7,16 +7,10 @@ const corsHeaders = {
 };
 
 const VALID_BUDGETS = ["low", "medium", "high"] as const;
-const VALID_INTERESTS = [
-  "adventure",
-  "relaxation",
-  "couple",
-  "solo",
-  "family",
-  "snorkeling",
-  "history",
-  "food",
-] as const;
+const VALID_FITNESS = ["low", "medium", "high"] as const;
+const VALID_GROUP = ["solo", "couple", "family", "group"] as const;
+const VALID_ACCOM = ["budget", "midrange", "resort", "luxury"] as const;
+const VALID_DIET = ["vegetarian", "non-vegetarian", "seafood-only", "vegan"] as const;
 
 type Inputs = {
   days: number;
@@ -25,6 +19,17 @@ type Inputs = {
   end_date: string;
   interests: string[];
   islands: string[];
+  travelers?: number;
+  group_type?: typeof VALID_GROUP[number];
+  ages?: string;
+  fitness?: typeof VALID_FITNESS[number];
+  accommodation?: typeof VALID_ACCOM[number];
+  diet?: typeof VALID_DIET[number];
+  avoid?: string[];
+  permits_arranged?: boolean;
+  returning_visitor?: boolean;
+  is_foreign_national?: boolean;
+  notes?: string;
 };
 
 function validateInputs(raw: any): Inputs {
@@ -38,11 +43,18 @@ function validateInputs(raw: any): Inputs {
     throw new Error("Invalid dates");
   }
   const interests = Array.isArray(raw.interests)
-    ? raw.interests.filter((i: any) => typeof i === "string").slice(0, 8)
+    ? raw.interests.filter((i: any) => typeof i === "string").slice(0, 12)
     : [];
   const islands = Array.isArray(raw.islands)
     ? raw.islands.filter((i: any) => typeof i === "string").slice(0, 6)
     : [];
+  const avoid = Array.isArray(raw.avoid)
+    ? raw.avoid.filter((i: any) => typeof i === "string").slice(0, 10)
+    : [];
+  const travelers = raw.travelers != null ? Number(raw.travelers) : undefined;
+  if (travelers != null && (!Number.isInteger(travelers) || travelers < 1 || travelers > 30)) {
+    throw new Error("travelers must be 1–30");
+  }
   return {
     days,
     budget: raw.budget,
@@ -50,16 +62,48 @@ function validateInputs(raw: any): Inputs {
     end_date: raw.end_date,
     interests,
     islands,
+    travelers,
+    group_type: VALID_GROUP.includes(raw.group_type) ? raw.group_type : undefined,
+    ages: typeof raw.ages === "string" ? raw.ages.slice(0, 200) : undefined,
+    fitness: VALID_FITNESS.includes(raw.fitness) ? raw.fitness : undefined,
+    accommodation: VALID_ACCOM.includes(raw.accommodation) ? raw.accommodation : undefined,
+    diet: VALID_DIET.includes(raw.diet) ? raw.diet : undefined,
+    avoid,
+    permits_arranged: typeof raw.permits_arranged === "boolean" ? raw.permits_arranged : undefined,
+    returning_visitor: typeof raw.returning_visitor === "boolean" ? raw.returning_visitor : undefined,
+    is_foreign_national: typeof raw.is_foreign_national === "boolean" ? raw.is_foreign_national : undefined,
+    notes: typeof raw.notes === "string" ? raw.notes.slice(0, 500) : undefined,
   };
+}
+
+function seasonWarning(startDate: string): string | null {
+  const d = new Date(startDate);
+  if (isNaN(d.getTime())) return null;
+  const m = d.getMonth() + 1;
+  if ([5, 6, 7, 8, 9].includes(m)) {
+    return "Heads up: your dates fall in monsoon (May–Sept). Expect rough seas, ferry cancellations, and limited scuba/snorkel.";
+  }
+  if (m === 12 || m === 1) {
+    return "Heads up: peak season (Dec–Jan) — ferries and hotels book out 2–3 months ahead.";
+  }
+  return null;
 }
 
 async function generateTeaser(inputs: Inputs): Promise<any> {
   const apiKey = Deno.env.get("LOVABLE_API_KEY");
   if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
 
-  const sys = `You are an Andaman Islands local insider. Produce a SHORT teaser (no more than 120 words) for a trip planner.
-You only output structured JSON via the provided tool. Do not include the full itinerary — only summary + Day 1 morning.
-Be specific to Andaman geography (Port Blair, Havelock/Swaraj Dweep, Neil/Shaheed Dweep). No fluff.`;
+  const sys = `You are an Andaman Islands local insider who has lived there for years. Produce a SHORT teaser (no more than 140 words).
+Output structured JSON via the provided tool only. Be specific to Andaman geography (Port Blair, Havelock/Swaraj Dweep, Neil/Shaheed Dweep, Baratang, Diglipur). No tourist fluff.
+
+Tailor to the user profile:
+- Group type / ages: family with kids → calmer beaches (Neil over Havelock); seniors → road-accessible spots; solo → social hostels; couple → sunset spots.
+- Fitness: low → no treks; high → adventure/scuba.
+- Diet: surface relevant food note if vegetarian/vegan (limited on smaller islands).
+- Returning visitor: skip Cellular Jail/Radhanagar, lean offbeat (Diglipur, Baratang, Long Island).
+- If foreign national: mention RAP permit on arrival.
+
+The summary line should feel hand-crafted — mention 2–3 real spots that fit this exact profile.`;
 
   const user = `Trip inputs: ${JSON.stringify(inputs)}.`;
 
@@ -120,7 +164,10 @@ Be specific to Andaman geography (Port Blair, Havelock/Swaraj Dweep, Neil/Shahee
   const data = await res.json();
   const args = data?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
   if (!args) throw new Error("AI returned no teaser");
-  return JSON.parse(args);
+  const parsed = JSON.parse(args);
+  const warn = seasonWarning(inputs.start_date);
+  if (warn) parsed.season_warning = warn;
+  return parsed;
 }
 
 Deno.serve(async (req) => {
