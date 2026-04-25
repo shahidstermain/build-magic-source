@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ExternalLink, Github, Loader2, RefreshCw, Save } from "lucide-react";
+import { AlertTriangle, ExternalLink, Github, Loader2, RefreshCw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -145,6 +145,31 @@ export function GitHubSyncCard() {
             <li>Two-way sync: edits in Lovable push to GitHub; pushes to your default branch sync back.</li>
             <li>There is no &quot;ahead/behind&quot; indicator inside the running app — sync state lives in your Lovable project, not the deployed site.</li>
             <li>To verify, check the latest commit on GitHub or the connector status in <strong>Connectors → GitHub</strong>.</li>
+          </ul>
+        </div>
+
+        <div className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-xs">
+          <p className="flex items-center gap-2 font-medium text-warning-foreground">
+            <AlertTriangle className="h-3.5 w-3.5 text-warning" /> Sync conflict detection
+          </p>
+          <p className="mt-1.5 text-muted-foreground">
+            The running app cannot detect git divergence — that state lives in the Lovable editor, not in your
+            deployed site. If Lovable and GitHub get out of sync (e.g. you pushed a force-push, edited the same
+            file in both places, or merged a branch with conflicts), you will see a banner inside the Lovable
+            editor with a <strong>Resolve</strong> button.
+          </p>
+          <ul className="mt-1.5 list-disc space-y-1 pl-5 text-muted-foreground">
+            <li>Open <strong>Connectors → GitHub</strong> to see the current sync status and any unresolved conflicts.</li>
+            {repoUrl && (
+              <li>
+                Compare the latest commit on{" "}
+                <a href={`${repoUrl}/commits`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+                  GitHub commits
+                </a>{" "}
+                against your latest Lovable version.
+              </li>
+            )}
+            <li>Use Lovable&apos;s version history to roll back if a conflicting merge broke something.</li>
           </ul>
         </div>
 
