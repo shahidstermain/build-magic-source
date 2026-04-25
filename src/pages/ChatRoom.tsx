@@ -46,6 +46,32 @@ const ChatRoom = () => {
   const [notFound, setNotFound] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [signedImages, setSignedImages] = useState<Record<string, string>>({});
+
+  // Resolve storage paths in messages to short-lived signed URLs
+  useEffect(() => {
+    const paths = messages
+      .map((m) => m.image_url)
+      .filter((u): u is string => !!u && !/^https?:\/\//.test(u) && !signedImages[u]);
+    if (paths.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.storage
+        .from("chat-images")
+        .createSignedUrls(paths, 60 * 60);
+      if (cancelled || !data) return;
+      setSignedImages((prev) => {
+        const next = { ...prev };
+        data.forEach((d) => {
+          if (d.path && d.signedUrl) next[d.path] = d.signedUrl;
+        });
+        return next;
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [messages, signedImages]);
 
   useEffect(() => {
     if (!user || !id) return;
