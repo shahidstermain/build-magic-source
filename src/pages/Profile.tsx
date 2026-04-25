@@ -527,9 +527,9 @@ function PhoneVerificationStatus({
     );
   }
   return (
-    <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-xs">
-      <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-700 dark:text-amber-400" />
-      <span className="text-amber-800 dark:text-amber-300">
+    <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-2 text-xs">
+      <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-destructive" />
+      <span className="text-destructive">
         {phoneEdited && verifiedAt
           ? "Phone number changed — verification will be required again once enabled."
           : "Phone not verified yet."}
