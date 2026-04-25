@@ -138,7 +138,7 @@ const Profile = () => {
         const path = `verification-docs/${user.id}/verify-${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from("listing-images")
-          .upload(path, verifyDocFile, { contentType: verifyDocFile.type, upsert: false });
+          .upload(path, verifyDocFile, { contentType: verifyDocFile.type, upsert: false, cacheControl: "31536000" });
         if (upErr) throw upErr;
         docUrl = supabase.storage.from("listing-images").getPublicUrl(path).data.publicUrl;
       }
@@ -195,7 +195,7 @@ const Profile = () => {
       const path = `${user.id}/avatar-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("listing-images")
-        .upload(path, file, { contentType: file.type, upsert: false });
+        .upload(path, file, { contentType: file.type, upsert: false, cacheControl: "31536000" });
       if (upErr) throw upErr;
       const url = supabase.storage.from("listing-images").getPublicUrl(path).data.publicUrl;
       const { error: dbErr } = await supabase
