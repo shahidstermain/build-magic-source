@@ -9,7 +9,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { CONDITIONS, formatPrice } from "@/lib/listings";
 import { getOrCreateChat } from "@/lib/chats";
-import { DeliveryEstimator } from "@/components/DeliveryEstimator";
 import { ReportListingDialog } from "@/components/ReportListingDialog";
 import { TrustBadge } from "@/components/TrustBadge";
 import { BoostListingDialog } from "@/components/BoostListingDialog";
