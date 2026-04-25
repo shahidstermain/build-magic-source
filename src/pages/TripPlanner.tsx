@@ -48,6 +48,7 @@ import {
   getTripDownloadUrl,
   regenerateTrip,
 } from "@/lib/tripPlanner";
+import { formatPriceLabel } from "@/lib/promo";
 import { saveCollaborativeTrip } from "@/lib/collaborativeTrips";
 import { PayTripDialog } from "@/components/PayTripDialog";
 import { RecommendationsSection } from "@/components/RecommendationCard";
