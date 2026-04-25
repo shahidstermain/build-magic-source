@@ -33,6 +33,14 @@ export async function recordVisitorOnce() {
   const path = window.location.pathname || "/";
   const referer = document.referrer || "";
   const user_agent = navigator.userAgent || "";
+  const landing_url = window.location.href || "";
+  const language = navigator.language || "";
+  const screen_size =
+    typeof window.screen?.width === "number"
+      ? `${window.screen.width}x${window.screen.height}`
+      : "";
+  const timezone =
+    Intl.DateTimeFormat().resolvedOptions().timeZone || "";
 
   try {
     const { data: recorded } = await supabase.rpc("record_visitor", {
@@ -46,7 +54,16 @@ export async function recordVisitorOnce() {
     if (recorded === true) {
       try {
         await supabase.functions.invoke("visitor-alert", {
-          body: { session_id, path, referer, user_agent },
+          body: {
+            session_id,
+            path,
+            referer,
+            user_agent,
+            landing_url,
+            language,
+            screen_size,
+            timezone,
+          },
         });
       } catch {
         // best-effort

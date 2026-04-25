@@ -11,6 +11,10 @@ type Payload = {
   path: string;
   referer: string;
   user_agent: string;
+  landing_url?: string;
+  language?: string;
+  screen_size?: string;
+  timezone?: string;
 };
 
 Deno.serve(async (req) => {
@@ -24,6 +28,38 @@ Deno.serve(async (req) => {
     const path = String(body.path ?? "/").slice(0, 200);
     const referer = String(body.referer ?? "").slice(0, 300);
     const user_agent = String(body.user_agent ?? "").slice(0, 300);
+    const landing_url = String(body.landing_url ?? "").slice(0, 500);
+    const language = String(body.language ?? "").slice(0, 20);
+    const screen_size = String(body.screen_size ?? "").slice(0, 20);
+    const timezone = String(body.timezone ?? "").slice(0, 60);
+
+    // Geo from Cloudflare-style request headers (best-effort).
+    const h = req.headers;
+    const country =
+      h.get("cf-ipcountry") ||
+      h.get("x-vercel-ip-country") ||
+      h.get("x-country") ||
+      "";
+    const region =
+      h.get("cf-region") ||
+      h.get("x-vercel-ip-country-region") ||
+      h.get("x-region") ||
+      "";
+    const city =
+      h.get("cf-ipcity") ||
+      h.get("x-vercel-ip-city") ||
+      h.get("x-city") ||
+      "";
+    const ipRaw =
+      h.get("cf-connecting-ip") ||
+      h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      h.get("x-real-ip") ||
+      "";
+    const ip_masked = ipRaw
+      ? ipRaw.includes(":")
+        ? ipRaw.split(":").slice(0, 4).join(":") + "::"
+        : ipRaw.split(".").slice(0, 3).join(".") + ".0"
+      : "";
 
     if (!session_id || session_id.length < 8) {
       return new Response(JSON.stringify({ ok: false, error: "bad_session" }), {
@@ -52,14 +88,34 @@ Deno.serve(async (req) => {
     }
 
     const dispatched: string[] = [];
+    const geo_label = [city, region, country].filter(Boolean).join(", ") || "Unknown";
     const payload = {
       event: "new_visitor",
       session_id,
       path,
+      landing_url,
       referer,
       user_agent,
+      language,
+      screen_size,
+      timezone,
+      country,
+      region,
+      city,
+      ip_masked,
+      geo_label,
       occurred_at: new Date().toISOString(),
     };
+
+    // Persist enrichment back to visitor_events row (best-effort).
+    try {
+      await admin
+        .from("visitor_events")
+        .update({ country: country || null })
+        .eq("session_id", session_id);
+    } catch (_) {
+      // ignore
+    }
 
     // Webhook
     if (
@@ -94,8 +150,18 @@ Deno.serve(async (req) => {
             <h2>New visitor</h2>
             <p>A new visitor just landed on your site.</p>
             <ul>
+              <li><strong>Location:</strong> ${escapeHtml(geo_label)}</li>
+              <li><strong>Landing page:</strong> ${
+                landing_url
+                  ? `<a href="${escapeHtml(landing_url)}">${escapeHtml(landing_url)}</a>`
+                  : escapeHtml(path)
+              }</li>
               <li><strong>Path:</strong> ${escapeHtml(path)}</li>
               <li><strong>Referer:</strong> ${escapeHtml(referer || "(direct)")}</li>
+              <li><strong>Language:</strong> ${escapeHtml(language || "—")}</li>
+              <li><strong>Timezone:</strong> ${escapeHtml(timezone || "—")}</li>
+              <li><strong>Screen:</strong> ${escapeHtml(screen_size || "—")}</li>
+              <li><strong>IP (masked):</strong> ${escapeHtml(ip_masked || "—")}</li>
               <li><strong>User agent:</strong> ${escapeHtml(user_agent)}</li>
               <li><strong>Session:</strong> ${escapeHtml(session_id)}</li>
               <li><strong>Time:</strong> ${payload.occurred_at}</li>
