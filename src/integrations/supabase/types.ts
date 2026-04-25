@@ -780,6 +780,57 @@ export type Database = {
         }
         Relationships: []
       }
+      posts: {
+        Row: {
+          author_id: string
+          category: string
+          content: string
+          cover_image_url: string | null
+          created_at: string
+          excerpt: string | null
+          id: string
+          published_at: string | null
+          slug: string
+          status: string
+          tags: string[]
+          title: string
+          updated_at: string
+          views: number
+        }
+        Insert: {
+          author_id: string
+          category?: string
+          content?: string
+          cover_image_url?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          published_at?: string | null
+          slug: string
+          status?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+          views?: number
+        }
+        Update: {
+          author_id?: string
+          category?: string
+          content?: string
+          cover_image_url?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          published_at?: string | null
+          slug?: string
+          status?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          views?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           area: string | null
@@ -1573,6 +1624,7 @@ export type Database = {
         Args: { _listing_id: string }
         Returns: undefined
       }
+      increment_post_views: { Args: { _slug: string }; Returns: undefined }
       record_affiliate_conversion: {
         Args: {
           _amount_inr: number
@@ -1595,6 +1647,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      slugify: { Args: { _input: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
