@@ -423,6 +423,39 @@ export type Database = {
           },
         ]
       }
+      legal_acceptances: {
+        Row: {
+          accepted_at: string
+          context: string | null
+          document_type: Database["public"]["Enums"]["legal_document_type"]
+          id: string
+          ip_hash: string | null
+          user_agent: string | null
+          user_id: string
+          version: string
+        }
+        Insert: {
+          accepted_at?: string
+          context?: string | null
+          document_type: Database["public"]["Enums"]["legal_document_type"]
+          id?: string
+          ip_hash?: string | null
+          user_agent?: string | null
+          user_id: string
+          version: string
+        }
+        Update: {
+          accepted_at?: string
+          context?: string | null
+          document_type?: Database["public"]["Enums"]["legal_document_type"]
+          id?: string
+          ip_hash?: string | null
+          user_agent?: string | null
+          user_id?: string
+          version?: string
+        }
+        Relationships: []
+      }
       listing_images: {
         Row: {
           created_at: string
@@ -1421,6 +1454,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      legal_document_type: "terms" | "privacy"
       listing_condition: "new" | "like_new" | "good" | "fair"
       listing_status: "active" | "sold" | "paused" | "removed"
       notification_type:
@@ -1560,6 +1594,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      legal_document_type: ["terms", "privacy"],
       listing_condition: ["new", "like_new", "good", "fair"],
       listing_status: ["active", "sold", "paused", "removed"],
       notification_type: [
