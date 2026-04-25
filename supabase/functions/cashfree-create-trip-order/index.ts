@@ -48,8 +48,8 @@ Deno.serve(async (req) => {
     if (tripErr) throw tripErr;
     if (!trip) throw new Error("Trip not found");
     if (trip.user_id !== user.id) throw new Error("Forbidden");
-    if (trip.status === "generated") {
-      throw new Error("Trip already generated");
+    if (["paid", "generating", "generated"].includes(trip.status)) {
+      throw new Error("Trip already paid or generated");
     }
 
     const orderId = `trip_${tripId.slice(0, 8)}_${Date.now()}`;
