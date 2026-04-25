@@ -22,11 +22,21 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import {
   BUDGET_OPTIONS,
-  INTEREST_OPTIONS,
+  EXPANDED_INTEREST_OPTIONS,
+  FITNESS_OPTIONS,
+  GROUP_OPTIONS,
+  ACCOMMODATION_OPTIONS,
+  DIET_OPTIONS,
   ISLAND_OPTIONS,
   TRIP_PRICE_INR,
   type TripInputs,
@@ -65,6 +75,24 @@ export default function TripPlanner() {
   const [endDate, setEndDate] = useState(initialDates.end);
   const [interests, setInterests] = useState<string[]>(["relaxation", "snorkeling"]);
   const [islands, setIslands] = useState<string[]>([]);
+
+  // Richer profile context (Upgrade 1)
+  const [travelers, setTravelers] = useState<number>(2);
+  const [groupType, setGroupType] = useState<TripInputs["group_type"]>("couple");
+  const [ages, setAges] = useState("");
+  const [fitness, setFitness] = useState<TripInputs["fitness"]>("medium");
+  const [accommodation, setAccommodation] = useState<TripInputs["accommodation"]>("midrange");
+  const [diet, setDiet] = useState<TripInputs["diet"]>("non-vegetarian");
+  const [avoid, setAvoid] = useState<string[]>([]);
+  const [permitsArranged, setPermitsArranged] = useState(false);
+  const [returningVisitor, setReturningVisitor] = useState(false);
+  const [isForeign, setIsForeign] = useState(false);
+  const [extraNotes, setExtraNotes] = useState("");
+
+  // Collapsible section open state
+  const [openProfile, setOpenProfile] = useState(false);
+  const [openPreferences, setOpenPreferences] = useState(false);
+  const [openLogistics, setOpenLogistics] = useState(false);
 
   // Keep days in sync with date range
   const syncDaysFromDates = (start: string, end: string) => {
@@ -139,6 +167,17 @@ export default function TripPlanner() {
         end_date: endDate,
         interests,
         islands,
+        travelers,
+        group_type: groupType,
+        ages: ages.trim() || undefined,
+        fitness,
+        accommodation,
+        diet,
+        avoid,
+        permits_arranged: permitsArranged,
+        returning_visitor: returningVisitor,
+        is_foreign_national: isForeign,
+        notes: extraNotes.trim() || undefined,
       };
       const result = await createTripPreview(inputs);
       setTripId(result.trip_id);
