@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Anchor, Compass, ShieldCheck } from "lucide-react";
+import { Loader2, Anchor, Compass, ShieldCheck, Phone, Info } from "lucide-react";
 import logoUrl from "@/assets/logo.webp";
 import {
   Dialog,
@@ -52,6 +52,10 @@ type Mode = "signin" | "signup" | "forgot";
 const emailSchema = z.string().trim().email("Enter a valid email").max(255);
 const passwordSchema = z.string().min(8, "At least 8 characters").max(72);
 const nameSchema = z.string().trim().min(2, "Tell us your name").max(80);
+const phoneSchema = z
+  .string()
+  .trim()
+  .regex(/^[+]?[0-9\s-]{7,20}$/, "Enter a valid phone number");
 
 const ISLAND_FACTS = [
   {
@@ -87,6 +91,7 @@ const AuthView = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const { session, loading } = useAuth();
   const navigate = useNavigate();
@@ -108,6 +113,10 @@ const AuthView = () => {
       const p = passwordSchema.safeParse(password);
       if (!p.success) return p.error.issues[0].message;
     }
+    if (mode === "signup" && phone.trim().length > 0) {
+      const ph = phoneSchema.safeParse(phone);
+      if (!ph.success) return ph.error.issues[0].message;
+    }
     return null;
   };
 
@@ -126,7 +135,7 @@ const AuthView = () => {
           password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { name },
+            data: { name, phone: phone.trim() || null },
           },
         });
         if (error) throw error;
@@ -345,6 +354,36 @@ const AuthView = () => {
                 required
               />
             </div>
+
+            {mode === "signup" && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="phone" className="flex items-center gap-1.5">
+                    <Phone className="h-3.5 w-3.5" />
+                    Phone number
+                  </Label>
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Optional
+                  </span>
+                </div>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+91 98765 43210"
+                  autoComplete="tel"
+                  inputMode="tel"
+                />
+                <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 p-2.5 text-[11px] leading-snug text-muted-foreground">
+                  <Info className="mt-0.5 h-3.5 w-3.5 flex-none text-primary" />
+                  <p>
+                    We'll soon require a verified phone number to post listings. Adding it now means
+                    one tap to verify later — your account is created either way.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {mode !== "forgot" && (
               <div className="space-y-1.5">
