@@ -5,16 +5,16 @@ import {
   Smartphone,
   Sofa,
   Car,
-  Home as HomeIcon,
-  Briefcase,
-  Bike,
+  Wrench,
+  Anchor,
   Shirt,
-  Dog,
+  BookOpen,
+  Briefcase,
+  HelpCircle,
   MapPin,
   ShieldCheck,
   Sparkles,
   Wand2,
-  Anchor,
   MessageCircle,
   HeartHandshake,
   Compass,
@@ -23,15 +23,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/listings";
 import { slangOfTheDay } from "@/lib/slang";
 
+// Kept in sync with CATEGORIES in src/lib/listings.ts
 const categories = [
   { id: "electronics", label: "Electronics", icon: Smartphone },
-  { id: "furniture", label: "Furniture", icon: Sofa },
   { id: "vehicles", label: "Vehicles", icon: Car },
-  { id: "property", label: "Property", icon: HomeIcon },
-  { id: "jobs", label: "Jobs", icon: Briefcase },
-  { id: "bikes", label: "Bikes", icon: Bike },
+  { id: "home", label: "Home & Garden", icon: Sofa },
   { id: "fashion", label: "Fashion", icon: Shirt },
-  { id: "pets", label: "Pets", icon: Dog },
+  { id: "fishing", label: "Fishing & Boats", icon: Anchor },
+  { id: "tools", label: "Tools", icon: Wrench },
+  { id: "books", label: "Books & Hobbies", icon: BookOpen },
+  { id: "services", label: "Services", icon: Briefcase },
+  { id: "other", label: "Other", icon: HelpCircle },
 ];
 
 type FeaturedItem = {
@@ -211,7 +213,7 @@ const Index = () => {
           See all
         </Link>
       </div>
-      <div className="grid grid-cols-4 gap-3 sm:grid-cols-8">
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-9">
         {categories.map(({ id, label, icon: Icon }) => (
           <Link
             key={id}
