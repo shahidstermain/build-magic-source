@@ -126,11 +126,21 @@ export default function Blog() {
                       loading="lazy"
                       decoding="async"
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      onError={(e) => {
+                        const img = e.currentTarget;
+                        img.style.display = "none";
+                        const parent = img.parentElement;
+                        if (parent) {
+                          parent.classList.add(
+                            "bg-gradient-to-br",
+                            "from-primary/20",
+                            "to-primary/5",
+                          );
+                        }
+                      }}
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                      No cover image
-                    </div>
+                    <div className="h-full w-full bg-gradient-to-br from-primary/20 to-primary/5" />
                   )}
                 </div>
                 <div className="flex flex-1 flex-col gap-2 p-4">
