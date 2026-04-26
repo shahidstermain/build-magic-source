@@ -99,6 +99,7 @@ export function Layout() {
               <Wand2 className="h-3.5 w-3.5" /> AI Planner
             </NavPill>
             <NavPill to="/blog">📰 Blog</NavPill>
+            <NavPill to="/pricing">💎 Pricing</NavPill>
           </div>
 
           {/* Search pill — desktop */}
