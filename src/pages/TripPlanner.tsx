@@ -988,21 +988,104 @@ export default function TripPlanner() {
               </>
             )}
 
-            <div className="rounded-xl border border-border bg-muted/30 p-4">
-              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                <CalendarDays className="h-3.5 w-3.5" /> Day 1 — Morning
+            {/* Photo-rich Day 1 card (Thrillophilia-style) */}
+            <div className="overflow-hidden rounded-xl border border-border bg-card">
+              <div
+                className="relative h-40 w-full bg-cover bg-center sm:h-52"
+                style={{
+                  backgroundImage: `url(${pickDayImage([...interests, ...islands.map((i) => i.toLowerCase())], 0)})`,
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
+                <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-medium uppercase tracking-wider text-white/90 drop-shadow">
+                      Day 1
+                    </div>
+                    <div className="text-lg font-semibold text-white drop-shadow">
+                      {islands[0] || "Andaman"} · arrival
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="bg-background/90 text-foreground">
+                    {interests.slice(0, 2).join(" · ") || "explore"}
+                  </Badge>
+                </div>
               </div>
-              {isEditing ? (
-                <Textarea
-                  value={preview.day1_morning}
-                  onChange={(e) => setPreview({...preview, day1_morning: e.target.value})}
-                  className="mt-1"
-                  rows={2}
-                />
-              ) : (
-                <p className="mt-1 text-sm">{preview.day1_morning}</p>
-              )}
+              <div className="space-y-3 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                    <Sun className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Morning
+                    </div>
+                    {isEditing ? (
+                      <Textarea
+                        value={preview.day1_morning}
+                        onChange={(e) => setPreview({ ...preview, day1_morning: e.target.value })}
+                        className="mt-1"
+                        rows={2}
+                      />
+                    ) : (
+                      <p className="mt-0.5 text-sm">{preview.day1_morning}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 opacity-60">
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
+                    <Sunset className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Afternoon
+                    </div>
+                    <p className="mt-0.5 text-sm text-muted-foreground italic">Unlock to see the full afternoon plan…</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 opacity-60">
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
+                    <Moon className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Evening
+                    </div>
+                    <p className="mt-0.5 text-sm text-muted-foreground italic">Sunset spot + dinner pick included after unlock.</p>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {/* Day-by-day photo strip preview (Days 2..N) */}
+            {days > 1 && (
+              <div>
+                <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  <CalendarDays className="h-3.5 w-3.5" /> Sneak peek · Days 2–{days}
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {Array.from({ length: Math.min(days - 1, 6) }).map((_, idx) => {
+                    const dayNum = idx + 2;
+                    const tags = [...interests, ...islands.map((i) => i.toLowerCase())];
+                    return (
+                      <div
+                        key={dayNum}
+                        className="relative h-24 w-36 shrink-0 overflow-hidden rounded-lg border border-border bg-cover bg-center"
+                        style={{ backgroundImage: `url(${pickDayImage(tags, dayNum)})` }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/85 to-transparent" />
+                        <div className="absolute bottom-1.5 left-2 text-xs font-semibold text-white drop-shadow">
+                          Day {dayNum}
+                        </div>
+                        <div className="absolute right-1.5 top-1.5">
+                          <Lock className="h-3 w-3 text-white/90 drop-shadow" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {preview.season_warning && (
               <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
