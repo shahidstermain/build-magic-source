@@ -8,6 +8,7 @@ import { Layout } from "@/components/Layout";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SiteMetaProvider } from "@/hooks/useSiteMeta";
 import { recordVisitorOnce } from "@/lib/visitorTracking";
+import { AdminGuard } from "@/components/AdminGuard";
 
 const Index = lazy(() => import("./pages/Index.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
@@ -76,20 +77,20 @@ const App = () => {
               <Route path="/payment-test" element={<PaymentTestChecklist />} />
               <Route path="/trip-planner" element={<TripPlanner />} />
               <Route path="/my-trips" element={<MyTrips />} />
-              <Route path="/admin/emails" element={<AdminEmails />} />
-              <Route path="/admin/affiliates" element={<AdminAffiliates />} />
-              <Route path="/admin/affiliate-revenue" element={<AdminAffiliateRevenue />} />
-              <Route path="/admin/knowledge" element={<AdminKnowledge />} />
-              <Route path="/admin/trip-leads" element={<AdminTripLeads />} />
+              <Route path="/admin/emails" element={<AdminGuard><AdminEmails /></AdminGuard>} />
+              <Route path="/admin/affiliates" element={<AdminGuard><AdminAffiliates /></AdminGuard>} />
+              <Route path="/admin/affiliate-revenue" element={<AdminGuard><AdminAffiliateRevenue /></AdminGuard>} />
+              <Route path="/admin/knowledge" element={<AdminGuard><AdminKnowledge /></AdminGuard>} />
+              <Route path="/admin/trip-leads" element={<AdminGuard><AdminTripLeads /></AdminGuard>} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/whats-new" element={<WhatsNew />} />
-              <Route path="/admin/release-notes" element={<AdminReleaseNotes />} />
-              <Route path="/admin/price-qa" element={<AdminPriceQA />} />
+              <Route path="/admin/release-notes" element={<AdminGuard><AdminReleaseNotes /></AdminGuard>} />
+              <Route path="/admin/price-qa" element={<AdminGuard><AdminPriceQA /></AdminGuard>} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
-              <Route path="/admin/blog" element={<AdminBlog />} />
-              <Route path="/admin/blog/new" element={<AdminBlogEditor />} />
-              <Route path="/admin/blog/edit/:id" element={<AdminBlogEditor />} />
+              <Route path="/admin/blog" element={<AdminGuard><AdminBlog /></AdminGuard>} />
+              <Route path="/admin/blog/new" element={<AdminGuard><AdminBlogEditor /></AdminGuard>} />
+              <Route path="/admin/blog/edit/:id" element={<AdminGuard><AdminBlogEditor /></AdminGuard>} />
               <Route path="/pricing" element={<Pricing />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
