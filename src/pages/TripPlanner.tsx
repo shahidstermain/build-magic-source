@@ -345,6 +345,19 @@ export default function TripPlanner() {
     setCollaborators(collaborators.filter(c => c !== email));
   };
 
+  const formatDateLabel = (iso: string) => {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  };
+  const budgetLabel = BUDGET_OPTIONS.find((b) => b.id === budget)?.label ?? budget;
+  const accommodationLabel =
+    ACCOMMODATION_OPTIONS.find((a) => a.id === accommodation)?.label ?? accommodation;
+  const dietLabel = DIET_OPTIONS.find((d) => d.id === diet)?.label ?? diet;
+  const fitnessLabel = FITNESS_OPTIONS.find((f) => f.id === fitness)?.label ?? fitness;
+  const groupLabel = GROUP_OPTIONS.find((g) => g.id === groupType)?.label ?? groupType;
+
   if (authLoading || !user) {
     return (
       <div className="grid place-items-center py-24 text-muted-foreground">
@@ -774,13 +787,99 @@ export default function TripPlanner() {
             </div>
           </div>
 
+          {/* Confirm-your-inputs recap */}
+          <Card className="space-y-3 border-dashed bg-muted/30 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <Sparkles className="h-3.5 w-3.5 text-primary" /> Confirm your trip inputs
+              </div>
+              <span className="text-xs text-muted-foreground">Review before we build the preview</span>
+            </div>
+            <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Trip length</dt>
+                <dd className="text-right font-medium">{days} {days === 1 ? "day" : "days"}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Budget</dt>
+                <dd className="text-right font-medium capitalize">{budgetLabel}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Dates</dt>
+                <dd className="text-right font-medium">
+                  {formatDateLabel(startDate)} → {formatDateLabel(endDate)}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Travellers</dt>
+                <dd className="text-right font-medium">
+                  {travelers} · <span className="capitalize">{groupLabel}</span>
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3 sm:col-span-2">
+                <dt className="shrink-0 text-muted-foreground">Islands</dt>
+                <dd className="text-right font-medium">
+                  {islands.length > 0 ? islands.join(", ") : (
+                    <span className="text-destructive">None selected</span>
+                  )}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3 sm:col-span-2">
+                <dt className="shrink-0 text-muted-foreground">Interests</dt>
+                <dd className="text-right font-medium capitalize">
+                  {interests.length > 0 ? interests.join(", ") : (
+                    <span className="text-destructive">None selected</span>
+                  )}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Stay</dt>
+                <dd className="text-right font-medium">{accommodationLabel}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Diet</dt>
+                <dd className="text-right font-medium capitalize">{dietLabel}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Fitness</dt>
+                <dd className="text-right font-medium capitalize">{fitnessLabel}</dd>
+              </div>
+              {avoid.length > 0 && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted-foreground">Avoid</dt>
+                  <dd className="text-right font-medium capitalize">{avoid.join(", ")}</dd>
+                </div>
+              )}
+              {(permitsArranged || returningVisitor || isForeign) && (
+                <div className="flex justify-between gap-3 sm:col-span-2">
+                  <dt className="text-muted-foreground">Notes</dt>
+                  <dd className="text-right font-medium">
+                    {[
+                      permitsArranged && "Permits arranged",
+                      returningVisitor && "Repeat visitor",
+                      isForeign && "Foreign national",
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </dd>
+                </div>
+              )}
+              {extraNotes.trim() && (
+                <div className="flex flex-col gap-1 sm:col-span-2">
+                  <dt className="text-muted-foreground">Extra notes</dt>
+                  <dd className="rounded-md bg-background p-2 text-xs">{extraNotes.trim()}</dd>
+                </div>
+              )}
+            </dl>
+          </Card>
+
           <Button onClick={onPreview} disabled={submitting} size="lg" className="w-full">
             {submitting ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <Wand2 className="mr-2 h-4 w-4" />
             )}
-            Build my preview
+            Looks good · Build my preview
           </Button>
           <p className="text-center text-xs text-muted-foreground">
             You'll see a free teaser. Pay {formatPriceLabel(TRIP_PRICE_INR)} only when you want the full plan.
