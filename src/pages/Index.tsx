@@ -10,6 +10,7 @@ import { formatPrice } from "@/lib/listings";
 import { slangOfTheDay } from "@/lib/slang";
 import { TRIP_PRICE_INR } from "@/lib/pricing";
 import { formatPriceLabel } from "@/lib/promo";
+import { HomeLatestPosts } from "@/components/HomeLatestPosts";
 
 const categories = [
   { id: "experiences", label: "Experiences", icon: Compass,   accent: true },
@@ -224,6 +225,9 @@ export default function Index() {
           Snap a photo, set a price, and your listing is live instantly.
         </TrustCard>
       </section>
+
+      {/* ── Latest from Andaman ──────────────────────────────────────────── */}
+      <HomeLatestPosts />
 
       {/* ── About ─────────────────────────────────────────────────────────── */}
       <section className="overflow-hidden rounded-3xl border border-border bg-card shadow-[var(--shadow-card)]">

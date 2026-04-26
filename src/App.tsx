@@ -36,6 +36,10 @@ const Contact = lazy(() => import("./pages/Contact.tsx"));
 const WhatsNew = lazy(() => import("./pages/WhatsNew.tsx"));
 const AdminReleaseNotes = lazy(() => import("./pages/AdminReleaseNotes.tsx"));
 const AdminPriceQA = lazy(() => import("./pages/AdminPriceQA.tsx"));
+const Blog = lazy(() => import("./pages/Blog.tsx"));
+const BlogPost = lazy(() => import("./pages/BlogPost.tsx"));
+const AdminBlog = lazy(() => import("./pages/AdminBlog.tsx"));
+const AdminBlogEditor = lazy(() => import("./pages/AdminBlogEditor.tsx"));
 
 const queryClient = new QueryClient();
 
@@ -80,6 +84,11 @@ const App = () => {
               <Route path="/whats-new" element={<WhatsNew />} />
               <Route path="/admin/release-notes" element={<AdminReleaseNotes />} />
               <Route path="/admin/price-qa" element={<AdminPriceQA />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<BlogPost />} />
+              <Route path="/admin/blog" element={<AdminBlog />} />
+              <Route path="/admin/blog/new" element={<AdminBlogEditor />} />
+              <Route path="/admin/blog/edit/:id" element={<AdminBlogEditor />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Route>

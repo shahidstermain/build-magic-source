@@ -98,6 +98,7 @@ export function Layout() {
             <NavPill to="/trip-planner">
               <Wand2 className="h-3.5 w-3.5" /> AI Planner
             </NavPill>
+            <NavPill to="/blog">📰 Blog</NavPill>
           </div>
 
           {/* Search pill — desktop */}
