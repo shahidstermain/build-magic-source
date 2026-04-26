@@ -24,6 +24,42 @@ const ANDAMAN_KEYWORDS = [
   "great nicobar",
 ];
 
+// Words/phrases we never want in a published article. Keep lowercase.
+const BANNED_TERMS = [
+  // clickbait / tabloid
+  "shocking",
+  "you won't believe",
+  "you wont believe",
+  "mind-blowing",
+  "mind blowing",
+  "jaw-dropping",
+  "click here",
+  "must read",
+  "must-read",
+  "breaking:",
+  "exclusive!!",
+  // unsafe / off-brand
+  "lorem ipsum",
+  "as an ai",
+  "as a language model",
+  "i cannot",
+  "i'm sorry, but",
+  // profanity / slurs (small starter list)
+  "fuck",
+  "shit",
+  "bastard",
+  "bitch",
+];
+
+const MIN_WORDS = 400;
+const MAX_WORDS = 900;
+const MIN_H2 = 2;
+const SEO_TITLE_MAX = 60;
+const META_DESC_MIN = 90;
+const META_DESC_MAX = 160;
+const SLUG_MAX = 75;
+const SIMILARITY_THRESHOLD = 0.55; // jaccard on word shingles
+
 type RawStory = {
   source: string;
   title: string;
@@ -40,6 +76,8 @@ type GeneratedPost = {
   bodyMarkdown: string;
   tags: string[];
 };
+
+type ValidationResult = { ok: true } | { ok: false; reasons: string[] };
 
 // ---------- utils ----------
 
