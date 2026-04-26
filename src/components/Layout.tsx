@@ -83,7 +83,6 @@ export function Layout() {
               alt="AndamanBazaar"
               width={32}
               height={32}
-              fetchPriority="high"
               decoding="async"
               className="h-8 w-8 rounded-lg object-cover"
             />
