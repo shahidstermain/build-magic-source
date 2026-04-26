@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Pencil, Trash2, Eye, Loader2, Sparkles, ExternalLink } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Eye,
+  Loader2,
+  Sparkles,
+  ExternalLink,
+  BookOpen,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -22,6 +31,7 @@ type AgentResult = {
   error?: string;
   gathered?: number;
   ranAt: string;
+  agent?: "news" | "stories";
 };
 
 function AdminBlogInner() {
@@ -29,6 +39,7 @@ function AdminBlogInner() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
+  const [runningStories, setRunningStories] = useState(false);
   const [agentResult, setAgentResult] = useState<AgentResult | null>(null);
 
   const load = async () => {
@@ -57,7 +68,11 @@ function AdminBlogInner() {
         { method: "POST" },
       );
       if (error) throw error;
-      const result: AgentResult = { ...(data ?? {}), ranAt: new Date().toISOString() };
+      const result: AgentResult = {
+        ...(data ?? {}),
+        ranAt: new Date().toISOString(),
+        agent: "news",
+      };
       setAgentResult(result);
       if (result.status === "created") {
         toast({ title: "News post published", description: result.title ?? result.slug });
@@ -73,10 +88,53 @@ function AdminBlogInner() {
       }
     } catch (e) {
       const msg = (e as Error).message;
-      setAgentResult({ status: "error", error: msg, ranAt: new Date().toISOString() });
+      setAgentResult({ status: "error", error: msg, ranAt: new Date().toISOString(), agent: "news" });
       toast({ title: "News agent failed", description: msg, variant: "destructive" });
     } finally {
       setRunning(false);
+    }
+  };
+
+  const runStoriesAgent = async () => {
+    setRunningStories(true);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "admin-trigger-stories-agent",
+        { method: "POST" },
+      );
+      if (error) throw error;
+      const result: AgentResult = {
+        ...(data ?? {}),
+        ranAt: new Date().toISOString(),
+        agent: "stories",
+      };
+      setAgentResult(result);
+      if (result.status === "created") {
+        toast({ title: "Story published", description: result.title ?? result.slug });
+        void load();
+      } else if (result.status === "skipped") {
+        toast({
+          title: "Story not published",
+          description: result.reason ?? "Skipped by validator/moderator.",
+        });
+      } else {
+        toast({
+          title: "Stories agent failed",
+          description: result.error ?? "Unknown error",
+          variant: "destructive",
+        });
+      }
+    } catch (e) {
+      const msg = (e as Error).message;
+      setAgentResult({
+        status: "error",
+        error: msg,
+        ranAt: new Date().toISOString(),
+        agent: "stories",
+      });
+      toast({ title: "Stories agent failed", description: msg, variant: "destructive" });
+    } finally {
+      setRunningStories(false);
     }
   };
 
@@ -109,6 +167,14 @@ function AdminBlogInner() {
             )}
             {running ? "Running…" : "Run news agent"}
           </Button>
+          <Button variant="outline" onClick={runStoriesAgent} disabled={runningStories}>
+            {runningStories ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <BookOpen className="mr-1 h-4 w-4" />
+            )}
+            {runningStories ? "Writing…" : "Run stories agent"}
+          </Button>
           <Button asChild>
             <Link to="/admin/blog/new">
               <Plus className="mr-1 h-4 w-4" /> New post
@@ -130,9 +196,16 @@ function AdminBlogInner() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="space-y-1">
               <p className="font-medium">
-                {agentResult.status === "created" && "Published a fresh story"}
-                {agentResult.status === "skipped" && "No new stories found"}
-                {agentResult.status !== "created" && agentResult.status !== "skipped" && "News agent error"}
+                {agentResult.status === "created" &&
+                  (agentResult.agent === "stories"
+                    ? "Published a fresh story"
+                    : "Published a fresh news post")}
+                {agentResult.status === "skipped" &&
+                  (agentResult.agent === "stories"
+                    ? "No story published this run"
+                    : "No new stories found")}
+                {agentResult.status !== "created" && agentResult.status !== "skipped" &&
+                  (agentResult.agent === "stories" ? "Stories agent error" : "News agent error")}
               </p>
               {agentResult.title && (
                 <p className="text-muted-foreground">{agentResult.title}</p>
