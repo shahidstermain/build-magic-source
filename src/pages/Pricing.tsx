@@ -79,7 +79,7 @@ export default function Pricing() {
       <SeoHead
         title="Pricing — Andaman Bazaar"
         description="Buying & selling on Andaman Bazaar is free. Pay only for optional Listing Boosts and AI Trip Plans. Transparent one-time pricing in INR."
-        canonical="https://andamanbazaar.in/pricing"
+        url="https://andamanbazaar.in/pricing"
       />
       <PricingSection
         title={
