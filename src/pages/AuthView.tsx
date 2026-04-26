@@ -178,6 +178,36 @@ const AuthView = () => {
   const onGoogle = async () => {
     setBusy(true);
     try {
+      // If the user is already authenticated (e.g. via email/password),
+      // link Google as an additional identity to the existing account
+      // instead of starting a fresh sign-in. This keeps the same user_id
+      // across providers so future Google sign-ins resolve to the same account.
+      if (session?.user) {
+        const alreadyLinked = session.user.identities?.some(
+          (i) => i.provider === "google",
+        );
+        if (alreadyLinked) {
+          navigate(next, { replace: true });
+          return;
+        }
+        const { data, error } = await supabase.auth.linkIdentity({
+          provider: "google",
+          options: { redirectTo: window.location.origin },
+        });
+        if (error) throw error;
+        // Supabase returns a URL to redirect the browser to for the OAuth handshake.
+        if (data?.url) {
+          window.location.href = data.url;
+          return;
+        }
+        toast({
+          title: "Google account linked",
+          description: "You can now sign in with Google or email.",
+        });
+        navigate(next, { replace: true });
+        return;
+      }
+
       // Lovable Cloud managed Google OAuth — works on .lovable.app subdomains
       // AND on custom domains (oauth.lovable.app proxy handles the callback).
       const result = await lovable.auth.signInWithOAuth("google", {
