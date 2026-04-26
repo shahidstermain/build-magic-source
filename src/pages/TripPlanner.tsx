@@ -57,6 +57,23 @@ import { TripPlannerLeadForm } from "@/components/TripPlannerLeadForm";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { Hero1, type HeroPrompt } from "@/components/ui/hero-1";
+import { X } from "lucide-react";
+
+function SelectionChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-medium capitalize text-foreground">
+      {label}
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Remove ${label}`}
+        className="grid h-4 w-4 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </span>
+  );
+}
 
 type Stage = "form" | "preview" | "generating" | "ready";
 
@@ -152,6 +169,20 @@ export default function TripPlanner() {
     setErrors({});
     document.getElementById("trip-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  // A prompt counts as "active" when its presets are a subset of the current selection.
+  const activePromptLabels = heroPrompts
+    .filter((p) => {
+      const daysOk = p.days == null || p.days === days;
+      const interestsOk = !p.interests || p.interests.every((i) => interests.includes(i));
+      const islandsOk = !p.islands || p.islands.every((i) => islands.includes(i));
+      return daysOk && interestsOk && islandsOk;
+    })
+    .map((p) => p.label);
+
+  const removeInterest = (i: string) => setInterests((arr) => arr.filter((x) => x !== i));
+  const removeIsland = (i: string) => setIslands((arr) => arr.filter((x) => x !== i));
+  const resetDays = () => onDaysChange(5);
 
   const handleHeroSubmit = (value: string) => {
     if (value) setExtraNotes(value);
@@ -369,6 +400,7 @@ export default function TripPlanner() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       {stage === "form" ? (
+        <>
         <Hero1
           eyebrow={`AI Trip Planner · ${formatPriceLabel(TRIP_PRICE_INR)}`}
           title={
@@ -379,11 +411,41 @@ export default function TripPlanner() {
           subtitle="Ferry-aware, weather-backed, budget-tuned. Built with a local insider mindset — no generic tourist fluff."
           placeholder="e.g. 5 days in Havelock & Neil with scuba and a quiet beach stay…"
           prompts={heroPrompts.map(({ label }) => ({ label }))}
+          activePromptLabels={activePromptLabels}
           ctaLabel="Start"
           onSubmit={handleHeroSubmit}
           onPromptSelect={handlePromptSelect}
           initialValue={extraNotes}
         />
+
+        {(islands.length > 0 || interests.length > 0 || days !== 5) && (
+          <Card className="flex flex-wrap items-center gap-2 p-3">
+            <span className="mr-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Your picks
+            </span>
+            {days !== 5 && (
+              <SelectionChip label={`${days} ${days === 1 ? "day" : "days"}`} onRemove={resetDays} />
+            )}
+            {islands.map((isl) => (
+              <SelectionChip key={`isl-${isl}`} label={isl} onRemove={() => removeIsland(isl)} />
+            ))}
+            {interests.map((i) => (
+              <SelectionChip key={`int-${i}`} label={i} onRemove={() => removeInterest(i)} />
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                setIslands([]);
+                setInterests([]);
+                resetDays();
+              }}
+              className="ml-auto text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              Clear all
+            </button>
+          </Card>
+        )}
+        </>
       ) : (
         <header className="space-y-2">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
