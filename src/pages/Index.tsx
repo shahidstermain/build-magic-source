@@ -12,6 +12,7 @@ import { TRIP_PRICE_INR } from "@/lib/pricing";
 import { formatPriceLabel } from "@/lib/promo";
 import { HomeLatestPosts } from "@/components/HomeLatestPosts";
 import { Hero195 } from "@/components/ui/hero-195";
+import InteractiveSelector from "@/components/ui/interactive-selector";
 
 const categories = [
   { id: "experiences", label: "Experiences", icon: Compass,   accent: true },
@@ -67,6 +68,9 @@ export default function Index() {
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <Hero195 />
+
+      {/* ── Explore the islands ──────────────────────────────────────────── */}
+      <InteractiveSelector />
 
       {/* ── AI Trip Planner banner ────────────────────────────────────────── */}
       <Link
