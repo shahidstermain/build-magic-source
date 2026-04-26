@@ -58,6 +58,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { cn } from "@/lib/utils";
 import { Hero1, type HeroPrompt } from "@/components/ui/hero-1";
 import { X } from "lucide-react";
+import { pickActivityImage, pickDayImage } from "@/lib/activityImages";
+import { Sun, Sunset, Moon } from "lucide-react";
 
 function SelectionChip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
