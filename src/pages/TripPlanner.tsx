@@ -59,6 +59,22 @@ import { cn } from "@/lib/utils";
 import { Hero1, type HeroPrompt } from "@/components/ui/hero-1";
 import { X } from "lucide-react";
 
+function SelectionChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-medium capitalize text-foreground">
+      {label}
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Remove ${label}`}
+        className="grid h-4 w-4 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </span>
+  );
+}
+
 type Stage = "form" | "preview" | "generating" | "ready";
 
 function defaultDates() {
