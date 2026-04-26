@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Anchor,
   Backpack,
@@ -16,8 +17,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { affiliateTrackingUrl, type TripRecommendation } from "@/lib/tripPlanner";
+import {
+  affiliateTrackingUrl,
+  type TripRecommendation,
+} from "@/lib/tripPlanner";
+import { TRIP_PRICE_INR } from "@/lib/pricing";
+import { formatPriceLabel } from "@/lib/promo";
 import { cn } from "@/lib/utils";
+import { BookingLeadDialog } from "@/components/BookingLeadDialog";
 
 const TYPE_META: Record<
   TripRecommendation["item_type"],
@@ -41,6 +48,11 @@ export function RecommendationCard({
   const meta = TYPE_META[rec.item_type] ?? TYPE_META.activity;
   const Icon = meta.icon;
   const trackingHref = affiliateTrackingUrl(rec.id);
+  const [leadOpen, setLeadOpen] = useState(false);
+
+  const openProvider = () => {
+    window.open(trackingHref, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <Card
@@ -95,15 +107,9 @@ export function RecommendationCard({
             </span>
           )}
         </div>
-        <Button asChild size="sm">
-          <a
-            href={trackingHref}
-            target="_blank"
-            rel="sponsored noopener noreferrer"
-          >
-            {rec.cta_label}
-            <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
-          </a>
+        <Button size="sm" onClick={() => setLeadOpen(true)}>
+          {rec.cta_label}
+          <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
         </Button>
       </div>
 
@@ -124,6 +130,14 @@ export function RecommendationCard({
           </Tooltip>
         </TooltipProvider>
       )}
+
+      <BookingLeadDialog
+        open={leadOpen}
+        onOpenChange={setLeadOpen}
+        context="provider_booking"
+        defaults={{ bookingTitle: `${rec.item_name} (${rec.merchant_name})` }}
+        onConfirmed={() => openProvider()}
+      />
     </Card>
   );
 }
@@ -162,7 +176,7 @@ export function RecommendationsSection({
         Some links above are affiliate links. We may earn a small commission if
         you book through them — at no extra cost to you. This helps keep
         AndamanBazaar free.
-        {locked && " Pay ₹49 to unlock the full curated list."}
+        {locked && ` Pay ${formatPriceLabel(TRIP_PRICE_INR)} to unlock the full curated list.`}
       </p>
     </section>
   );

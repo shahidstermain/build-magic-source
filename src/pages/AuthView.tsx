@@ -8,6 +8,45 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2, Anchor, Compass, ShieldCheck, Phone, Info } from "lucide-react";
+import logoUrl from "@/assets/logo.webp";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import TermsOfService from "@/pages/TermsOfService";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import { LEGAL_VERSIONS, recordLegalAcceptanceIfMissing } from "@/lib/legal";
+
+const LegalDialog = ({
+  trigger,
+  title,
+  description,
+  children,
+}: {
+  trigger: React.ReactNode;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) => (
+  <Dialog>
+    <DialogTrigger asChild>{trigger}</DialogTrigger>
+    <DialogContent className="max-w-3xl p-0">
+      <DialogHeader className="border-b border-border px-6 py-4">
+        <DialogTitle>{title}</DialogTitle>
+        <DialogDescription>{description}</DialogDescription>
+      </DialogHeader>
+      <ScrollArea className="max-h-[70vh] px-6">
+        <div className="py-2">{children}</div>
+      </ScrollArea>
+    </DialogContent>
+  </Dialog>
+);
 import { Loader2, MapPin, Anchor, Compass, ShieldCheck } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
 import { usePageSeo } from "@/hooks/usePageSeo";
@@ -17,27 +56,35 @@ type Mode = "signin" | "signup" | "forgot";
 const emailSchema = z.string().trim().email("Enter a valid email").max(255);
 const passwordSchema = z.string().min(8, "At least 8 characters").max(72);
 const nameSchema = z.string().trim().min(2, "Tell us your name").max(80);
+const phoneSchema = z
+  .string()
+  .trim()
+  .regex(/^[+]?[0-9\s-]{7,20}$/, "Enter a valid phone number");
 
 const ISLAND_FACTS = [
   {
+    badge: "01",
+    badgeClass: "bg-warning text-warning-foreground",
+    rotate: "-rotate-1 hover:rotate-0",
     icon: Anchor,
-    heading: "Hyperlocal to A&N",
-    body: "Every listing is tagged to an island — Port Blair, Havelock, Neil, Diglipur and beyond. No mainland middlemen.",
+    heading: "Hyperlocal Commerce",
+    body: "Buy fresh catches from Havelock or sell handicrafts from Port Blair — no mainland middlemen.",
   },
   {
+    badge: "02",
+    badgeClass: "bg-success text-success-foreground",
+    rotate: "rotate-1 hover:rotate-0",
     icon: ShieldCheck,
-    heading: "Island Verified sellers",
-    body: "GPS-checked locals earn a trust badge. You always know you're dealing with a real islander.",
+    heading: "Island Verified Trust",
+    body: "GPS-authenticated sellers verified by locals. Real people, real products, real bharosa.",
   },
   {
+    badge: "03",
+    badgeClass: "bg-accent text-accent-foreground",
+    rotate: "-rotate-1 hover:rotate-0",
     icon: Compass,
-    heading: "AI Trip Planner",
-    body: "Ferry-aware, weather-backed, day-by-day PDF itineraries built with a local insider mindset.",
-  },
-  {
-    icon: MapPin,
-    heading: "Experiences by locals",
-    body: "Scuba diving, sea walks, limestone caves, mangrove tours — booked directly with the people who run them.",
+    heading: "Ferry-Aware Planning",
+    body: "Our AI plans itineraries around real Makruzz & Green Ocean schedules. Never miss a boat.",
   },
 ];
 
@@ -48,6 +95,7 @@ const AuthView = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const { session, loading } = useAuth();
   const navigate = useNavigate();
@@ -62,7 +110,12 @@ const AuthView = () => {
   });
 
   useEffect(() => {
-    if (!loading && session) navigate(next, { replace: true });
+    if (!loading && session) {
+      // Backfill legal acceptance records on the first authenticated visit.
+      // RLS allows users to insert their own rows; duplicate versions are skipped.
+      void recordLegalAcceptanceIfMissing(session.user.id);
+      navigate(next, { replace: true });
+    }
   }, [loading, session, navigate, next]);
 
   const validate = () => {
@@ -75,6 +128,10 @@ const AuthView = () => {
     if (mode !== "forgot") {
       const p = passwordSchema.safeParse(password);
       if (!p.success) return p.error.issues[0].message;
+    }
+    if (mode === "signup" && phone.trim().length > 0) {
+      const ph = phoneSchema.safeParse(phone);
+      if (!ph.success) return ph.error.issues[0].message;
     }
     return null;
   };
@@ -94,7 +151,13 @@ const AuthView = () => {
           password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { name },
+            data: {
+              name,
+              phone: phone.trim() || null,
+              accepted_terms_version: LEGAL_VERSIONS.terms,
+              accepted_privacy_version: LEGAL_VERSIONS.privacy,
+              accepted_at: new Date().toISOString(),
+            },
           },
         });
         if (error) throw error;
@@ -125,28 +188,13 @@ const AuthView = () => {
   const onGoogle = async () => {
     setBusy(true);
     try {
-      // On Lovable Cloud the /~oauth/initiate proxy exists and handles the flow.
-      // Locally that route doesn't exist, so we fall back to Supabase native OAuth.
-      const isLovableCloud = window.location.hostname.endsWith(".lovable.app") ||
-        window.location.hostname.endsWith(".lovableproject.com");
-
-      if (isLovableCloud) {
-        const result = await lovable.auth.signInWithOAuth("google", {
-          redirect_uri: window.location.origin,
-        });
-        if (result.error) throw result.error;
-        if (!result.redirected) navigate(next, { replace: true });
-      } else {
-        // Local dev — use Supabase OAuth directly
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: `${window.location.origin}/auth`,
-          },
-        });
-        if (error) throw error;
-        // Browser will redirect — nothing more to do here
-      }
+      // Lovable Cloud managed Google OAuth — works on .lovable.app subdomains
+      // AND on custom domains (oauth.lovable.app proxy handles the callback).
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) throw result.error;
+      if (!result.redirected) navigate(next, { replace: true });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Google sign-in failed";
       toast({ title: "Google sign-in failed", description: message, variant: "destructive" });
@@ -155,83 +203,105 @@ const AuthView = () => {
   };
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[1fr_480px]">
+    <div className="min-h-screen lg:grid lg:grid-cols-2">
 
-      {/* ── Left panel — brand ─────────────────────────────────────────────── */}
-      <div className="relative hidden overflow-hidden bg-[image:var(--gradient-hero)] lg:flex lg:flex-col lg:justify-between lg:p-12">
-        {/* Decorative blobs */}
-        <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-1/3 right-1/4 h-48 w-48 rounded-full bg-accent/20 blur-2xl" />
+      {/* ── Left panel — brand marketing ───────────────────────────────────── */}
+      <div className="relative hidden overflow-hidden bg-primary p-12 text-primary-foreground lg:flex lg:flex-col lg:justify-between xl:p-16">
+        {/* Decorative coastal blobs */}
+        <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-warning/25 blur-3xl" />
+        <div className="pointer-events-none absolute top-1/2 -left-48 h-[32rem] w-[32rem] rounded-full bg-accent/30 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-72 w-72 rounded-full bg-success/20 blur-3xl" />
 
         {/* Logo */}
         <Link to="/" className="relative z-10 flex items-center gap-3">
-          <img src={logoUrl} alt="AndamanBazaar" className="h-10 w-10 rounded-xl shadow-md" />
-          <span className="text-xl font-semibold tracking-tight text-primary-foreground">
-            Andaman<span className="opacity-80">Bazaar</span>
+          <img src={logoUrl} alt="AndamanBazaar" className="h-12 w-12 rotate-3 rounded-xl bg-background p-1 shadow-elevated" />
+          <span className="text-2xl font-extrabold uppercase tracking-tight">
+            Andaman<span className="opacity-90">Bazaar</span>
           </span>
         </Link>
 
-        {/* Hero copy */}
-        <div className="relative z-10 space-y-6">
-          <div className="space-y-3">
-            <p className="font-mono text-xs uppercase tracking-widest text-primary-foreground/60">
+        {/* Hero copy + feature stack */}
+        <div className="relative z-10 my-8 space-y-10">
+          <div className="space-y-4">
+            <span className="inline-block rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-3 py-1 font-mono text-[10px] uppercase tracking-widest backdrop-blur-sm">
               Andaman & Nicobar Islands
-            </p>
-            <h1 className="font-serif text-4xl leading-tight text-primary-foreground xl:text-5xl">
-              Buy, sell, and discover — across the islands.
+            </span>
+            <h1 className="text-balance text-5xl font-extrabold leading-[0.95] tracking-tight xl:text-6xl">
+              Taming the <span className="text-warning">Tides</span> of Island Trade.
             </h1>
-            <p className="text-base text-primary-foreground/75">
-              The hyperlocal marketplace built on{" "}
-              <span className="italic text-primary-foreground">boat pe bharosa</span>.
+            <p className="max-w-md text-base text-primary-foreground/75">
+              The hyperlocal marketplace + AI trip planner built for the rhythm of the archipelago.
             </p>
           </div>
 
-          {/* Feature pills */}
-          <ul className="space-y-3">
-            {ISLAND_FACTS.map(({ icon: Icon, heading, body }) => (
-              <li key={heading} className="flex items-start gap-3">
-                <span className="mt-0.5 grid h-8 w-8 flex-none place-items-center rounded-lg bg-white/15 text-primary-foreground backdrop-blur-sm">
-                  <Icon className="h-4 w-4" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-primary-foreground">{heading}</p>
-                  <p className="text-xs text-primary-foreground/65">{body}</p>
+          {/* Tilted feature cards */}
+          <ul className="space-y-4">
+            {ISLAND_FACTS.map(({ icon: Icon, heading, body, badge, badgeClass, rotate }) => (
+              <li
+                key={heading}
+                className={`group rounded-2xl border border-primary-foreground/15 bg-primary-foreground/10 p-5 backdrop-blur-md transition-transform duration-300 hover:rotate-0 ${rotate}`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className={`grid h-11 w-11 flex-none place-items-center rounded-full font-bold ${badgeClass}`}>
+                    {badge}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4 opacity-70" />
+                      <h3 className="text-base font-bold">{heading}</h3>
+                    </div>
+                    <p className="mt-1 text-sm text-primary-foreground/75">{body}</p>
+                  </div>
                 </div>
               </li>
             ))}
           </ul>
         </div>
 
-        {/* Bottom tagline */}
-        <p className="relative z-10 font-mono text-xs text-primary-foreground/40">
-          © {new Date().getFullYear()} AndamanBazaar · Port Blair, A&N Islands
-        </p>
+        {/* Trust signal + tagline */}
+        <div className="relative z-10 space-y-5">
+          <div className="inline-block rotate-2 rounded-full bg-warning px-6 py-3 text-xl font-black tracking-tight text-warning-foreground shadow-elevated">
+            Boat pe bharosa.
+          </div>
+          <div className="flex items-center gap-3 text-xs uppercase tracking-wider text-primary-foreground/70">
+            <div className="flex -space-x-2">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-8 w-8 rounded-full border-2 border-primary bg-gradient-to-br from-accent to-warning"
+                />
+              ))}
+            </div>
+            <span className="font-medium">Joined by islanders across A&N this week</span>
+          </div>
+        </div>
       </div>
 
       {/* ── Right panel — form ─────────────────────────────────────────────── */}
-      <div className="flex min-h-screen flex-col justify-center bg-background px-6 py-12 lg:px-10">
+      <div className="relative flex min-h-screen flex-col justify-center bg-background px-6 py-12 lg:px-10">
+        {/* Subtle mobile background tint */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-primary/5 to-transparent lg:hidden" />
 
         {/* Mobile logo */}
-        <Link to="/" className="mb-8 flex items-center gap-2.5 lg:hidden">
-          <img src={logoUrl} alt="AndamanBazaar" className="h-9 w-9 rounded-xl shadow-sm" />
-          <span className="text-lg font-semibold tracking-tight">
+        <Link to="/" className="relative mb-8 flex items-center gap-2.5 lg:hidden">
+          <img src={logoUrl} alt="AndamanBazaar" className="h-10 w-10 rotate-3 rounded-xl bg-card p-1 shadow-card" />
+          <span className="text-lg font-extrabold uppercase tracking-tight">
             Andaman<span className="text-primary">Bazaar</span>
           </span>
         </Link>
 
-        <div className="w-full max-w-sm mx-auto space-y-6">
+        <div className="relative mx-auto w-full max-w-sm space-y-6">
 
           {/* Heading */}
-          <div className="space-y-1">
-            <h2 className="text-2xl font-semibold tracking-tight">
-              {mode === "signup" && "Create your account"}
+          <div className="space-y-1.5">
+            <h2 className="text-3xl font-extrabold tracking-tight">
+              {mode === "signup" && "Join the bazaar"}
               {mode === "signin" && "Welcome back"}
               {mode === "forgot" && "Reset your password"}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {mode === "signup" && "Join the island marketplace — it's free."}
-              {mode === "signin" && "Sign in to keep selling and chatting."}
+              {mode === "signup" && "Create your free account — start selling in minutes."}
+              {mode === "signin" && "Sign in to keep selling, chatting and planning trips."}
               {mode === "forgot" && "We'll email you a link to set a new password."}
             </p>
           </div>
@@ -292,6 +362,36 @@ const AuthView = () => {
               />
             </div>
 
+            {mode === "signup" && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="phone" className="flex items-center gap-1.5">
+                    <Phone className="h-3.5 w-3.5" />
+                    Phone number
+                  </Label>
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Optional
+                  </span>
+                </div>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+91 98765 43210"
+                  autoComplete="tel"
+                  inputMode="tel"
+                />
+                <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 p-2.5 text-[11px] leading-snug text-muted-foreground">
+                  <Info className="mt-0.5 h-3.5 w-3.5 flex-none text-primary" />
+                  <p>
+                    We'll soon require a verified phone number to post listings. Adding it now means
+                    one tap to verify later — your account is created either way.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {mode !== "forgot" && (
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
@@ -319,10 +419,10 @@ const AuthView = () => {
               </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={busy}>
+            <Button type="submit" size="lg" className="w-full font-bold shadow-elevated" disabled={busy}>
               {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {mode === "signup" && "Create account"}
-              {mode === "signin" && "Sign in"}
+              {mode === "signup" && "Create my account"}
+              {mode === "signin" && "Enter the bazaar"}
               {mode === "forgot" && "Send reset link"}
             </Button>
           </form>
@@ -356,12 +456,50 @@ const AuthView = () => {
           </p>
 
           {/* Legal */}
-          <p className="text-center text-xs text-muted-foreground">
-            By continuing you agree to our{" "}
-            <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">Terms</Link>
-            {" "}and{" "}
-            <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">Privacy Policy</Link>.
-          </p>
+          <div className="space-y-2 text-center text-xs text-muted-foreground">
+            <p>By continuing you agree to our</p>
+            <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-center sm:gap-3">
+              <LegalDialog
+                trigger={
+                  <button
+                    type="button"
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:border-primary/40 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:min-h-0 sm:border-0 sm:bg-transparent sm:px-1 sm:py-0 sm:text-xs sm:font-normal sm:text-muted-foreground sm:shadow-none sm:underline sm:underline-offset-2 sm:hover:bg-transparent sm:hover:text-foreground"
+                  >
+                    Terms of Service
+                  </button>
+                }
+                title="Terms of Service"
+                description="Preview of our Terms — opens the full page in a new tab from the link below."
+              >
+                <TermsOfService />
+                <p className="mt-4 text-xs text-muted-foreground">
+                  <Link to="/terms" target="_blank" rel="noopener" className="underline">
+                    Open full page in a new tab ↗
+                  </Link>
+                </p>
+              </LegalDialog>
+              <span className="hidden text-muted-foreground sm:inline">and</span>
+              <LegalDialog
+                trigger={
+                  <button
+                    type="button"
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:border-primary/40 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:min-h-0 sm:border-0 sm:bg-transparent sm:px-1 sm:py-0 sm:text-xs sm:font-normal sm:text-muted-foreground sm:shadow-none sm:underline sm:underline-offset-2 sm:hover:bg-transparent sm:hover:text-foreground"
+                  >
+                    Privacy Policy
+                  </button>
+                }
+                title="Privacy Policy"
+                description="Preview of our Privacy Policy — opens the full page in a new tab from the link below."
+              >
+                <PrivacyPolicy />
+                <p className="mt-4 text-xs text-muted-foreground">
+                  <Link to="/privacy" target="_blank" rel="noopener" className="underline">
+                    Open full page in a new tab ↗
+                  </Link>
+                </p>
+              </LegalDialog>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -30,7 +30,7 @@ export function useReviews(listingId: string) {
   const fetchReviews = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("listing_reviews")
         .select(`id, comment, ratings, helpful_count, is_verified, created_at, user_id`)
         .eq("listing_id", listingId)
@@ -51,7 +51,7 @@ export function useReviews(listingId: string) {
       }
 
       // Fetch user profiles separately
-      const userIds = [...new Set(data?.map(r => r.user_id) || [])];
+      const userIds = [...new Set((data as any[])?.map((r: any) => r.user_id) || [])] as string[];
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
           .from("public_profiles")
@@ -61,7 +61,7 @@ export function useReviews(listingId: string) {
         const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
 
         setReviews(
-          data?.map(r => ({
+          (data as any[])?.map((r: any) => ({
             ...r,
             user_name: profileMap.get(r.user_id)?.name || "Anonymous",
             user_avatar: profileMap.get(r.user_id)?.photo_url,
@@ -81,7 +81,7 @@ export function useReviews(listingId: string) {
 
   const fetchStats = useCallback(async () => {
     try {
-      const { data, error } = await supabase.rpc("calculate_listing_rating", {
+      const { data, error } = await (supabase as any).rpc("calculate_listing_rating", {
         listing_uuid: listingId,
       });
 
@@ -90,7 +90,7 @@ export function useReviews(listingId: string) {
         console.warn("calculate_listing_rating unavailable:", error.message);
         return;
       }
-      if (data && data.length > 0) {
+      if (data && Array.isArray(data) && data.length > 0) {
         setStats({
           average_rating: Number(data[0].average_rating) || 0,
           total_reviews: Number(data[0].total_reviews) || 0,
@@ -126,7 +126,7 @@ export function useReviews(listingId: string) {
 
       setSubmitting(true);
       try {
-        const { error } = await supabase.from("listing_reviews").insert({
+        const { error } = await (supabase as any).from("listing_reviews").insert({
           listing_id: listingId,
           user_id: user.id,
           ratings,

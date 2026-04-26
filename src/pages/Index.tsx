@@ -9,6 +9,11 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/listings";
 import { slangOfTheDay } from "@/lib/slang";
+import { TRIP_PRICE_INR } from "@/lib/pricing";
+import { formatPriceLabel } from "@/lib/promo";
+import { HomeLatestPosts } from "@/components/HomeLatestPosts";
+import { Hero195 } from "@/components/ui/hero-195";
+import InteractiveSelector from "@/components/ui/interactive-selector";
 import { usePageSeo } from "@/hooks/usePageSeo";
 
 const categories = [
@@ -80,6 +85,11 @@ export default function Index() {
   return (
     <div className="space-y-10 py-2">
 
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <Hero195 />
+
+      {/* ── Explore the islands ──────────────────────────────────────────── */}
+      <InteractiveSelector />
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden rounded-[2rem] shadow-[var(--shadow-elevated)]">
         {/* Deep ocean background */}
@@ -174,6 +184,10 @@ export default function Index() {
         <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/15 text-primary shadow-[inset_0_1px_0_hsl(0_0%_100%/0.15)] transition-all group-hover:bg-primary/20 group-hover:scale-105">
           <Wand2 className="h-5 w-5" />
         </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold">
+            AI Trip Planner · {formatPriceLabel(TRIP_PRICE_INR)}
+          </p>
         <div className="relative min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="text-sm font-bold">AI Trip Planner</p>
@@ -246,6 +260,14 @@ export default function Index() {
                         <div className="relative aspect-square w-full overflow-hidden bg-muted">
                           {cover ? (
                             <img
+                              src={cover}
+                              alt={item.title}
+                              width={192}
+                              height={192}
+                              sizes="(min-width: 640px) 192px, 160px"
+                              loading="lazy"
+                              decoding="async"
+                              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                               src={cover} alt={item.title} loading="lazy"
                               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                             />
@@ -302,6 +324,14 @@ export default function Index() {
         </TrustCard>
       </section>
 
+      {/* ── Latest from Andaman ──────────────────────────────────────────── */}
+      <HomeLatestPosts />
+
+      {/* ── About ─────────────────────────────────────────────────────────── */}
+      <section className="overflow-hidden rounded-3xl border border-border bg-card shadow-[var(--shadow-card)]">
+        <div className="grid md:grid-cols-[1.1fr_0.9fr]">
+          <div className="space-y-4 p-6 sm:p-8">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">
       {/* ── ABOUT ────────────────────────────────────────────────────────── */}
       <section className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-[var(--shadow-card)]">
         <div className="grid md:grid-cols-[1.15fr_0.85fr]">

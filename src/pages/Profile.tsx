@@ -1,6 +1,6 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { Camera, Clock, Loader2, ShieldCheck, ShieldQuestion, ShieldX, X } from "lucide-react";
+import { Camera, Clock, Loader2, ShieldAlert, ShieldCheck, ShieldQuestion, ShieldX, X } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ANDAMAN_AREAS } from "@/lib/listings";
+import { GitHubSyncCard } from "@/components/GitHubSyncCard";
+import { LegalAcceptancesCard } from "@/components/LegalAcceptancesCard";
 
 const profileSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(80),
@@ -43,6 +45,7 @@ type ProfileRow = {
   is_location_verified: boolean;
   total_listings: number;
   successful_sales: number;
+  phone_verified_at: string | null;
 };
 
 type VerificationRequest = {
@@ -80,7 +83,7 @@ const Profile = () => {
       const [{ data, error }, { data: vr, error: vrErr }] = await Promise.all([
         supabase
           .from("profiles")
-          .select("id, name, phone, area, city, photo_url, is_location_verified, total_listings, successful_sales")
+          .select("id, name, phone, area, city, photo_url, is_location_verified, total_listings, successful_sales, phone_verified_at")
           .eq("id", user.id)
           .maybeSingle(),
         supabase
@@ -140,7 +143,7 @@ const Profile = () => {
         const path = `verification-docs/${user.id}/verify-${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from("listing-images")
-          .upload(path, verifyDocFile, { contentType: verifyDocFile.type, upsert: false });
+          .upload(path, verifyDocFile, { contentType: verifyDocFile.type, upsert: false, cacheControl: "31536000" });
         if (upErr) throw upErr;
         docUrl = supabase.storage.from("listing-images").getPublicUrl(path).data.publicUrl;
       }
@@ -197,7 +200,7 @@ const Profile = () => {
       const path = `${user.id}/avatar-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("listing-images")
-        .upload(path, file, { contentType: file.type, upsert: false });
+        .upload(path, file, { contentType: file.type, upsert: false, cacheControl: "31536000" });
       if (upErr) throw upErr;
       const url = supabase.storage.from("listing-images").getPublicUrl(path).data.publicUrl;
       const { error: dbErr } = await supabase
@@ -324,6 +327,11 @@ const Profile = () => {
           <p className="text-xs text-muted-foreground">
             Shown only to people you chat with — never public.
           </p>
+          <PhoneVerificationStatus
+            phone={profile?.phone ?? null}
+            verifiedAt={profile?.phone_verified_at ?? null}
+            phoneEdited={(profile?.phone ?? "") !== phone.trim()}
+          />
         </div>
 
         <div className="space-y-2">
@@ -446,6 +454,16 @@ const Profile = () => {
           </div>
         )}
       </div>
+
+      <div className="mt-6">
+        <GitHubSyncCard />
+      </div>
+
+      {user && (
+        <div className="mt-6">
+          <LegalAcceptancesCard userId={user.id} />
+        </div>
+      )}
     </section>
   );
 };
@@ -482,6 +500,51 @@ function VerificationBadge({
     <Badge variant="outline">
       <ShieldQuestion className="mr-1 h-3 w-3" /> Not verified
     </Badge>
+  );
+}
+
+function PhoneVerificationStatus({
+  phone,
+  verifiedAt,
+  phoneEdited,
+}: {
+  phone: string | null;
+  verifiedAt: string | null;
+  phoneEdited: boolean;
+}) {
+  if (!phone) {
+    return (
+      <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 p-2 text-xs text-muted-foreground">
+        <ShieldQuestion className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <span>Add a phone number to enable verification.</span>
+      </div>
+    );
+  }
+  if (verifiedAt && !phoneEdited) {
+    const date = new Date(verifiedAt);
+    const formatted = date.toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    return (
+      <div className="flex items-start gap-2 rounded-lg border border-success/30 bg-success/10 p-2 text-xs">
+        <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success-foreground" />
+        <span className="text-success-foreground">
+          Phone verified on <span className="font-medium">{formatted}</span>.
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-2 text-xs">
+      <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-destructive" />
+      <span className="text-destructive">
+        {phoneEdited && verifiedAt
+          ? "Phone number changed — verification will be required again once enabled."
+          : "Phone not verified yet."}
+      </span>
+    </div>
   );
 }
 

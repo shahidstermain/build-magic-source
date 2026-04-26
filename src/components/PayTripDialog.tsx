@@ -11,11 +11,18 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
-  TRIP_PRICE_INR,
   createTripOrder,
   loadCashfreeSdk,
   verifyTripPayment,
 } from "@/lib/tripPlanner";
+import { TRIP_PRICE_INR } from "@/lib/pricing";
+import {
+  PROMO_CODE,
+  PROMO_DISCOUNT_PCT,
+  effectivePrice,
+  isPromoActive,
+  listPrice,
+} from "@/lib/promo";
 
 type Props = {
   tripId: string | null;
@@ -114,12 +121,34 @@ export function PayTripDialog({ tripId, open, onOpenChange, onPaid }: Props) {
 
         <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 text-center">
           <p className="text-xs uppercase tracking-wider text-muted-foreground">One-time</p>
-          <p className="mt-1 text-3xl font-semibold tracking-tight">
-            ₹{TRIP_PRICE_INR.toLocaleString("en-IN")}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Includes PDF · saved to your account · share anytime
-          </p>
+          {isPromoActive() ? (
+            <>
+              <p className="mt-1 flex items-baseline justify-center gap-2">
+                <span className="text-sm text-muted-foreground line-through">
+                  ₹{listPrice(TRIP_PRICE_INR).toLocaleString("en-IN")}
+                </span>
+                <span className="text-3xl font-semibold tracking-tight">
+                  ₹{effectivePrice(TRIP_PRICE_INR).toLocaleString("en-IN")}
+                </span>
+              </p>
+              <p className="mt-1 text-xs font-medium text-primary">
+                {PROMO_DISCOUNT_PCT}% off auto-applied with{" "}
+                <span className="font-mono">{PROMO_CODE}</span>
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Includes PDF · saved to your account · share anytime
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-1 text-3xl font-semibold tracking-tight">
+                ₹{listPrice(TRIP_PRICE_INR).toLocaleString("en-IN")}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Includes PDF · saved to your account · share anytime
+              </p>
+            </>
+          )}
         </div>
 
         {errorInfo && (

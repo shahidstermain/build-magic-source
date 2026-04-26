@@ -1,4 +1,5 @@
-import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Home, Search, PlusSquare, MessageCircle, User,
   LogOut, LayoutDashboard, Heart, Sparkles, Mail, Wand2, Waves,
@@ -11,7 +12,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NotificationBell } from "@/components/NotificationBell";
-import logoUrl from "@/assets/logo.png";
+import { PromoBanner } from "@/components/PromoBanner";
+import { supabase } from "@/integrations/supabase/client";
+import logoUrl from "@/assets/logo.webp";
 
 const tabs = [
   { to: "/",         label: "Home",    icon: Home,          end: true },
@@ -25,12 +28,65 @@ export function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const hideChrome = ["/auth", "/reset-password"].some((p) => location.pathname.startsWith(p));
+
+  // ── Affiliate UTM return tracking ────────────────────────────────────────
+  // If a shopper returns to the site with `?ab_click=<id>&ab_amount=<inr>&ab_order=<ext>`,
+  // record a soft (pending) conversion and strip those params from the URL.
+  useEffect(() => {
+    const clickId = searchParams.get("ab_click");
+    if (!clickId) return;
+    const amountParam = searchParams.get("ab_amount");
+    const externalOrderId = searchParams.get("ab_order");
+    const amount_inr = amountParam ? Number(amountParam) : null;
+
+    // Dedupe across reloads using sessionStorage
+    const dedupeKey = `ab_utm_${clickId}_${externalOrderId ?? ""}`;
+    if (sessionStorage.getItem(dedupeKey)) {
+      // already recorded — just strip params
+    } else {
+      sessionStorage.setItem(dedupeKey, "1");
+      supabase.functions
+        .invoke("affiliate-utm-return", {
+          body: {
+            click_id: clickId,
+            external_order_id: externalOrderId,
+            amount_inr,
+          },
+        })
+        .catch((err) => console.warn("affiliate-utm-return failed", err));
+    }
+
+    // Strip ab_* params so they don't pollute analytics or sharing
+    const next = new URLSearchParams(searchParams);
+    next.delete("ab_click");
+    next.delete("ab_amount");
+    next.delete("ab_order");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   if (hideChrome) return <Outlet />;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* ── Launch promo banner ───────────────────────────────────────────── */}
+      <PromoBanner />
+
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/90 backdrop-blur-lg">
+        <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
+          {/* Logo */}
+          <Link to="/" className="flex shrink-0 items-center gap-2">
+            <img
+              src={logoUrl}
+              alt="AndamanBazaar"
+              width={32}
+              height={32}
+              decoding="async"
+              className="h-8 w-8 rounded-lg object-cover"
+            />
+            <span className="hidden text-base font-semibold tracking-tight sm:block">
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 border-b border-border/50 bg-background/85 backdrop-blur-xl">
@@ -58,6 +114,10 @@ export function Layout() {
             </HeaderNavLink>
             <HeaderNavLink to="/trip-planner">
               <Wand2 className="h-3.5 w-3.5" /> AI Planner
+            </NavPill>
+            <NavPill to="/blog">📰 Blog</NavPill>
+            <NavPill to="/pricing">💎 Pricing</NavPill>
+          </div>
             </HeaderNavLink>
           </nav>
 

@@ -4,6 +4,8 @@ import { CheckCircle2, Clock, Loader2, Rocket, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { BOOST_PRICE_INR } from "@/lib/pricing";
+import { formatPriceLabel } from "@/lib/promo";
 
 type PaymentRow = {
   id: string;
@@ -100,7 +102,7 @@ export function PaymentHistory({ userId }: { userId: string }) {
       <div className="rounded-2xl border border-dashed border-border p-10 text-center">
         <p className="font-medium">No payments yet</p>
         <p className="mt-2 text-sm text-muted-foreground">
-          Boost a listing for ₹99 to give it priority placement.
+          Boost a listing for {formatPriceLabel(BOOST_PRICE_INR)} to give it priority placement.
         </p>
       </div>
     );

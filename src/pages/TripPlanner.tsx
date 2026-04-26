@@ -14,6 +14,7 @@ import {
   Wand2,
   Edit3,
   Users,
+  Phone,
 } from "lucide-react";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { Button } from "@/components/ui/button";
@@ -23,13 +24,22 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import {
   BUDGET_OPTIONS,
-  INTEREST_OPTIONS,
+  EXPANDED_INTEREST_OPTIONS,
+  FITNESS_OPTIONS,
+  GROUP_OPTIONS,
+  ACCOMMODATION_OPTIONS,
+  DIET_OPTIONS,
   ISLAND_OPTIONS,
-  TRIP_PRICE_INR,
   type TripInputs,
   type TripPreview,
   type TripRecommendation,
@@ -38,11 +48,35 @@ import {
   getTripDownloadUrl,
   regenerateTrip,
 } from "@/lib/tripPlanner";
+import { TRIP_PRICE_INR } from "@/lib/pricing";
+import { formatPriceLabel } from "@/lib/promo";
 import { saveCollaborativeTrip } from "@/lib/collaborativeTrips";
 import { PayTripDialog } from "@/components/PayTripDialog";
 import { RecommendationsSection } from "@/components/RecommendationCard";
-import { WhatsAppShare } from "@/components/WhatsAppShare";
+import { WhatsAppShare, WhatsAppBookingConfirm } from "@/components/WhatsAppShare";
+import { TripPlannerLeadForm } from "@/components/TripPlannerLeadForm";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { Hero1, type HeroPrompt } from "@/components/ui/hero-1";
+import { X } from "lucide-react";
+import { pickActivityImage, pickDayImage } from "@/lib/activityImages";
+import { Sun, Sunset, Moon } from "lucide-react";
+
+function SelectionChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-medium capitalize text-foreground">
+      {label}
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Remove ${label}`}
+        className="grid h-4 w-4 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-destructive"
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </span>
+  );
+}
 
 type Stage = "form" | "preview" | "generating" | "ready";
 
@@ -89,6 +123,24 @@ export default function TripPlanner() {
   const [interests, setInterests] = useState<string[]>(["relaxation", "snorkeling"]);
   const [islands, setIslands] = useState<string[]>([]);
 
+  // Richer profile context (Upgrade 1)
+  const [travelers, setTravelers] = useState<number>(2);
+  const [groupType, setGroupType] = useState<TripInputs["group_type"]>("couple");
+  const [ages, setAges] = useState("");
+  const [fitness, setFitness] = useState<TripInputs["fitness"]>("medium");
+  const [accommodation, setAccommodation] = useState<TripInputs["accommodation"]>("midrange");
+  const [diet, setDiet] = useState<TripInputs["diet"]>("non-vegetarian");
+  const [avoid, setAvoid] = useState<string[]>([]);
+  const [permitsArranged, setPermitsArranged] = useState(false);
+  const [returningVisitor, setReturningVisitor] = useState(false);
+  const [isForeign, setIsForeign] = useState(false);
+  const [extraNotes, setExtraNotes] = useState("");
+
+  // Collapsible section open state
+  const [openProfile, setOpenProfile] = useState(false);
+  const [openPreferences, setOpenPreferences] = useState(false);
+  const [openLogistics, setOpenLogistics] = useState(false);
+
   // Keep days in sync with date range
   const syncDaysFromDates = (start: string, end: string) => {
     if (start && end) {
@@ -119,6 +171,48 @@ export default function TripPlanner() {
 
   const [stage, setStage] = useState<Stage>("form");
   const [submitting, setSubmitting] = useState(false);
+
+  type FormErrors = Partial<Record<"days" | "dates" | "interests" | "islands", string>>;
+  const [errors, setErrors] = useState<FormErrors>({});
+  const clearError = (key: keyof FormErrors) =>
+    setErrors((e) => (e[key] ? { ...e, [key]: undefined } : e));
+
+  const heroPrompts: (HeroPrompt & { days?: number; interests?: string[]; islands?: string[] })[] = [
+    { label: "5 days · Havelock + Neil", days: 5, islands: ["havelock", "neil"], interests: ["beach", "snorkeling", "relaxation"] },
+    { label: "Scuba-focused weekend", days: 3, islands: ["havelock"], interests: ["scuba", "beach"] },
+    { label: "7 days family with kids", days: 7, interests: ["beach", "sightseeing", "relaxation"] },
+    { label: "Honeymoon · 6 days", days: 6, islands: ["havelock", "neil"], interests: ["relaxation", "beach", "sunset"] },
+    { label: "Adventure: trekking + caves", days: 6, islands: ["diglipur", "baratang"], interests: ["trekking", "adventure"] },
+  ];
+
+  const handlePromptSelect = (p: HeroPrompt) => {
+    const meta = heroPrompts.find((x) => x.label === p.label);
+    if (!meta) return;
+    if (meta.days) onDaysChange(meta.days);
+    if (meta.interests) setInterests(meta.interests);
+    if (meta.islands) setIslands(meta.islands);
+    setErrors({});
+    document.getElementById("trip-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  // A prompt counts as "active" when its presets are a subset of the current selection.
+  const activePromptLabels = heroPrompts
+    .filter((p) => {
+      const daysOk = p.days == null || p.days === days;
+      const interestsOk = !p.interests || p.interests.every((i) => interests.includes(i));
+      const islandsOk = !p.islands || p.islands.every((i) => islands.includes(i));
+      return daysOk && interestsOk && islandsOk;
+    })
+    .map((p) => p.label);
+
+  const removeInterest = (i: string) => setInterests((arr) => arr.filter((x) => x !== i));
+  const removeIsland = (i: string) => setIslands((arr) => arr.filter((x) => x !== i));
+  const resetDays = () => onDaysChange(5);
+
+  const handleHeroSubmit = (value: string) => {
+    if (value) setExtraNotes(value);
+    document.getElementById("trip-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
   const [tripId, setTripId] = useState<string | null>(null);
   const [preview, setPreview] = useState<TripPreview | null>(null);
   const [payOpen, setPayOpen] = useState(false);
@@ -126,6 +220,7 @@ export default function TripPlanner() {
   const [genError, setGenError] = useState<string | null>(null);
   const [teaserRecs, setTeaserRecs] = useState<TripRecommendation[]>([]);
   const [fullRecs, setFullRecs] = useState<TripRecommendation[]>([]);
+  const [leadOpen, setLeadOpen] = useState(false);
   
   // Enhanced features
   const [isEditing, setIsEditing] = useState(false);
@@ -141,18 +236,32 @@ export default function TripPlanner() {
     arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
 
   const onPreview = async () => {
-    if (!startDate || !endDate || days < 1) {
-      toast({ title: "Please fill all fields", variant: "destructive" });
+    const next: FormErrors = {};
+    if (!days || days < 1) next.days = "Choose at least 1 day.";
+    else if (days > 14) next.days = "Trips can be up to 14 days.";
+    if (!startDate || !endDate) next.dates = "Pick both a start and end date.";
+    else if (new Date(endDate) <= new Date(startDate))
+      next.dates = "End date must be after start date.";
+    if (interests.length === 0) next.interests = "Pick at least one interest.";
+    if (islands.length === 0) next.islands = "Pick at least one island to visit.";
+
+    if (Object.keys(next).length > 0) {
+      setErrors(next);
+      toast({
+        title: "A few things to fix",
+        description: "Please complete the highlighted fields below.",
+        variant: "destructive",
+      });
+      const firstKey = (["days", "dates", "interests", "islands"] as const).find((k) => next[k]);
+      const targetId = firstKey === "dates" ? "start" : firstKey;
+      if (targetId) {
+        const el = document.getElementById(targetId);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (el instanceof HTMLInputElement) el.focus({ preventScroll: true });
+      }
       return;
     }
-    if (new Date(endDate) <= new Date(startDate)) {
-      toast({ title: "End date must be after start date", variant: "destructive" });
-      return;
-    }
-    if (interests.length === 0) {
-      toast({ title: "Pick at least one interest", variant: "destructive" });
-      return;
-    }
+    setErrors({});
     setSubmitting(true);
     try {
       const inputs: TripInputs = {
@@ -162,6 +271,17 @@ export default function TripPlanner() {
         end_date: endDate,
         interests,
         islands,
+        travelers,
+        group_type: groupType,
+        ages: ages.trim() || undefined,
+        fitness,
+        accommodation,
+        diet,
+        avoid,
+        permits_arranged: permitsArranged,
+        returning_visitor: returningVisitor,
+        is_foreign_national: isForeign,
+        notes: extraNotes.trim() || undefined,
       };
       const result = await createTripPreview(inputs);
       setTripId(result.trip_id);
@@ -281,6 +401,19 @@ export default function TripPlanner() {
     setCollaborators(collaborators.filter(c => c !== email));
   };
 
+  const formatDateLabel = (iso: string) => {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  };
+  const budgetLabel = BUDGET_OPTIONS.find((b) => b.id === budget)?.label ?? budget;
+  const accommodationLabel =
+    ACCOMMODATION_OPTIONS.find((a) => a.id === accommodation)?.label ?? accommodation;
+  const dietLabel = DIET_OPTIONS.find((d) => d.id === diet)?.label ?? diet;
+  const fitnessLabel = FITNESS_OPTIONS.find((f) => f.id === fitness)?.label ?? fitness;
+  const groupLabel = GROUP_OPTIONS.find((g) => g.id === groupType)?.label ?? groupType;
+
   if (authLoading || !user) {
     return (
       <div className="grid place-items-center py-24 text-muted-foreground">
@@ -291,21 +424,66 @@ export default function TripPlanner() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <header className="space-y-2">
-        <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-          <Sparkles className="h-3.5 w-3.5" /> AI Trip Planner
-        </div>
-        <h1 className="text-3xl font-semibold tracking-tight">
-          Plan your Andaman trip in 60 seconds
-        </h1>
-        <p className="text-muted-foreground">
-          Ferry-aware, weather-backed, budget-tuned. Built with a local insider mindset — no
-          generic tourist fluff. Premium PDF for ₹{TRIP_PRICE_INR}.
-        </p>
-      </header>
+      {stage === "form" ? (
+        <>
+        <Hero1
+          eyebrow={`AI Trip Planner · ${formatPriceLabel(TRIP_PRICE_INR)}`}
+          title={
+            <>
+              Plan your <span className="text-primary">Andaman trip</span> in 60 seconds.
+            </>
+          }
+          subtitle="Ferry-aware, weather-backed, budget-tuned. Built with a local insider mindset — no generic tourist fluff."
+          placeholder="e.g. 5 days in Havelock & Neil with scuba and a quiet beach stay…"
+          prompts={heroPrompts.map(({ label }) => ({ label }))}
+          activePromptLabels={activePromptLabels}
+          ctaLabel="Start"
+          onSubmit={handleHeroSubmit}
+          onPromptSelect={handlePromptSelect}
+          initialValue={extraNotes}
+        />
+
+        {(islands.length > 0 || interests.length > 0 || days !== 5) && (
+          <Card className="flex flex-wrap items-center gap-2 p-3">
+            <span className="mr-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Your picks
+            </span>
+            {days !== 5 && (
+              <SelectionChip label={`${days} ${days === 1 ? "day" : "days"}`} onRemove={resetDays} />
+            )}
+            {islands.map((isl) => (
+              <SelectionChip key={`isl-${isl}`} label={isl} onRemove={() => removeIsland(isl)} />
+            ))}
+            {interests.map((i) => (
+              <SelectionChip key={`int-${i}`} label={i} onRemove={() => removeInterest(i)} />
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                setIslands([]);
+                setInterests([]);
+                resetDays();
+              }}
+              className="ml-auto text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              Clear all
+            </button>
+          </Card>
+        )}
+        </>
+      ) : (
+        <header className="space-y-2">
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+            <Sparkles className="h-3.5 w-3.5" /> AI Trip Planner
+          </div>
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Plan your Andaman trip in 60 seconds
+          </h1>
+        </header>
+      )}
 
       {stage === "form" && (
-        <Card className="space-y-6 p-6">
+        <Card id="trip-form" className="space-y-6 p-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="days">Number of days</Label>
@@ -315,8 +493,19 @@ export default function TripPlanner() {
                 min={1}
                 max={14}
                 value={days}
-                onChange={(e) => onDaysChange(Number(e.target.value))}
+                onChange={(e) => {
+                  onDaysChange(Number(e.target.value));
+                  clearError("days");
+                }}
+                aria-invalid={!!errors.days}
+                aria-describedby={errors.days ? "days-error" : undefined}
+                className={cn(errors.days && "border-destructive focus-visible:ring-destructive")}
               />
+              {errors.days && (
+                <p id="days-error" className="text-xs text-destructive">
+                  {errors.days}
+                </p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>Budget</Label>
@@ -345,7 +534,12 @@ export default function TripPlanner() {
                 id="start"
                 type="date"
                 value={startDate}
-                onChange={(e) => onStartDateChange(e.target.value)}
+                onChange={(e) => {
+                  onStartDateChange(e.target.value);
+                  clearError("dates");
+                }}
+                aria-invalid={!!errors.dates}
+                className={cn(errors.dates && "border-destructive focus-visible:ring-destructive")}
               />
             </div>
             <div className="space-y-1.5">
@@ -355,21 +549,37 @@ export default function TripPlanner() {
                 type="date"
                 value={endDate}
                 min={startDate}
-                onChange={(e) => onEndDateChange(e.target.value)}
+                onChange={(e) => {
+                  onEndDateChange(e.target.value);
+                  clearError("dates");
+                }}
+                aria-invalid={!!errors.dates}
+                className={cn(errors.dates && "border-destructive focus-visible:ring-destructive")}
               />
+              {errors.dates && (
+                <p className="col-span-full text-xs text-destructive">{errors.dates}</p>
+              )}
             </div>
           </div>
 
           <div className="space-y-2">
             <Label>Interests</Label>
-            <div className="flex flex-wrap gap-2">
-              {INTEREST_OPTIONS.map((i) => {
+            <div
+              className={cn(
+                "flex flex-wrap gap-2 rounded-md",
+                errors.interests && "p-2 ring-1 ring-destructive",
+              )}
+            >
+              {EXPANDED_INTEREST_OPTIONS.map((i) => {
                 const active = interests.includes(i);
                 return (
                   <button
                     key={i}
                     type="button"
-                    onClick={() => setInterests((arr) => toggle(arr, i))}
+                    onClick={() => {
+                      setInterests((arr) => toggle(arr, i));
+                      clearError("interests");
+                    }}
                     className={cn(
                       "rounded-full border px-3 py-1 text-xs capitalize transition-colors",
                       active
@@ -382,22 +592,239 @@ export default function TripPlanner() {
                 );
               })}
             </div>
+            {errors.interests && (
+              <p className="text-xs text-destructive">{errors.interests}</p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label>Preferred islands (optional)</Label>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <Label>Preferred islands</Label>
+            <div
+              className={cn(
+                "grid gap-2 rounded-md sm:grid-cols-2",
+                errors.islands && "p-2 ring-1 ring-destructive",
+              )}
+            >
               {ISLAND_OPTIONS.map((isl) => (
                 <label key={isl} className="flex items-center gap-2 text-sm">
                   <Checkbox
                     checked={islands.includes(isl)}
-                    onCheckedChange={() => setIslands((arr) => toggle(arr, isl))}
+                    onCheckedChange={() => {
+                      setIslands((arr) => toggle(arr, isl));
+                      clearError("islands");
+                    }}
                   />
                   <span>{isl}</span>
                 </label>
               ))}
             </div>
+            {errors.islands && (
+              <p className="text-xs text-destructive">{errors.islands}</p>
+            )}
           </div>
+
+          {/* ========= Who's travelling ========= */}
+          <Collapsible open={openProfile} onOpenChange={setOpenProfile} className="border-t pt-4">
+            <CollapsibleTrigger className="flex w-full items-center justify-between text-left">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <Label className="cursor-pointer">Who's travelling</Label>
+                <span className="text-xs text-muted-foreground">(personalises the plan)</span>
+              </div>
+              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", openProfile && "rotate-180")} />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 pt-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="travelers">Number of travellers</Label>
+                  <Input
+                    id="travelers"
+                    type="number"
+                    min={1}
+                    max={30}
+                    value={travelers}
+                    onChange={(e) => setTravelers(Math.max(1, Number(e.target.value) || 1))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Group type</Label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {GROUP_OPTIONS.map((g) => (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => setGroupType(g.id)}
+                        className={cn(
+                          "rounded-lg border px-2 py-2 text-xs transition-colors",
+                          groupType === g.id
+                            ? "border-primary bg-primary/5 text-primary"
+                            : "border-border hover:bg-muted",
+                        )}
+                      >
+                        {g.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ages">Ages in group (optional)</Label>
+                <Input
+                  id="ages"
+                  value={ages}
+                  onChange={(e) => setAges(e.target.value)}
+                  placeholder="e.g. 32, 30, child 6, infant 1"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Helps avoid impossible activities (e.g. scuba with infants).
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Fitness level</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {FITNESS_OPTIONS.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setFitness(f.id)}
+                      className={cn(
+                        "rounded-lg border px-2 py-2 text-left text-xs transition-colors",
+                        fitness === f.id
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border hover:bg-muted",
+                      )}
+                    >
+                      <div className="font-medium">{f.label}</div>
+                      <div className="text-[10px] text-muted-foreground">{f.hint}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* ========= Stay & food ========= */}
+          <Collapsible open={openPreferences} onOpenChange={setOpenPreferences} className="border-t pt-4">
+            <CollapsibleTrigger className="flex w-full items-center justify-between text-left">
+              <div className="flex items-center gap-2">
+                <Wallet className="h-4 w-4 text-muted-foreground" />
+                <Label className="cursor-pointer">Stay & food preferences</Label>
+              </div>
+              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", openPreferences && "rotate-180")} />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 pt-4">
+              <div className="space-y-1.5">
+                <Label>Accommodation</Label>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {ACCOMMODATION_OPTIONS.map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => setAccommodation(a.id)}
+                      className={cn(
+                        "rounded-lg border px-2 py-2 text-xs transition-colors",
+                        accommodation === a.id
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border hover:bg-muted",
+                      )}
+                    >
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Diet</Label>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {DIET_OPTIONS.map((d) => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => setDiet(d.id)}
+                      className={cn(
+                        "rounded-lg border px-2 py-2 text-xs transition-colors",
+                        diet === d.id
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border hover:bg-muted",
+                      )}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* ========= Logistics ========= */}
+          <Collapsible open={openLogistics} onOpenChange={setOpenLogistics} className="border-t pt-4">
+            <CollapsibleTrigger className="flex w-full items-center justify-between text-left">
+              <div className="flex items-center gap-2">
+                <Compass className="h-4 w-4 text-muted-foreground" />
+                <Label className="cursor-pointer">Logistics & avoid list</Label>
+              </div>
+              <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", openLogistics && "rotate-180")} />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label>Islands or activities to avoid (optional)</Label>
+                <div className="flex flex-wrap gap-2">
+                  {[...ISLAND_OPTIONS, "scuba", "treks", "long ferry rides"].map((item) => {
+                    const active = avoid.includes(item);
+                    return (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setAvoid((arr) => toggle(arr, item))}
+                        className={cn(
+                          "rounded-full border px-3 py-1 text-xs transition-colors",
+                          active
+                            ? "border-destructive bg-destructive/10 text-destructive"
+                            : "border-border hover:bg-muted",
+                        )}
+                      >
+                        {item}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <label className="flex items-start gap-2 text-sm">
+                  <Checkbox
+                    checked={permitsArranged}
+                    onCheckedChange={(v) => setPermitsArranged(v === true)}
+                  />
+                  <span>Permits already arranged</span>
+                </label>
+                <label className="flex items-start gap-2 text-sm">
+                  <Checkbox
+                    checked={returningVisitor}
+                    onCheckedChange={(v) => setReturningVisitor(v === true)}
+                  />
+                  <span>Been to Andaman before</span>
+                </label>
+                <label className="flex items-start gap-2 text-sm">
+                  <Checkbox
+                    checked={isForeign}
+                    onCheckedChange={(v) => setIsForeign(v === true)}
+                  />
+                  <span>Foreign national</span>
+                </label>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="extraNotes">Anything else? (optional)</Label>
+                <Textarea
+                  id="extraNotes"
+                  value={extraNotes}
+                  onChange={(e) => setExtraNotes(e.target.value)}
+                  rows={2}
+                  maxLength={500}
+                  placeholder="Allergies, must-do bucket list, anniversaries…"
+                />
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* Collaborative Planning Section */}
           <div className="space-y-3 border-t pt-4">
@@ -447,16 +874,102 @@ export default function TripPlanner() {
             </div>
           </div>
 
+          {/* Confirm-your-inputs recap */}
+          <Card className="space-y-3 border-dashed bg-muted/30 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <Sparkles className="h-3.5 w-3.5 text-primary" /> Confirm your trip inputs
+              </div>
+              <span className="text-xs text-muted-foreground">Review before we build the preview</span>
+            </div>
+            <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Trip length</dt>
+                <dd className="text-right font-medium">{days} {days === 1 ? "day" : "days"}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Budget</dt>
+                <dd className="text-right font-medium capitalize">{budgetLabel}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Dates</dt>
+                <dd className="text-right font-medium">
+                  {formatDateLabel(startDate)} → {formatDateLabel(endDate)}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Travellers</dt>
+                <dd className="text-right font-medium">
+                  {travelers} · <span className="capitalize">{groupLabel}</span>
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3 sm:col-span-2">
+                <dt className="shrink-0 text-muted-foreground">Islands</dt>
+                <dd className="text-right font-medium">
+                  {islands.length > 0 ? islands.join(", ") : (
+                    <span className="text-destructive">None selected</span>
+                  )}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3 sm:col-span-2">
+                <dt className="shrink-0 text-muted-foreground">Interests</dt>
+                <dd className="text-right font-medium capitalize">
+                  {interests.length > 0 ? interests.join(", ") : (
+                    <span className="text-destructive">None selected</span>
+                  )}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Stay</dt>
+                <dd className="text-right font-medium">{accommodationLabel}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Diet</dt>
+                <dd className="text-right font-medium capitalize">{dietLabel}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-muted-foreground">Fitness</dt>
+                <dd className="text-right font-medium capitalize">{fitnessLabel}</dd>
+              </div>
+              {avoid.length > 0 && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted-foreground">Avoid</dt>
+                  <dd className="text-right font-medium capitalize">{avoid.join(", ")}</dd>
+                </div>
+              )}
+              {(permitsArranged || returningVisitor || isForeign) && (
+                <div className="flex justify-between gap-3 sm:col-span-2">
+                  <dt className="text-muted-foreground">Notes</dt>
+                  <dd className="text-right font-medium">
+                    {[
+                      permitsArranged && "Permits arranged",
+                      returningVisitor && "Repeat visitor",
+                      isForeign && "Foreign national",
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </dd>
+                </div>
+              )}
+              {extraNotes.trim() && (
+                <div className="flex flex-col gap-1 sm:col-span-2">
+                  <dt className="text-muted-foreground">Extra notes</dt>
+                  <dd className="rounded-md bg-background p-2 text-xs">{extraNotes.trim()}</dd>
+                </div>
+              )}
+            </dl>
+          </Card>
+
           <Button onClick={onPreview} disabled={submitting} size="lg" className="w-full">
             {submitting ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <Wand2 className="mr-2 h-4 w-4" />
             )}
-            Build my preview
+            Looks good · Build my preview
           </Button>
           <p className="text-center text-xs text-muted-foreground">
-            You'll see a free teaser. Pay ₹{TRIP_PRICE_INR} only when you want the full plan.
+            You'll see a free teaser. Pay {formatPriceLabel(TRIP_PRICE_INR)} only when you want the full plan.
           </p>
         </Card>
       )}
@@ -498,21 +1011,110 @@ export default function TripPlanner() {
               </>
             )}
 
-            <div className="rounded-xl border border-border bg-muted/30 p-4">
-              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                <CalendarDays className="h-3.5 w-3.5" /> Day 1 — Morning
+            {/* Photo-rich Day 1 card (Thrillophilia-style) */}
+            <div className="overflow-hidden rounded-xl border border-border bg-card">
+              <div
+                className="relative h-40 w-full bg-cover bg-center sm:h-52"
+                style={{
+                  backgroundImage: `url(${pickDayImage([...interests, ...islands.map((i) => i.toLowerCase())], 0)})`,
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
+                <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-medium uppercase tracking-wider text-white/90 drop-shadow">
+                      Day 1
+                    </div>
+                    <div className="text-lg font-semibold text-white drop-shadow">
+                      {islands[0] || "Andaman"} · arrival
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="bg-background/90 text-foreground">
+                    {interests.slice(0, 2).join(" · ") || "explore"}
+                  </Badge>
+                </div>
               </div>
-              {isEditing ? (
-                <Textarea
-                  value={preview.day1_morning}
-                  onChange={(e) => setPreview({...preview, day1_morning: e.target.value})}
-                  className="mt-1"
-                  rows={2}
-                />
-              ) : (
-                <p className="mt-1 text-sm">{preview.day1_morning}</p>
-              )}
+              <div className="space-y-3 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                    <Sun className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Morning
+                    </div>
+                    {isEditing ? (
+                      <Textarea
+                        value={preview.day1_morning}
+                        onChange={(e) => setPreview({ ...preview, day1_morning: e.target.value })}
+                        className="mt-1"
+                        rows={2}
+                      />
+                    ) : (
+                      <p className="mt-0.5 text-sm">{preview.day1_morning}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 opacity-60">
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
+                    <Sunset className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Afternoon
+                    </div>
+                    <p className="mt-0.5 text-sm text-muted-foreground italic">Unlock to see the full afternoon plan…</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 opacity-60">
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
+                    <Moon className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Evening
+                    </div>
+                    <p className="mt-0.5 text-sm text-muted-foreground italic">Sunset spot + dinner pick included after unlock.</p>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            {/* Day-by-day photo strip preview (Days 2..N) */}
+            {days > 1 && (
+              <div>
+                <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  <CalendarDays className="h-3.5 w-3.5" /> Sneak peek · Days 2–{days}
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {Array.from({ length: Math.min(days - 1, 6) }).map((_, idx) => {
+                    const dayNum = idx + 2;
+                    const tags = [...interests, ...islands.map((i) => i.toLowerCase())];
+                    return (
+                      <div
+                        key={dayNum}
+                        className="relative h-24 w-36 shrink-0 overflow-hidden rounded-lg border border-border bg-cover bg-center"
+                        style={{ backgroundImage: `url(${pickDayImage(tags, dayNum)})` }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/85 to-transparent" />
+                        <div className="absolute bottom-1.5 left-2 text-xs font-semibold text-white drop-shadow">
+                          Day {dayNum}
+                        </div>
+                        <div className="absolute right-1.5 top-1.5">
+                          <Lock className="h-3 w-3 text-white/90 drop-shadow" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {preview.season_warning && (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                ⚠️ {preview.season_warning}
+              </div>
+            )}
 
             <div className="grid gap-2 sm:grid-cols-3">
               {preview.highlights.map((h, i) => (
@@ -559,7 +1161,7 @@ export default function TripPlanner() {
               </div>
               <p className="font-medium">Unlock full plan</p>
               <Button size="lg" onClick={() => setPayOpen(true)}>
-                <Sparkles className="mr-2 h-4 w-4" /> Pay ₹{TRIP_PRICE_INR} & generate PDF
+                <Sparkles className="mr-2 h-4 w-4" /> Pay {formatPriceLabel(TRIP_PRICE_INR)} & generate PDF
               </Button>
               <Button variant="ghost" size="sm" onClick={() => setStage("form")}>
                 Edit inputs
@@ -632,6 +1234,22 @@ export default function TripPlanner() {
               tripId={tripId || undefined}
             />
           </div>
+          {preview && (
+            <div className="flex justify-center pt-1">
+              <WhatsAppBookingConfirm
+                title={preview.trip_title}
+                startDate={startDate}
+                endDate={endDate}
+                travelers={travelers}
+                islands={islands}
+                highlights={preview.highlights}
+                totalInr={preview.estimated_total_inr}
+                url={downloadUrl}
+                tripId={tripId || undefined}
+                size="lg"
+              />
+            </div>
+          )}
           <div className="flex justify-center gap-3 pt-2 text-sm">
             <Link to="/my-trips" className="text-primary hover:underline">
               <MapPin className="mr-1 inline h-3.5 w-3.5" /> My trips
@@ -661,6 +1279,37 @@ export default function TripPlanner() {
         />
       )}
 
+      {stage === "ready" && (
+        <section className="pt-2">
+          <TripPlannerLeadForm />
+        </section>
+      )}
+
+      {stage === "form" && (
+        <section className="pt-2">
+          <Card className="rounded-xl border bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-5 shadow-sm">
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <span className="text-3xl" aria-hidden>🚢</span>
+                <div>
+                  <h3 className="text-base font-semibold sm:text-lg">
+                    Want a custom plan built just for you?
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Skip the form — talk to a real Andaman expert and get a tailored plan over a quick call.
+                  </p>
+                </div>
+              </div>
+              <Button onClick={() => setLeadOpen(true)} size="lg" className="w-full shrink-0 sm:w-auto">
+                <Phone className="mr-2 h-4 w-4" /> Request a Callback
+              </Button>
+            </div>
+          </Card>
+        </section>
+      )}
+
+      <LeadCallbackSheet open={leadOpen} onOpenChange={setLeadOpen} />
+
       <PayTripDialog
         tripId={tripId}
         open={payOpen}
@@ -668,5 +1317,29 @@ export default function TripPlanner() {
         onPaid={onPaid}
       />
     </div>
+  );
+}
+
+function LeadCallbackSheet({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="bottom"
+        className="max-h-[92vh] overflow-y-auto rounded-t-2xl p-0 sm:max-w-2xl sm:mx-auto"
+      >
+        <SheetHeader className="sr-only">
+          <SheetTitle>Talk to an Andaman Travel Expert</SheetTitle>
+        </SheetHeader>
+        <div className="p-4 sm:p-6">
+          <TripPlannerLeadForm className="border-0 shadow-none" />
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

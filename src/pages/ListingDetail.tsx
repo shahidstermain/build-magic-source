@@ -12,7 +12,10 @@ import { getOrCreateChat } from "@/lib/chats";
 import { ReportListingDialog } from "@/components/ReportListingDialog";
 import { TrustBadge } from "@/components/TrustBadge";
 import { BoostListingDialog } from "@/components/BoostListingDialog";
+import { BOOST_PRICE_INR } from "@/lib/pricing";
+import { formatPriceLabel } from "@/lib/promo";
 import { ReviewSystem } from "@/components/ReviewSystem";
+import { MessageSellerPanel } from "@/components/MessageSellerPanel";
 import { usePageSeo } from "@/hooks/usePageSeo";
 
 type Listing = {
@@ -271,6 +274,11 @@ const ListingDetail = () => {
                 <img
                   src={photos[activePhoto].image_url}
                   alt={listing.title}
+                  width={800}
+                  height={800}
+                  sizes="(min-width: 768px) 60vw, 100vw"
+                  fetchPriority="high"
+                  decoding="async"
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -291,7 +299,15 @@ const ListingDetail = () => {
                     i === activePhoto ? "border-primary" : "border-transparent opacity-60 hover:opacity-100"
                   }`}
                 >
-                  <img src={p.image_url} alt="" className="h-full w-full object-cover" />
+                  <img
+                    src={p.image_url}
+                    alt=""
+                    width={64}
+                    height={64}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -343,21 +359,30 @@ const ListingDetail = () => {
 
           {/* Seller card */}
           {listing.profiles && (
-            <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
-              <Avatar className="h-11 w-11 shrink-0">
-                <AvatarImage src={listing.profiles.photo_url ?? undefined} alt="" />
-                <AvatarFallback className="bg-primary/10 font-semibold text-primary">
-                  {(listing.profiles.name ?? "?").slice(0, 1).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-medium">{listing.profiles.name ?? "Seller"}</p>
-                <p className="text-xs text-muted-foreground">
-                  {listing.profiles.total_listings} listings · {listing.profiles.successful_sales} sold
-                </p>
+            !isOwner && !isSold ? (
+              <MessageSellerPanel
+                listingId={listing.id}
+                listingTitle={listing.title}
+                listingPrice={listing.price}
+                seller={listing.profiles}
+              />
+            ) : (
+              <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
+                <Avatar className="h-11 w-11 shrink-0">
+                  <AvatarImage src={listing.profiles.photo_url ?? undefined} alt="" />
+                  <AvatarFallback className="bg-primary/10 font-semibold text-primary">
+                    {(listing.profiles.name ?? "?").slice(0, 1).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{listing.profiles.name ?? "Seller"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {listing.profiles.total_listings} listings · {listing.profiles.successful_sales} sold
+                  </p>
+                </div>
+                <TrustBadge profile={listing.profiles} />
               </div>
-              <TrustBadge profile={listing.profiles} />
-            </div>
+            )
           )}
 
           {/* Description */}
@@ -396,11 +421,13 @@ const ListingDetail = () => {
             </div>
             <div>
               <p className="text-sm font-semibold">Boost this listing</p>
-              <p className="text-xs text-muted-foreground">Featured rail · ~3× views · ₹99 one-time</p>
+              <p className="text-xs text-muted-foreground">
+                Featured rail · ~3× views · {formatPriceLabel(BOOST_PRICE_INR)} one-time
+              </p>
             </div>
           </div>
           <Button onClick={() => setBoostOpen(true)} className="w-full rounded-xl sm:w-auto">
-            <Rocket className="mr-2 h-4 w-4" /> Boost for ₹99
+            <Rocket className="mr-2 h-4 w-4" /> Boost for {formatPriceLabel(BOOST_PRICE_INR)}
           </Button>
         </div>
       )}

@@ -198,6 +198,10 @@ const Dashboard = () => {
                         <img
                           src={publicImageUrl(cover)}
                           alt=""
+                          width={64}
+                          height={64}
+                          loading="lazy"
+                          decoding="async"
                           className="h-16 w-16 rounded-lg object-cover"
                         />
                       ) : (
@@ -328,6 +332,10 @@ const Dashboard = () => {
                         <img
                           src={publicImageUrl(cover)}
                           alt=""
+                          width={64}
+                          height={64}
+                          loading="lazy"
+                          decoding="async"
                           className="h-16 w-16 rounded-lg object-cover"
                         />
                       ) : (

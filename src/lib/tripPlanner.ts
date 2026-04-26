@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
-
-export const TRIP_PRICE_INR = 49;
+// Re-exported for backwards-compatibility. Canonical source: src/lib/pricing.ts
+export { TRIP_PRICE_INR } from "@/lib/pricing";
 
 export const BUDGET_OPTIONS = [
   { id: "low", label: "Low", hint: "Hostels, local food, ferry" },
@@ -28,6 +28,47 @@ export const ISLAND_OPTIONS = [
   "Diglipur",
 ] as const;
 
+export const FITNESS_OPTIONS = [
+  { id: "low", label: "Low", hint: "Beach & city only, no treks" },
+  { id: "medium", label: "Medium", hint: "Light trek + snorkel ok" },
+  { id: "high", label: "High", hint: "Treks, scuba, full days" },
+] as const;
+
+export const GROUP_OPTIONS = [
+  { id: "solo", label: "Solo" },
+  { id: "couple", label: "Couple" },
+  { id: "family", label: "Family" },
+  { id: "group", label: "Group" },
+] as const;
+
+export const ACCOMMODATION_OPTIONS = [
+  { id: "budget", label: "Budget guesthouse" },
+  { id: "midrange", label: "Mid-range hotel" },
+  { id: "resort", label: "Beach resort" },
+  { id: "luxury", label: "Luxury" },
+] as const;
+
+export const DIET_OPTIONS = [
+  { id: "vegetarian", label: "Vegetarian" },
+  { id: "non-vegetarian", label: "Non-vegetarian" },
+  { id: "seafood-only", label: "Seafood-only" },
+  { id: "vegan", label: "Vegan" },
+] as const;
+
+export const EXPANDED_INTEREST_OPTIONS = [
+  "adventure",
+  "scuba",
+  "snorkeling",
+  "beaches",
+  "history",
+  "photography",
+  "food",
+  "wildlife",
+  "offbeat",
+  "relaxation",
+  "nightlife",
+] as const;
+
 export type TripInputs = {
   days: number;
   budget: "low" | "medium" | "high";
@@ -35,6 +76,17 @@ export type TripInputs = {
   end_date: string;
   interests: string[];
   islands: string[];
+  travelers?: number;
+  group_type?: "solo" | "couple" | "family" | "group";
+  ages?: string;
+  fitness?: "low" | "medium" | "high";
+  accommodation?: "budget" | "midrange" | "resort" | "luxury";
+  diet?: "vegetarian" | "non-vegetarian" | "seafood-only" | "vegan";
+  avoid?: string[];
+  permits_arranged?: boolean;
+  returning_visitor?: boolean;
+  is_foreign_national?: boolean;
+  notes?: string;
 };
 
 export type TripPreview = {
@@ -43,6 +95,7 @@ export type TripPreview = {
   day1_morning: string;
   highlights: string[];
   estimated_total_inr: number;
+  season_warning?: string;
 };
 
 export type TripStatus = "pending" | "paid" | "generating" | "generated" | "failed";
@@ -54,6 +107,21 @@ export async function createTripPreview(inputs: TripInputs) {
   if (error) throw new Error(error.message ?? "Preview failed");
   if ((data as any)?.error) throw new Error((data as any).error);
   return data as { trip_id: string; preview: TripPreview };
+}
+
+// ============= Day feedback =============
+export async function submitTripDayFeedback(args: {
+  trip_id: string;
+  day_number: number;
+  is_helpful: boolean;
+  comment?: string;
+}) {
+  const { data, error } = await supabase.functions.invoke("trip-feedback", {
+    body: args,
+  });
+  if (error) throw new Error(error.message ?? "Feedback failed");
+  if ((data as any)?.error) throw new Error((data as any).error);
+  return data as { ok: true };
 }
 
 export async function createTripOrder(tripId: string) {
