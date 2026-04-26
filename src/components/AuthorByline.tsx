@@ -20,8 +20,8 @@ export const AUTHOR_SHAHID: Author = {
   location: "Port Blair, Andaman & Nicobar Islands",
   about:
     "Born and raised in the Andamans, I write practical, local-first travel guides so visitors can plan trips without the usual confusion. By day I work on cloud databases and information security; by weekend I'm probably on a ferry or at a beach café.",
-  website: "https://www.shhahidster.tech/",
-  websiteLabel: "shhahidster.tech",
+  website: "https://www.shahidster.tech/",
+  websiteLabel: "shahidster.tech",
 };
 
 export function AuthorByline({
