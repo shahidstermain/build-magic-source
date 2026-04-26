@@ -138,3 +138,131 @@ export function QuickWhatsAppShare({
     </Button>
   );
 }
+
+// ============================================================
+// Booking confirmation – rich, structured WhatsApp message
+// ============================================================
+
+export interface BookingConfirmationDetails {
+  /** What the booking is for, e.g. "Andaman Trip" or "Scuba Diving · Havelock" */
+  title: string;
+  /** ISO date string for the start of travel (optional) */
+  startDate?: string;
+  /** ISO date string for the end of travel (optional) */
+  endDate?: string;
+  /** Number of travellers (optional) */
+  travelers?: number;
+  /** Islands or location summary (optional) */
+  islands?: string[];
+  /** Highlight bullets (optional, max 5 shown) */
+  highlights?: string[];
+  /** Estimated total in INR (optional) */
+  totalInr?: number;
+  /** Public URL to the trip / listing / PDF (optional but recommended) */
+  url?: string;
+  /** Phone number in international format (no `+`), e.g. "919876543210". Empty → user picks contact in WhatsApp. */
+  toPhone?: string;
+}
+
+function formatDateShort(iso?: string) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
+/** Build the structured confirmation message. Exported for tests + reuse. */
+export function buildBookingConfirmationMessage(d: BookingConfirmationDetails): string {
+  const lines: string[] = [];
+  lines.push(`🏝️ *Andaman Booking Confirmation*`);
+  lines.push(`📌 ${d.title}`);
+
+  if (d.startDate || d.endDate) {
+    const from = formatDateShort(d.startDate);
+    const to = formatDateShort(d.endDate);
+    lines.push(`📅 ${[from, to].filter(Boolean).join(" → ")}`);
+  }
+  if (d.travelers && d.travelers > 0) {
+    lines.push(`👥 ${d.travelers} traveller${d.travelers > 1 ? "s" : ""}`);
+  }
+  if (d.islands && d.islands.length > 0) {
+    lines.push(`📍 ${d.islands.join(" · ")}`);
+  }
+  if (d.highlights && d.highlights.length > 0) {
+    lines.push("");
+    lines.push("*Highlights:*");
+    for (const h of d.highlights.slice(0, 5)) lines.push(`• ${h}`);
+  }
+  if (typeof d.totalInr === "number" && d.totalInr > 0) {
+    lines.push("");
+    lines.push(`💰 Estimated total: ₹${d.totalInr.toLocaleString("en-IN")}`);
+  }
+  if (d.url) {
+    lines.push("");
+    lines.push(`🔗 ${d.url}`);
+  }
+  lines.push("");
+  lines.push("— Sent via AndamanBazaar");
+  return lines.join("\n");
+}
+
+interface WhatsAppBookingConfirmProps extends BookingConfirmationDetails {
+  size?: "default" | "sm" | "lg";
+  className?: string;
+  tripId?: string;
+}
+
+export function WhatsAppBookingConfirm({
+  size = "default",
+  className,
+  tripId,
+  ...details
+}: WhatsAppBookingConfirmProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const handleSend = async () => {
+    const text = buildBookingConfirmationMessage(details);
+    const base = details.toPhone
+      ? `https://wa.me/${details.toPhone}`
+      : `https://wa.me/`;
+    const url = `${base}?text=${encodeURIComponent(text)}`;
+
+    if (user) {
+      (supabase as any)
+        .from("whatsapp_shares")
+        .insert({
+          user_id: user.id,
+          trip_id: tripId ?? null,
+          share_type: "booking_confirmation",
+          message_template: text,
+        })
+        .then(({ error }: { error: any }) => {
+          if (error && error.code !== "42P01") {
+            console.warn("Failed to track booking confirmation share:", error.message);
+          }
+        });
+    }
+
+    try {
+      window.open(url, "_blank");
+    } catch {
+      navigator.clipboard.writeText(text);
+      toast({
+        title: "Confirmation copied",
+        description: "Paste it in WhatsApp to share.",
+      });
+    }
+  };
+
+  return (
+    <Button
+      onClick={handleSend}
+      size={size}
+      className={`bg-green-600 text-white hover:bg-green-700 ${className ?? ""}`}
+    >
+      <MessageCircle className="mr-2 h-4 w-4" />
+      Send booking confirmation
+    </Button>
+  );
+}
