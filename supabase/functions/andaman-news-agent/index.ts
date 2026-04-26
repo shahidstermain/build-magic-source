@@ -321,6 +321,165 @@ Write a publishable article for AndamanBazaar.in.`;
   ]);
 }
 
+// ---------- targeted patching (single retry) ----------
+
+type PatchBucket = "body" | "seo" | "alt";
+
+function classifyReasons(reasons: string[]): Set<PatchBucket> {
+  const buckets = new Set<PatchBucket>();
+  for (const r of reasons) {
+    const s = r.toLowerCase();
+    if (
+      s.includes("words") ||
+      s.includes("h2") ||
+      s.includes("source' section") ||
+      s.includes("banned terms")
+    ) {
+      buckets.add("body");
+    }
+    if (
+      s.includes("seotitle") ||
+      s.includes("metadescription") ||
+      s.includes("headline") ||
+      s.includes("excerpt") ||
+      s.includes("tags") ||
+      s.includes("slug")
+    ) {
+      buckets.add("seo");
+    }
+    if (s.includes("cover alt") || s.includes("alt text")) {
+      buckets.add("alt");
+    }
+  }
+  return buckets;
+}
+
+async function callLovablePatch(
+  messages: Array<{ role: string; content: string }>,
+  fields: string[],
+): Promise<Record<string, unknown>> {
+  const properties: Record<string, unknown> = {
+    seoTitle: { type: "string" },
+    metaDescription: { type: "string" },
+    headline: { type: "string" },
+    excerpt: { type: "string" },
+    bodyMarkdown: { type: "string" },
+    tags: { type: "array", items: { type: "string" } },
+    coverAlt: { type: "string" },
+  };
+  const filtered: Record<string, unknown> = {};
+  for (const f of fields) if (properties[f]) filtered[f] = properties[f];
+
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages,
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "patch_article",
+            description: "Return ONLY the corrected fields for the article",
+            parameters: {
+              type: "object",
+              properties: filtered,
+              required: fields,
+              additionalProperties: false,
+            },
+          },
+        },
+      ],
+      tool_choice: { type: "function", function: { name: "patch_article" } },
+    }),
+  });
+  if (res.status === 429) throw new Error("ai_rate_limited");
+  if (res.status === 402) throw new Error("ai_credits_exhausted");
+  if (!res.ok) throw new Error(`AI ${res.status}: ${await res.text()}`);
+  const json = await res.json();
+  const args = json?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+  if (!args) throw new Error("AI returned no tool call");
+  return JSON.parse(args) as Record<string, unknown>;
+}
+
+async function patchArticle(
+  post: GeneratedPost,
+  story: RawStory,
+  reasons: string[],
+): Promise<GeneratedPost> {
+  const buckets = classifyReasons(reasons);
+  if (buckets.size === 0) return post;
+
+  const fields: string[] = [];
+  const instructions: string[] = [];
+
+  if (buckets.has("body")) {
+    fields.push("bodyMarkdown");
+    instructions.push(
+      `Rewrite ONLY \`bodyMarkdown\`. Keep facts, headline, tags and SEO unchanged. ` +
+        `Constraints: ${MIN_WORDS}-${MAX_WORDS} words, at least ${MIN_H2} \`## H2\` subheadings, ` +
+        `must end with a \`## Source\` section linking ${story.url}. No banned/clickbait terms.`,
+    );
+  }
+  if (buckets.has("seo")) {
+    fields.push("seoTitle", "metaDescription", "headline", "excerpt", "tags");
+    instructions.push(
+      `Regenerate ONLY the SEO/meta fields (seoTitle ≤${SEO_TITLE_MAX} chars, ` +
+        `metaDescription ${META_DESC_MIN}-${META_DESC_MAX} chars, headline ≥10 chars, ` +
+        `excerpt ≥40 chars, tags 3-6 lowercase keywords). Do NOT change \`bodyMarkdown\`.`,
+    );
+  }
+  if (buckets.has("alt")) {
+    fields.push("coverAlt");
+    instructions.push(
+      `Regenerate ONLY \`coverAlt\` (${ALT_MIN}-${ALT_MAX} chars). Must describe a concrete visual ` +
+        `scene, mention an Andaman place/location, reflect the article topic (reuse ≥2 keywords ` +
+        `from headline/tags), and must NOT start with "image of"/"photo of" or duplicate the headline.`,
+    );
+  }
+
+  const system =
+    `You are editing a draft article for AndamanBazaar.in. Return ONLY the requested fields ` +
+    `via the \`patch_article\` tool. Do NOT include any other fields.`;
+
+  const user = `Original story: ${story.title} (${story.source})
+Source URL: ${story.url}
+
+Current draft (for context only):
+- headline: ${post.headline}
+- seoTitle: ${post.seoTitle}
+- metaDescription: ${post.metaDescription}
+- excerpt: ${post.excerpt}
+- tags: ${(post.tags ?? []).join(", ")}
+- coverAlt: ${post.coverAlt}
+- bodyMarkdown:
+"""
+${post.bodyMarkdown}
+"""
+
+Validation issues to fix:
+- ${reasons.join("\n- ")}
+
+Patch instructions:
+- ${instructions.join("\n- ")}
+
+Return only: ${fields.join(", ")}.`;
+
+  const patch = await callLovablePatch(
+    [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+    fields,
+  );
+
+  return { ...post, ...(patch as Partial<GeneratedPost>) };
+}
+
 // ---------- cover image ----------
 
 async function generateCoverImage(
@@ -630,18 +789,20 @@ Deno.serve(async (req) => {
 
     console.log("[agent] picked:", story.source, story.title);
 
-    // Generate, validate, and retry once if validation fails.
+    // Generate, validate, and retry once — patching ONLY the failing sections.
     let post = await generateArticle(story);
     let validation = validateContent(post);
     if (!validation.ok) {
       console.warn("[validate] first attempt failed:", validation.reasons);
-      post = await generateArticle({
-        ...story,
-        title:
-          `${story.title}\n\nFix these issues from the previous draft:\n- ` +
-          validation.reasons.join("\n- "),
-      });
+      try {
+        post = await patchArticle(post, story, validation.reasons);
+      } catch (e) {
+        console.error("[validate] targeted patch failed:", e);
+      }
       validation = validateContent(post);
+      if (validation.ok) {
+        console.log("[validate] targeted patch succeeded");
+      }
     }
     if (!validation.ok) {
       return new Response(
