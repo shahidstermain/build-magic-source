@@ -52,7 +52,7 @@ import { formatPriceLabel } from "@/lib/promo";
 import { saveCollaborativeTrip } from "@/lib/collaborativeTrips";
 import { PayTripDialog } from "@/components/PayTripDialog";
 import { RecommendationsSection } from "@/components/RecommendationCard";
-import { WhatsAppShare } from "@/components/WhatsAppShare";
+import { WhatsAppShare, WhatsAppBookingConfirm } from "@/components/WhatsAppShare";
 import { TripPlannerLeadForm } from "@/components/TripPlannerLeadForm";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -1211,6 +1211,22 @@ export default function TripPlanner() {
               tripId={tripId || undefined}
             />
           </div>
+          {preview && (
+            <div className="flex justify-center pt-1">
+              <WhatsAppBookingConfirm
+                title={preview.trip_title}
+                startDate={startDate}
+                endDate={endDate}
+                travelers={travelers}
+                islands={islands}
+                highlights={preview.highlights}
+                totalInr={preview.estimated_total_inr}
+                url={downloadUrl}
+                tripId={tripId || undefined}
+                size="lg"
+              />
+            </div>
+          )}
           <div className="flex justify-center gap-3 pt-2 text-sm">
             <Link to="/my-trips" className="text-primary hover:underline">
               <MapPin className="mr-1 inline h-3.5 w-3.5" /> My trips
