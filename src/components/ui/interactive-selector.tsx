@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { SmartImage } from "@/components/ui/smart-image";
 
 export type SelectorOption = {
   title: string;
@@ -131,12 +132,15 @@ export default function InteractiveSelector({
           const inner = (
             <>
               {/* Background image */}
-              <img
+              <SmartImage
                 src={option.image}
                 alt={option.title}
-                loading="lazy"
+                fallbacks={[
+                  "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=70",
+                ]}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 33vw, 20vw"
                 className={cn(
-                  "absolute inset-0 h-full w-full object-cover transition-transform duration-700",
+                  "absolute inset-0 transition-transform duration-700",
                   isActive ? "scale-105" : "scale-100 group-hover:scale-105",
                 )}
               />
