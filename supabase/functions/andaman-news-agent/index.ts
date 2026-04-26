@@ -397,6 +397,103 @@ async function resolveAuthorId(supabase: any): Promise<string> {
   );
 }
 
+// ---------- validation ----------
+
+function wordCount(text: string): number {
+  return (text.trim().match(/\S+/g) ?? []).length;
+}
+
+function countH2(markdown: string): number {
+  return (markdown.match(/^##\s+\S/gm) ?? []).length;
+}
+
+function findBannedTerms(text: string): string[] {
+  const hay = text.toLowerCase();
+  return BANNED_TERMS.filter((t) => hay.includes(t));
+}
+
+function tokenize(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 3);
+}
+
+function shingles(words: string[], n = 3): Set<string> {
+  const out = new Set<string>();
+  for (let i = 0; i + n <= words.length; i++) {
+    out.add(words.slice(i, i + n).join(" "));
+  }
+  return out;
+}
+
+function jaccard(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 || b.size === 0) return 0;
+  let inter = 0;
+  for (const x of a) if (b.has(x)) inter++;
+  const union = a.size + b.size - inter;
+  return union === 0 ? 0 : inter / union;
+}
+
+function validateContent(post: GeneratedPost): ValidationResult {
+  const reasons: string[] = [];
+
+  // length
+  const words = wordCount(post.bodyMarkdown);
+  if (words < MIN_WORDS) reasons.push(`too short (${words} words, min ${MIN_WORDS})`);
+  if (words > MAX_WORDS) reasons.push(`too long (${words} words, max ${MAX_WORDS})`);
+
+  // structure
+  const h2 = countH2(post.bodyMarkdown);
+  if (h2 < MIN_H2) reasons.push(`needs at least ${MIN_H2} H2 subheadings (found ${h2})`);
+  if (!/##\s*Source/i.test(post.bodyMarkdown)) reasons.push("missing '## Source' section");
+
+  // SEO
+  if (!post.seoTitle || post.seoTitle.length > SEO_TITLE_MAX)
+    reasons.push(`seoTitle must be 1-${SEO_TITLE_MAX} chars (got ${post.seoTitle?.length ?? 0})`);
+  if (!post.metaDescription || post.metaDescription.length < META_DESC_MIN || post.metaDescription.length > META_DESC_MAX)
+    reasons.push(`metaDescription must be ${META_DESC_MIN}-${META_DESC_MAX} chars (got ${post.metaDescription?.length ?? 0})`);
+  if (!post.headline || post.headline.length < 10) reasons.push("headline too short");
+  if (!post.excerpt || post.excerpt.length < 40) reasons.push("excerpt too short");
+  if (!Array.isArray(post.tags) || post.tags.length < 3 || post.tags.length > 6)
+    reasons.push(`tags must be 3-6 items (got ${post.tags?.length ?? 0})`);
+  const slugLen = slugify(post.headline).length;
+  if (slugLen === 0 || slugLen > SLUG_MAX) reasons.push(`slug length must be 1-${SLUG_MAX} chars (got ${slugLen})`);
+
+  // banned terms
+  const banned = findBannedTerms(`${post.headline} ${post.bodyMarkdown} ${post.excerpt}`);
+  if (banned.length > 0) reasons.push(`banned terms detected: ${banned.join(", ")}`);
+
+  return reasons.length === 0 ? { ok: true } : { ok: false, reasons };
+}
+
+// deno-lint-ignore no-explicit-any
+async function checkDuplicateSimilarity(
+  supabase: any,
+  post: GeneratedPost,
+): Promise<{ similar: boolean; score: number; against?: string }> {
+  const { data } = await supabase
+    .from("posts")
+    .select("title, content")
+    .eq("status", "published")
+    .order("published_at", { ascending: false })
+    .limit(20);
+  if (!data?.length) return { similar: false, score: 0 };
+
+  const newSet = shingles(tokenize(`${post.headline} ${post.bodyMarkdown}`));
+  let best = 0;
+  let bestTitle: string | undefined;
+  for (const row of data as Array<{ title: string; content: string }>) {
+    const s = jaccard(newSet, shingles(tokenize(`${row.title} ${row.content}`)));
+    if (s > best) {
+      best = s;
+      bestTitle = row.title;
+    }
+  }
+  return { similar: best >= SIMILARITY_THRESHOLD, score: best, against: bestTitle };
+}
+
 // ---------- handler ----------
 
 Deno.serve(async (req) => {
