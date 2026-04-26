@@ -178,28 +178,13 @@ const AuthView = () => {
   const onGoogle = async () => {
     setBusy(true);
     try {
-      // On Lovable Cloud the /~oauth/initiate proxy exists and handles the flow.
-      // Locally that route doesn't exist, so we fall back to Supabase native OAuth.
-      const isLovableCloud = window.location.hostname.endsWith(".lovable.app") ||
-        window.location.hostname.endsWith(".lovableproject.com");
-
-      if (isLovableCloud) {
-        const result = await lovable.auth.signInWithOAuth("google", {
-          redirect_uri: window.location.origin,
-        });
-        if (result.error) throw result.error;
-        if (!result.redirected) navigate(next, { replace: true });
-      } else {
-        // Local dev — use Supabase OAuth directly
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: `${window.location.origin}/auth`,
-          },
-        });
-        if (error) throw error;
-        // Browser will redirect — nothing more to do here
-      }
+      // Lovable Cloud managed Google OAuth — works on .lovable.app subdomains
+      // AND on custom domains (oauth.lovable.app proxy handles the callback).
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) throw result.error;
+      if (!result.redirected) navigate(next, { replace: true });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Google sign-in failed";
       toast({ title: "Google sign-in failed", description: message, variant: "destructive" });
