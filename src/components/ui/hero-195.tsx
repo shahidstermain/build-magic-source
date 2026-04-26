@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { BorderBeam } from "@/components/ui/border-beam";
+import { SmartImage } from "@/components/ui/smart-image";
 
 const previewTabs = [
   {
@@ -162,11 +163,10 @@ export function Hero195({ className }: Hero195Props) {
                 <Card className="relative overflow-hidden rounded-2xl border-border/70 shadow-xl">
                   <BorderBeam size={250} duration={12} />
                   <div className="relative aspect-[16/10] w-full overflow-hidden">
-                    <img
+                    <SmartImage
                       src={t.image}
                       alt={t.headline}
-                      loading="lazy"
-                      className="h-full w-full object-cover"
+                      sizes="(max-width: 1024px) 100vw, 600px"
                     />
                     <div
                       aria-hidden
