@@ -539,7 +539,60 @@ Deno.serve(async (req) => {
 
     console.log("[agent] picked:", story.source, story.title);
 
-    const post = await generateArticle(story);
+    // Generate, validate, and retry once if validation fails.
+    let post = await generateArticle(story);
+    let validation = validateContent(post);
+    if (!validation.ok) {
+      console.warn("[validate] first attempt failed:", validation.reasons);
+      post = await generateArticle({
+        ...story,
+        title:
+          `${story.title}\n\nFix these issues from the previous draft:\n- ` +
+          validation.reasons.join("\n- "),
+      });
+      validation = validateContent(post);
+    }
+    if (!validation.ok) {
+      return new Response(
+        JSON.stringify({
+          status: "skipped",
+          reason: "validation_failed",
+          issues: validation.reasons,
+          source: story.source,
+          source_url: story.url,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Duplicate / similarity check against last 20 published posts.
+    const dup = await checkDuplicateSimilarity(supabase, post);
+    if (dup.similar) {
+      // Mark this source as used so we don't keep retrying it.
+      const usedHash = await sha256Hex(story.url);
+      await supabase.from("source_url_hashes").insert({
+        source: story.source,
+        url: story.url,
+        url_hash: usedHash,
+      });
+      return new Response(
+        JSON.stringify({
+          status: "skipped",
+          reason: "duplicate_content",
+          similarity: Number(dup.score.toFixed(3)),
+          similar_to: dup.against,
+          source: story.source,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
     const authorId = await resolveAuthorId(supabase);
     const slug = await ensureUniqueSlug(supabase, slugify(post.headline));
     const coverUrl = await generateCoverImage(post.headline);
