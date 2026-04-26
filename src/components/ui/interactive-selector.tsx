@@ -111,20 +111,8 @@ export default function InteractiveSelector({
           const isActive = index === activeIndex;
           const isRevealed = revealed.includes(index);
           const Icon = option.icon;
-          const Wrapper: typeof Link | "button" = option.href ? Link : "button";
-          const wrapperProps = option.href
-            ? ({ to: option.href } as { to: string })
-            : ({ type: "button" } as { type: "button" });
 
-          return (
-            <Wrapper
-              key={option.title}
-              {...(wrapperProps as Record<string, unknown>)}
-              onMouseEnter={() => setActiveIndex(index)}
-              onFocus={() => setActiveIndex(index)}
-              onClick={() => setActiveIndex(index)}
-              aria-label={option.title}
-              className={cn(
+          const className = cn(
                 "group relative block min-w-[60px] cursor-pointer overflow-hidden rounded-2xl border border-border text-left transition-[flex-grow,transform,box-shadow] duration-500 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 isActive
                   ? "flex-[5] shadow-lg sm:flex-[6]"
@@ -132,9 +120,16 @@ export default function InteractiveSelector({
                 isRevealed
                   ? "translate-x-0 opacity-100"
                   : "-translate-x-6 opacity-0",
-              )}
-              style={{ transitionDelay: isRevealed ? "0ms" : `${index * 80}ms` }}
-            >
+          );
+          const style = { transitionDelay: isRevealed ? "0ms" : `${index * 80}ms` };
+          const handlers = {
+            onMouseEnter: () => setActiveIndex(index),
+            onFocus: () => setActiveIndex(index),
+            onClick: () => setActiveIndex(index),
+          };
+
+          const inner = (
+            <>
               {/* Background image */}
               <img
                 src={option.image}
@@ -190,7 +185,34 @@ export default function InteractiveSelector({
                   {option.title.split(" ")[0]}
                 </span>
               )}
-            </Wrapper>
+            </>
+          );
+
+          if (option.href) {
+            return (
+              <Link
+                key={option.title}
+                to={option.href}
+                aria-label={option.title}
+                className={className}
+                style={style}
+                {...handlers}
+              >
+                {inner}
+              </Link>
+            );
+          }
+          return (
+            <button
+              key={option.title}
+              type="button"
+              aria-label={option.title}
+              className={className}
+              style={style}
+              {...handlers}
+            >
+              {inner}
+            </button>
           );
         })}
       </div>
