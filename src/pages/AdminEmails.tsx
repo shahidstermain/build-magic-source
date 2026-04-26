@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +48,8 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 const AdminEmails = () => {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+
+  usePageSeo({ title: "Admin — Email Logs", description: "Admin email log management.", noIndex: true });
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);

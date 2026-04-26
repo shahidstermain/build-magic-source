@@ -2,6 +2,16 @@ const LAST_UPDATED = "25 April 2026";
 
 const TermsOfService = () => (
   <article className="prose prose-slate max-w-none py-8 dark:prose-invert">
+import { usePageSeo } from "@/hooks/usePageSeo";
+
+const TermsOfService = () => {
+  usePageSeo({
+    title: "Terms of Service — AndamanBazaar",
+    description: "AndamanBazaar terms of service. Use the platform lawfully, post only items you own, and be respectful with fellow islanders.",
+    path: "/terms",
+  });
+  return (
+  <section className="prose prose-slate max-w-none py-8 dark:prose-invert">
     <h1>Terms of Service</h1>
     <p className="text-sm text-muted-foreground">Last updated: {LAST_UPDATED}</p>
 
@@ -258,5 +268,8 @@ const TermsOfService = () => (
     </p>
   </article>
 );
+  </section>
+  );
+};
 
 export default TermsOfService;

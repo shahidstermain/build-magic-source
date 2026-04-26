@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 type ListingLite = {
   id: string;
@@ -43,6 +44,8 @@ const PaymentTestChecklist = () => {
   const [listings, setListings] = useState<ListingLite[]>([]);
   const [payments, setPayments] = useState<PaymentLite[]>([]);
   const [loading, setLoading] = useState(true);
+
+  usePageSeo({ title: "Payment Test — AndamanBazaar", description: "Internal payment testing checklist.", noIndex: true });
   const [refreshing, setRefreshing] = useState(false);
 
   const load = async () => {

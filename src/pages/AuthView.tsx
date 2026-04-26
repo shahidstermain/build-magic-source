@@ -47,6 +47,9 @@ const LegalDialog = ({
     </DialogContent>
   </Dialog>
 );
+import { Loader2, MapPin, Anchor, Compass, ShieldCheck } from "lucide-react";
+import logoUrl from "@/assets/logo.png";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 type Mode = "signin" | "signup" | "forgot";
 
@@ -98,6 +101,13 @@ const AuthView = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const next = params.get("next") || "/";
+
+  usePageSeo({
+    title: mode === "signup" ? "Create Account — AndamanBazaar" : mode === "forgot" ? "Reset Password — AndamanBazaar" : "Sign In — AndamanBazaar",
+    description: "Sign in or create your AndamanBazaar account to buy, sell, and discover experiences across the Andaman Islands.",
+    path: "/auth",
+    noIndex: true,
+  });
 
   useEffect(() => {
     if (!loading && session) {

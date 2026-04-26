@@ -1,18 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  Mail,
-  Phone,
-  MapPin,
-  Clock,
-  Instagram,
-  Facebook,
-  Twitter,
-  MessageSquare,
-  Send,
-  Loader2,
+  Mail, Phone, MapPin, Clock, Instagram, Facebook, Twitter,
+  MessageSquare, Send, Loader2,
 } from "lucide-react";
 import { z } from "zod";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,6 +38,24 @@ const SOCIALS = [
 
 const Contact = () => {
   const { toast } = useToast();
+  usePageSeo({
+    title: "Contact AndamanBazaar — Get in Touch",
+    description: "Contact the AndamanBazaar team in Port Blair. Questions, feedback, or partnership ideas — we're here to help. Email, WhatsApp, or use the contact form.",
+    path: "/contact",
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "ContactPage",
+      "name": "Contact AndamanBazaar",
+      "url": "https://andamanbazaar.in/contact",
+      "breadcrumb": {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://andamanbazaar.in/" },
+          { "@type": "ListItem", "position": 2, "name": "Contact", "item": "https://andamanbazaar.in/contact" },
+        ]
+      }
+    },
+  });
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
   const [errors, setErrors] = useState<Partial<Record<keyof typeof form, string>>>({});
   const [submitting, setSubmitting] = useState(false);

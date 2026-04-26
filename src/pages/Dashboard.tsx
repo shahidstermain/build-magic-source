@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -53,6 +54,8 @@ type FavoriteRow = {
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+
+  usePageSeo({ title: "Dashboard — AndamanBazaar", description: "Manage your listings, saved items, and payments.", path: "/dashboard", noIndex: true });
   const [myListings, setMyListings] = useState<ListingRow[]>([]);
   const [favorites, setFavorites] = useState<FavoriteRow[]>([]);
   const [loading, setLoading] = useState(true);

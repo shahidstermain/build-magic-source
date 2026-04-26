@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Home, Search, PlusSquare, MessageCircle, User,
-  LogOut, LayoutDashboard, Heart, Sparkles, Mail, Wand2,
+  LogOut, LayoutDashboard, Heart, Sparkles, Mail, Wand2, Waves,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,11 +17,11 @@ import { supabase } from "@/integrations/supabase/client";
 import logoUrl from "@/assets/logo.webp";
 
 const tabs = [
-  { to: "/",        label: "Home",    icon: Home,          end: true },
-  { to: "/listings",label: "Browse",  icon: Search },
-  { to: "/sell",    label: "Sell",    icon: PlusSquare },
-  { to: "/chats",   label: "Chats",   icon: MessageCircle },
-  { to: "/profile", label: "Profile", icon: User },
+  { to: "/",         label: "Home",    icon: Home,          end: true },
+  { to: "/listings", label: "Browse",  icon: Search },
+  { to: "/sell",     label: "Sell",    icon: PlusSquare },
+  { to: "/chats",    label: "Chats",   icon: MessageCircle },
+  { to: "/profile",  label: "Profile", icon: User },
 ];
 
 export function Layout() {
@@ -87,34 +87,54 @@ export function Layout() {
               className="h-8 w-8 rounded-lg object-cover"
             />
             <span className="hidden text-base font-semibold tracking-tight sm:block">
+
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-40 border-b border-border/50 bg-background/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-15 max-w-6xl items-center gap-3 px-4 h-[56px]">
+
+          {/* Logo */}
+          <Link to="/" className="flex shrink-0 items-center gap-2.5 group">
+            <div className="relative">
+              <img
+                src={logoUrl}
+                alt="AndamanBazaar"
+                className="h-8 w-8 rounded-xl object-cover shadow-sm transition-transform group-hover:scale-105"
+              />
+              <div className="absolute inset-0 rounded-xl ring-2 ring-primary/0 transition-all group-hover:ring-primary/20" />
+            </div>
+            <span className="hidden text-[15px] font-bold tracking-tight sm:block">
               Andaman<span className="text-primary">Bazaar</span>
             </span>
           </Link>
 
-          {/* Desktop nav pills */}
-          <div className="ml-4 hidden items-center gap-1 md:flex">
-            <NavPill to="/listings?category=experiences">🌊 Experiences</NavPill>
-            <NavPill to="/trip-planner">
+          {/* Desktop nav */}
+          <nav className="ml-3 hidden items-center gap-0.5 md:flex">
+            <HeaderNavLink to="/listings?category=experiences">
+              <Waves className="h-3.5 w-3.5" /> Experiences
+            </HeaderNavLink>
+            <HeaderNavLink to="/trip-planner">
               <Wand2 className="h-3.5 w-3.5" /> AI Planner
             </NavPill>
             <NavPill to="/blog">📰 Blog</NavPill>
             <NavPill to="/pricing">💎 Pricing</NavPill>
           </div>
+            </HeaderNavLink>
+          </nav>
 
-          {/* Search pill — desktop */}
+          {/* Search bar — desktop */}
           <Link
             to="/listings"
-            className="mx-auto hidden max-w-xs flex-1 items-center gap-2 rounded-full border border-border bg-muted/60 px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted md:flex"
+            className="mx-auto hidden max-w-sm flex-1 items-center gap-2.5 rounded-full border border-border bg-muted/50 px-4 py-2 text-sm text-muted-foreground shadow-[var(--shadow-xs)] transition-all hover:border-primary/30 hover:bg-muted hover:shadow-[var(--shadow-card)] md:flex"
           >
-            <Search className="h-3.5 w-3.5 shrink-0" />
-            Search the islands…
+            <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+            <span>Search the islands…</span>
           </Link>
 
           {/* Right actions */}
           <div className="ml-auto flex items-center gap-2">
             <Link
               to="/sell"
-              className="rounded-full bg-accent px-4 py-1.5 text-sm font-semibold text-accent-foreground shadow-sm transition-opacity hover:opacity-90 active:scale-95"
+              className="rounded-full bg-accent px-4 py-1.5 text-sm font-semibold text-accent-foreground shadow-[var(--shadow-accent)] transition-all hover:opacity-90 hover:shadow-none active:scale-95"
             >
               + Post
             </Link>
@@ -123,40 +143,40 @@ export function Layout() {
               <>
                 <NotificationBell />
                 <DropdownMenu>
-                  <DropdownMenuTrigger className="rounded-full outline-none ring-2 ring-transparent focus-visible:ring-ring">
-                    <Avatar className="h-8 w-8 border border-border">
+                  <DropdownMenuTrigger className="rounded-full outline-none">
+                    <Avatar className="h-8 w-8 border-2 border-border transition-all hover:border-primary/40">
                       <AvatarImage src={user.user_metadata?.avatar_url} alt="" />
-                      <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+                      <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-xs font-bold text-primary">
                         {(user.user_metadata?.name || user.email || "?").slice(0, 1).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel className="truncate text-xs text-muted-foreground font-normal">
+                  <DropdownMenuContent align="end" className="w-56 rounded-2xl p-1.5 shadow-[var(--shadow-elevated)]">
+                    <DropdownMenuLabel className="truncate px-2 py-1.5 text-xs text-muted-foreground font-normal">
                       {user.user_metadata?.name || user.email}
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate("/profile")}>
-                      <User className="mr-2 h-4 w-4" /> Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/favorites")}>
-                      <Heart className="mr-2 h-4 w-4" /> Saved
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/dashboard")}>
-                      <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/my-trips")}>
-                      <Sparkles className="mr-2 h-4 w-4" /> My trips
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/contact")}>
-                      <Mail className="mr-2 h-4 w-4" /> Contact us
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="my-1" />
+                    {[
+                      { icon: User,          label: "Profile",    to: "/profile" },
+                      { icon: Heart,         label: "Saved",      to: "/favorites" },
+                      { icon: LayoutDashboard,label: "Dashboard", to: "/dashboard" },
+                      { icon: Sparkles,      label: "My trips",   to: "/my-trips" },
+                      { icon: Mail,          label: "Contact",    to: "/contact" },
+                    ].map(({ icon: Icon, label, to }) => (
+                      <DropdownMenuItem
+                        key={to}
+                        onClick={() => navigate(to)}
+                        className="cursor-pointer rounded-xl px-2 py-2"
+                      >
+                        <Icon className="mr-2.5 h-4 w-4 text-muted-foreground" /> {label}
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator className="my-1" />
                     <DropdownMenuItem
-                      className="text-destructive focus:text-destructive"
+                      className="cursor-pointer rounded-xl px-2 py-2 text-destructive focus:text-destructive"
                       onClick={async () => { await signOut(); navigate("/", { replace: true }); }}
                     >
-                      <LogOut className="mr-2 h-4 w-4" /> Sign out
+                      <LogOut className="mr-2.5 h-4 w-4" /> Sign out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -164,7 +184,7 @@ export function Layout() {
             ) : (
               <Link
                 to="/auth"
-                className="rounded-full border border-border px-4 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
+                className="rounded-full border border-border px-4 py-1.5 text-sm font-medium transition-all hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
               >
                 Sign in
               </Link>
@@ -173,72 +193,87 @@ export function Layout() {
         </div>
       </header>
 
-      {/* ── Main ───────────────────────────────────────────────────────────── */}
-      <main className="mx-auto max-w-6xl px-4 pb-24 pt-4 md:pb-10">
+      {/* ── Main ───────────────────────────────────────────────────────── */}
+      <main className="mx-auto max-w-6xl px-4 pb-24 pt-5 md:pb-12">
         <Outlet />
       </main>
 
-      {/* ── Desktop footer ─────────────────────────────────────────────────── */}
-      <footer className="mx-auto hidden max-w-6xl px-4 pb-8 pt-4 text-xs text-muted-foreground md:block">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-          <p>© {new Date().getFullYear()} AndamanBazaar · Port Blair, A&N Islands</p>
-          <ul className="flex flex-wrap items-center gap-4">
-            {[
-              { to: "/contact", label: "Contact" },
-              { to: "/privacy",  label: "Privacy" },
-              { to: "/terms",    label: "Terms" },
-              { to: "/brand",    label: "Brand" },
-            ].map(({ to, label }) => (
-              <li key={to}>
-                <Link to={to} className="transition-colors hover:text-foreground">{label}</Link>
+      {/* ── Footer ─────────────────────────────────────────────────────── */}
+      <footer className="hidden border-t border-border/50 bg-muted/30 md:block">
+        <div className="mx-auto max-w-6xl px-4 py-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5">
+              <img src={logoUrl} alt="" className="h-6 w-6 rounded-lg opacity-70" />
+              <p className="text-xs text-muted-foreground">
+                © {new Date().getFullYear()} AndamanBazaar · Port Blair, A&N Islands
+              </p>
+            </div>
+            <ul className="flex flex-wrap items-center gap-5">
+              {[
+                { to: "/contact", label: "Contact" },
+                { to: "/privacy", label: "Privacy" },
+                { to: "/terms",   label: "Terms" },
+                { to: "/brand",   label: "Brand" },
+              ].map(({ to, label }) => (
+                <li key={to}>
+                  <Link to={to} className="text-xs text-muted-foreground transition-colors hover:text-foreground">
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </footer>
+
+      {/* ── Mobile bottom nav ──────────────────────────────────────────── */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden">
+        {/* Frosted glass bar */}
+        <div className="border-t border-border/40 bg-background/90 backdrop-blur-xl">
+          <ul className="mx-auto flex max-w-6xl">
+            {tabs.map(({ to, label, icon: Icon, end }) => (
+              <li key={to} className="flex-1">
+                <NavLink
+                  to={to}
+                  end={end}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold tracking-wide transition-colors",
+                      isActive ? "text-primary" : "text-muted-foreground/70",
+                    )
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <span className={cn(
+                        "relative grid h-7 w-7 place-items-center rounded-2xl transition-all duration-200",
+                        isActive
+                          ? "bg-primary/12 text-primary scale-110"
+                          : "text-muted-foreground/70",
+                      )}>
+                        <Icon className="h-[18px] w-[18px]" />
+                        {isActive && (
+                          <span className="absolute -bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary" />
+                        )}
+                      </span>
+                      <span className={isActive ? "text-primary" : ""}>{label}</span>
+                    </>
+                  )}
+                </NavLink>
               </li>
             ))}
           </ul>
         </div>
-      </footer>
-
-      {/* ── Mobile bottom nav ──────────────────────────────────────────────── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-lg md:hidden">
-        <ul className="mx-auto flex max-w-6xl items-stretch">
-          {tabs.map(({ to, label, icon: Icon, end }) => (
-            <li key={to} className="flex-1">
-              <NavLink
-                to={to}
-                end={end}
-                className={({ isActive }) =>
-                  cn(
-                    "flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors",
-                    isActive
-                      ? "text-primary"
-                      : "text-muted-foreground",
-                  )
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <span className={cn(
-                      "grid h-7 w-7 place-items-center rounded-xl transition-colors",
-                      isActive ? "bg-primary/10" : "",
-                    )}>
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    {label}
-                  </>
-                )}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
       </nav>
     </div>
   );
 }
 
-function NavPill({ to, children }: { to: string; children: React.ReactNode }) {
+function HeaderNavLink({ to, children }: { to: string; children: React.ReactNode }) {
   return (
     <Link
       to={to}
-      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:bg-primary/8 hover:text-primary"
     >
       {children}
     </Link>

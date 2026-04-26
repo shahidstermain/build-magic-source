@@ -16,6 +16,7 @@ import { BOOST_PRICE_INR } from "@/lib/pricing";
 import { formatPriceLabel } from "@/lib/promo";
 import { ReviewSystem } from "@/components/ReviewSystem";
 import { MessageSellerPanel } from "@/components/MessageSellerPanel";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 type Listing = {
   id: string;
@@ -161,6 +162,43 @@ const ListingDetail = () => {
   const conditionLabel = CONDITIONS.find((c) => c.value === listing.condition)?.label ?? listing.condition;
   const isOwner = user?.id === listing.seller_id;
   const isSold = listing.status === "sold";
+  const coverImage = photos[0]?.image_url;
+
+  // Per-listing SEO
+  usePageSeo({
+    title: `${listing.title} — ₹${listing.price.toLocaleString("en-IN")} in ${listing.area || listing.city}`,
+    description: `${listing.description?.slice(0, 150) || listing.title} — Listed on AndamanBazaar in ${listing.area || listing.city}. ${conditionLabel} condition.`,
+    path: `/listings/${listing.id}`,
+    ogImage: coverImage,
+    ogType: "product",
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": listing.title,
+      "description": listing.description || listing.title,
+      "image": coverImage ? [coverImage] : [],
+      "offers": {
+        "@type": "Offer",
+        "price": listing.price,
+        "priceCurrency": "INR",
+        "availability": isSold
+          ? "https://schema.org/SoldOut"
+          : "https://schema.org/InStock",
+        "seller": {
+          "@type": "Person",
+          "name": listing.profiles?.name ?? "Local seller"
+        }
+      },
+      "breadcrumb": {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://andamanbazaar.in/" },
+          { "@type": "ListItem", "position": 2, "name": "Listings", "item": "https://andamanbazaar.in/listings" },
+          { "@type": "ListItem", "position": 3, "name": listing.title, "item": `https://andamanbazaar.in/listings/${listing.id}` },
+        ]
+      }
+    },
+  });
 
   const onMarkSold = async () => {
     if (!listing) return;
