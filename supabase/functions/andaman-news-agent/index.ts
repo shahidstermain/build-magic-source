@@ -75,6 +75,7 @@ type GeneratedPost = {
   excerpt: string;
   bodyMarkdown: string;
   tags: string[];
+  coverAlt: string;
 };
 
 type ValidationResult = { ok: true } | { ok: false; reasons: string[] };
@@ -254,6 +255,11 @@ async function callLovableJSON(messages: Array<{ role: string; content: string }
                 excerpt: { type: "string" },
                 bodyMarkdown: { type: "string" },
                 tags: { type: "array", items: { type: "string" } },
+                coverAlt: {
+                  type: "string",
+                  description:
+                    "Descriptive alt text for the cover image (50-125 chars). Must describe the visual scene AND mention the article topic. No 'image of' / 'photo of' prefix.",
+                },
               },
               required: [
                 "seoTitle",
@@ -262,6 +268,7 @@ async function callLovableJSON(messages: Array<{ role: string; content: string }
                 "excerpt",
                 "bodyMarkdown",
                 "tags",
+                "coverAlt",
               ],
               additionalProperties: false,
             },
@@ -294,7 +301,8 @@ async function generateArticle(story: RawStory): Promise<GeneratedPost> {
 - 450–700 words. Use 2–4 H2 subheadings (## ...).
 - Include a final "## Source" section linking to the original URL.
 - No clickbait. No fabricated quotes or numbers. If unsure, omit.
-- Tags: 3–6 short lowercase keywords.`;
+- Tags: 3–6 short lowercase keywords.
+- coverAlt: 50–125 chars, describes the cover image's scene AND the article subject (location, activity, or event). No "image of" / "photo of" prefix.`;
 
   const user = `Original headline: ${story.title}
 Source URL: ${story.url}
@@ -315,7 +323,10 @@ Write a publishable article for AndamanBazaar.in.`;
 
 // ---------- cover image ----------
 
-async function generateCoverImage(headline: string): Promise<string | null> {
+async function generateCoverImage(
+  headline: string,
+  altText: string,
+): Promise<string | null> {
   try {
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -328,7 +339,9 @@ async function generateCoverImage(headline: string): Promise<string | null> {
         messages: [
           {
             role: "user",
-            content: `Cinematic, photo-realistic editorial cover image for an Andaman Islands news article titled: "${headline}". Tropical, scenic, no text overlays.`,
+            content: `Cinematic, photo-realistic editorial cover image for an Andaman Islands news article titled: "${headline}".
+Visual brief (must be reflected in the image): ${altText}.
+Tropical, scenic, true-to-place, no text overlays, no watermarks.`,
           },
         ],
         modalities: ["image", "text"],
@@ -465,7 +478,85 @@ function validateContent(post: GeneratedPost): ValidationResult {
   const banned = findBannedTerms(`${post.headline} ${post.bodyMarkdown} ${post.excerpt}`);
   if (banned.length > 0) reasons.push(`banned terms detected: ${banned.join(", ")}`);
 
+  // image SEO: alt text quality and topical relevance
+  const altReasons = validateCoverAlt(post);
+  reasons.push(...altReasons);
+
   return reasons.length === 0 ? { ok: true } : { ok: false, reasons };
+}
+
+const ALT_MIN = 50;
+const ALT_MAX = 125;
+const ALT_TOPIC_OVERLAP_MIN = 2; // # of topic words that must appear in alt
+const ALT_BAD_PREFIXES = [
+  "image of",
+  "picture of",
+  "photo of",
+  "photograph of",
+  "an image",
+  "a picture",
+  "a photo",
+];
+
+function topicKeywords(post: GeneratedPost): string[] {
+  const stop = new Set([
+    "the","and","for","with","from","that","this","into","over","after","amid",
+    "andaman","andamans","nicobar","islands","island","news","story","update",
+  ]);
+  const fromTitle = tokenize(`${post.headline} ${post.seoTitle}`).filter(
+    (w) => !stop.has(w),
+  );
+  const fromTags = (post.tags ?? [])
+    .flatMap((t) => tokenize(t))
+    .filter((w) => !stop.has(w));
+  // dedupe, keep order
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const w of [...fromTitle, ...fromTags]) {
+    if (!seen.has(w)) {
+      seen.add(w);
+      out.push(w);
+    }
+  }
+  return out;
+}
+
+function validateCoverAlt(post: GeneratedPost): string[] {
+  const reasons: string[] = [];
+  const alt = (post.coverAlt ?? "").trim();
+
+  if (!alt) {
+    reasons.push("cover alt text is missing");
+    return reasons;
+  }
+  if (alt.length < ALT_MIN || alt.length > ALT_MAX) {
+    reasons.push(`cover alt must be ${ALT_MIN}-${ALT_MAX} chars (got ${alt.length})`);
+  }
+  const lower = alt.toLowerCase();
+  const badPrefix = ALT_BAD_PREFIXES.find((p) => lower.startsWith(p));
+  if (badPrefix) reasons.push(`cover alt should not start with "${badPrefix}"`);
+
+  // Must mention an Andaman/place keyword (locality grounding)
+  if (!includesAndamanKeyword(alt)) {
+    reasons.push("cover alt must reference an Andaman location/place");
+  }
+
+  // Topic overlap: at least N significant words from the article appear in alt
+  const altWords = new Set(tokenize(alt));
+  const topic = topicKeywords(post);
+  const overlap = topic.filter((w) => altWords.has(w));
+  if (overlap.length < ALT_TOPIC_OVERLAP_MIN) {
+    reasons.push(
+      `cover alt must reflect article topic (matched ${overlap.length}/${ALT_TOPIC_OVERLAP_MIN} keywords)`,
+    );
+  }
+
+  // Avoid duplicating the headline verbatim
+  if (alt.toLowerCase() === post.headline.trim().toLowerCase()) {
+    reasons.push("cover alt must not be identical to the headline");
+  }
+
+  return reasons;
 }
 
 // deno-lint-ignore no-explicit-any
@@ -595,13 +686,19 @@ Deno.serve(async (req) => {
 
     const authorId = await resolveAuthorId(supabase);
     const slug = await ensureUniqueSlug(supabase, slugify(post.headline));
-    const coverUrl = await generateCoverImage(post.headline);
+    const coverUrl = await generateCoverImage(post.headline, post.coverAlt);
+
+    // Embed the cover image with proper alt text at the top of the markdown
+    // so it renders in the post body with SEO-friendly alt attribute.
+    const contentWithCover = coverUrl
+      ? `![${post.coverAlt.replace(/[\[\]]/g, "")}](${coverUrl})\n\n${post.bodyMarkdown}`
+      : post.bodyMarkdown;
 
     const { error: insertErr } = await supabase.from("posts").insert({
       title: post.headline,
       slug,
       excerpt: post.excerpt,
-      content: post.bodyMarkdown,
+      content: contentWithCover,
       category: "news",
       tags: post.tags ?? [],
       status: "published",
