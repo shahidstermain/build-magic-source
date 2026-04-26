@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Pencil, Trash2, Eye, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Loader2, Sparkles, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -12,10 +12,24 @@ type Row = Pick<
   "id" | "title" | "slug" | "category" | "status" | "published_at" | "views" | "updated_at"
 >;
 
+type AgentResult = {
+  status: "created" | "skipped" | "error" | string;
+  slug?: string;
+  title?: string;
+  source?: string;
+  cover_image_url?: string | null;
+  reason?: string;
+  error?: string;
+  gathered?: number;
+  ranAt: string;
+};
+
 function AdminBlogInner() {
   const { toast } = useToast();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [running, setRunning] = useState(false);
+  const [agentResult, setAgentResult] = useState<AgentResult | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -34,6 +48,37 @@ function AdminBlogInner() {
   useEffect(() => {
     void load();
   }, []);
+
+  const runNewsAgent = async () => {
+    setRunning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "admin-trigger-news-agent",
+        { method: "POST" },
+      );
+      if (error) throw error;
+      const result: AgentResult = { ...(data ?? {}), ranAt: new Date().toISOString() };
+      setAgentResult(result);
+      if (result.status === "created") {
+        toast({ title: "News post published", description: result.title ?? result.slug });
+        void load();
+      } else if (result.status === "skipped") {
+        toast({ title: "Nothing new to publish", description: result.reason ?? "All sources up to date." });
+      } else {
+        toast({
+          title: "News agent failed",
+          description: result.error ?? "Unknown error",
+          variant: "destructive",
+        });
+      }
+    } catch (e) {
+      const msg = (e as Error).message;
+      setAgentResult({ status: "error", error: msg, ranAt: new Date().toISOString() });
+      toast({ title: "News agent failed", description: msg, variant: "destructive" });
+    } finally {
+      setRunning(false);
+    }
+  };
 
   const onDelete = async (row: Row) => {
     if (!confirm(`Delete "${row.title}"? This cannot be undone.`)) return;
@@ -55,12 +100,72 @@ function AdminBlogInner() {
             Stories, news and blog articles for andamanbazaar.in
           </p>
         </div>
-        <Button asChild>
-          <Link to="/admin/blog/new">
-            <Plus className="mr-1 h-4 w-4" /> New post
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={runNewsAgent} disabled={running}>
+            {running ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="mr-1 h-4 w-4" />
+            )}
+            {running ? "Running…" : "Run news agent"}
+          </Button>
+          <Button asChild>
+            <Link to="/admin/blog/new">
+              <Plus className="mr-1 h-4 w-4" /> New post
+            </Link>
+          </Button>
+        </div>
       </header>
+
+      {agentResult && (
+        <div
+          className={`rounded-2xl border p-4 text-sm ${
+            agentResult.status === "created"
+              ? "border-success/40 bg-success/10"
+              : agentResult.status === "skipped"
+                ? "border-border bg-muted/40"
+                : "border-destructive/40 bg-destructive/10"
+          }`}
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-1">
+              <p className="font-medium">
+                {agentResult.status === "created" && "Published a fresh story"}
+                {agentResult.status === "skipped" && "No new stories found"}
+                {agentResult.status !== "created" && agentResult.status !== "skipped" && "News agent error"}
+              </p>
+              {agentResult.title && (
+                <p className="text-muted-foreground">{agentResult.title}</p>
+              )}
+              {agentResult.reason && (
+                <p className="text-muted-foreground">{agentResult.reason}</p>
+              )}
+              {agentResult.error && (
+                <p className="text-destructive">{agentResult.error}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {agentResult.source && `Source: ${agentResult.source} · `}
+                Ran at {new Date(agentResult.ranAt).toLocaleTimeString()}
+              </p>
+            </div>
+            {agentResult.status === "created" && agentResult.slug && (
+              <Button asChild size="sm" variant="outline">
+                <Link to={`/blog/${agentResult.slug}`} target="_blank" rel="noopener">
+                  View post <ExternalLink className="ml-1 h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            )}
+          </div>
+          {agentResult.cover_image_url && (
+            <img
+              src={agentResult.cover_image_url}
+              alt={agentResult.title ?? "Cover"}
+              className="mt-3 h-32 w-full max-w-md rounded-lg object-cover"
+              loading="lazy"
+            />
+          )}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex h-40 items-center justify-center">
