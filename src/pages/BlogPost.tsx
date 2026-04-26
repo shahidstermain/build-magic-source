@@ -159,7 +159,32 @@ export default function BlogPost() {
         />
       )}
 
-      <div className="prose prose-sm max-w-none sm:prose-base prose-headings:font-semibold prose-headings:tracking-tight prose-a:text-primary prose-img:rounded-xl">
+      <div
+        className="
+          prose prose-base max-w-none sm:prose-lg
+          prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-foreground
+          prose-h1:mt-10 prose-h1:mb-4 prose-h1:text-3xl
+          prose-h2:mt-10 prose-h2:mb-3 prose-h2:text-2xl prose-h2:border-b prose-h2:border-border prose-h2:pb-2
+          prose-h3:mt-8 prose-h3:mb-2 prose-h3:text-xl
+          prose-h4:mt-6 prose-h4:mb-2 prose-h4:text-lg
+          prose-p:text-foreground/90 prose-p:leading-[1.8] prose-p:my-5
+          prose-a:text-primary prose-a:font-medium prose-a:underline-offset-4 hover:prose-a:underline
+          prose-strong:text-foreground prose-strong:font-semibold
+          prose-em:text-foreground/90
+          prose-ul:my-5 prose-ul:pl-6 prose-ol:my-5 prose-ol:pl-6
+          prose-li:my-2 prose-li:leading-relaxed prose-li:marker:text-primary
+          prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-muted/40
+          prose-blockquote:px-5 prose-blockquote:py-2 prose-blockquote:rounded-r-lg
+          prose-blockquote:not-italic prose-blockquote:text-foreground/80
+          prose-code:rounded prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5
+          prose-code:text-sm prose-code:font-mono prose-code:before:content-none prose-code:after:content-none
+          prose-pre:rounded-xl prose-pre:bg-muted prose-pre:border prose-pre:border-border
+          prose-img:rounded-xl prose-img:shadow-[var(--shadow-card)] prose-img:my-6
+          prose-hr:my-10 prose-hr:border-border
+          prose-table:my-6 prose-th:bg-muted prose-th:text-foreground
+          prose-td:border-border prose-th:border-border
+        "
+      >
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
       </div>
 
