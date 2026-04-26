@@ -75,6 +75,7 @@ type GeneratedPost = {
   excerpt: string;
   bodyMarkdown: string;
   tags: string[];
+  coverAlt: string;
 };
 
 type ValidationResult = { ok: true } | { ok: false; reasons: string[] };
@@ -254,6 +255,11 @@ async function callLovableJSON(messages: Array<{ role: string; content: string }
                 excerpt: { type: "string" },
                 bodyMarkdown: { type: "string" },
                 tags: { type: "array", items: { type: "string" } },
+                coverAlt: {
+                  type: "string",
+                  description:
+                    "Descriptive alt text for the cover image (50-125 chars). Must describe the visual scene AND mention the article topic. No 'image of' / 'photo of' prefix.",
+                },
               },
               required: [
                 "seoTitle",
@@ -262,6 +268,7 @@ async function callLovableJSON(messages: Array<{ role: string; content: string }
                 "excerpt",
                 "bodyMarkdown",
                 "tags",
+                "coverAlt",
               ],
               additionalProperties: false,
             },
@@ -294,7 +301,8 @@ async function generateArticle(story: RawStory): Promise<GeneratedPost> {
 - 450–700 words. Use 2–4 H2 subheadings (## ...).
 - Include a final "## Source" section linking to the original URL.
 - No clickbait. No fabricated quotes or numbers. If unsure, omit.
-- Tags: 3–6 short lowercase keywords.`;
+- Tags: 3–6 short lowercase keywords.
+- coverAlt: 50–125 chars, describes the cover image's scene AND the article subject (location, activity, or event). No "image of" / "photo of" prefix.`;
 
   const user = `Original headline: ${story.title}
 Source URL: ${story.url}
