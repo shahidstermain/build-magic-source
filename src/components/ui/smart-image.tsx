@@ -41,6 +41,12 @@ export interface SmartImageProps
   showSkeleton?: boolean;
   /** Optional className applied to the wrapping element. */
   wrapperClassName?: string;
+  /**
+   * Optional low-quality image placeholder URL shown blurred behind the main
+   * image until it loads. When omitted, an Unsplash-aware tiny preview is
+   * generated automatically. Set to `false` to disable entirely.
+   */
+  lqip?: string | false;
 }
 
 /** Build a responsive srcSet for Unsplash URLs. Returns undefined for non-Unsplash. */
@@ -59,10 +65,26 @@ function buildUnsplashSrcSet(url: string): string | undefined {
     .join(", ");
 }
 
+/** Build a tiny, blurry Unsplash preview to use as an LQIP. */
+function buildUnsplashLqip(url: string): string | undefined {
+  if (!/images\.unsplash\.com\/photo-/.test(url)) return undefined;
+  try {
+    const u = new URL(url);
+    u.searchParams.set("w", "32");
+    u.searchParams.set("q", "20");
+    u.searchParams.set("blur", "50");
+    u.searchParams.set("auto", "format");
+    u.searchParams.set("fit", u.searchParams.get("fit") ?? "crop");
+    return u.toString();
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Image component with a graceful fallback chain, an inline SVG safety net,
- * an Unsplash-aware `srcSet`, and a shimmering skeleton + fade-in transition
- * so layouts feel polished while images load.
+ * an Unsplash-aware `srcSet`, a blurred LQIP preview, and a fade-in
+ * transition so layouts feel polished while images load.
  */
 export function SmartImage({
   src,
@@ -72,6 +94,7 @@ export function SmartImage({
   responsive = true,
   showSkeleton = true,
   wrapperClassName,
+  lqip,
   className,
   alt = "",
   loading = "lazy",
@@ -91,6 +114,10 @@ export function SmartImage({
   const currentSrc = chain[index];
   const isFallbackSvg = currentSrc === FALLBACK_SVG;
   const srcSet = !isFallbackSvg && responsive ? buildUnsplashSrcSet(currentSrc) : undefined;
+  const lqipSrc =
+    lqip === false
+      ? undefined
+      : lqip ?? (!isFallbackSvg ? buildUnsplashLqip(currentSrc) : undefined);
 
   return (
     <span
@@ -99,7 +126,23 @@ export function SmartImage({
         wrapperClassName,
       )}
     >
-      {showSkeleton && !loaded && (
+      {lqipSrc && (
+        <img
+          src={lqipSrc}
+          alt=""
+          aria-hidden
+          loading="eager"
+          decoding="async"
+          className={cn(
+            "absolute inset-0 h-full w-full scale-110 blur-xl transition-opacity duration-700 ease-out",
+            fit === "cover" && "object-cover",
+            fit === "contain" && "object-contain",
+            fit === "scale-down" && "object-scale-down",
+            loaded ? "opacity-0" : "opacity-100",
+          )}
+        />
+      )}
+      {showSkeleton && !loaded && !lqipSrc && (
         <span
           aria-hidden
           className="absolute inset-0 animate-pulse bg-gradient-to-br from-muted via-muted/60 to-muted"
@@ -122,7 +165,7 @@ export function SmartImage({
           }
         }}
         className={cn(
-          "h-full w-full transition-opacity duration-500 ease-out",
+          "relative h-full w-full transition-opacity duration-500 ease-out",
           loaded ? "opacity-100" : "opacity-0",
           fit === "cover" && "object-cover",
           fit === "contain" && "object-contain",
