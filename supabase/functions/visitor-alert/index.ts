@@ -117,6 +117,36 @@ Deno.serve(async (req) => {
       // ignore
     }
 
+    // Enrich the in-app admin notifications that record_visitor just created
+    // for this session, so admins see geo / referer / device details.
+    try {
+      const device = detectDevice(user_agent);
+      const browser = detectBrowser(user_agent);
+      const refererLabel = referer ? shortenUrl(referer) : "direct";
+      const enrichedTitle = `New visitor${geo_label !== "Unknown" ? ` from ${geo_label}` : ""}`;
+      const bodyLines = [
+        `Page: ${path}`,
+        `Source: ${refererLabel}`,
+        `Device: ${device} · ${browser}`,
+      ];
+      if (language) bodyLines.push(`Language: ${language}`);
+      if (timezone) bodyLines.push(`Timezone: ${timezone}`);
+      if (ip_masked) bodyLines.push(`IP: ${ip_masked}`);
+
+      const sinceIso = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      await admin
+        .from("notifications")
+        .update({
+          title: enrichedTitle,
+          body: bodyLines.join(" · "),
+        })
+        .eq("type", "system")
+        .eq("link", path)
+        .gte("created_at", sinceIso);
+    } catch (e) {
+      console.error("notification enrichment failed", e);
+    }
+
     // Webhook
     if (
       settings.visitor_alerts_webhook_enabled &&
@@ -210,4 +240,31 @@ function escapeHtml(s: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function detectDevice(ua: string): string {
+  const s = ua.toLowerCase();
+  if (/ipad|tablet/.test(s)) return "Tablet";
+  if (/mobile|iphone|android.*mobile/.test(s)) return "Mobile";
+  if (/android/.test(s)) return "Mobile";
+  return "Desktop";
+}
+
+function detectBrowser(ua: string): string {
+  const s = ua.toLowerCase();
+  if (/edg\//.test(s)) return "Edge";
+  if (/opr\//.test(s) || /opera/.test(s)) return "Opera";
+  if (/chrome\//.test(s) && !/edg\//.test(s)) return "Chrome";
+  if (/firefox\//.test(s)) return "Firefox";
+  if (/safari\//.test(s) && !/chrome\//.test(s)) return "Safari";
+  return "Unknown browser";
+}
+
+function shortenUrl(u: string): string {
+  try {
+    const url = new URL(u);
+    return url.hostname + (url.pathname && url.pathname !== "/" ? url.pathname : "");
+  } catch {
+    return u.slice(0, 80);
+  }
 }
