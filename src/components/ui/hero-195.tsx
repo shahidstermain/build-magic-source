@@ -29,7 +29,7 @@ const previewTabs = [
       "Sunset @ Laxmanpur Beach · 5:30 PM",
     ],
     image:
-      "https://images.unsplash.com/photo-1583309217394-d916fc3a92e2?auto=format&fit=crop&w=1200&q=70",
+      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=70",
   },
   {
     id: "marketplace",
@@ -43,7 +43,7 @@ const previewTabs = [
       "Ships within Andaman Islands",
     ],
     image:
-      "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=1200&q=70",
+      "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=1200&q=70",
   },
   {
     id: "experiences",
@@ -57,7 +57,7 @@ const previewTabs = [
       "Pickup from Havelock jetty",
     ],
     image:
-      "https://images.unsplash.com/photo-1582967788606-a171c1080cb0?auto=format&fit=crop&w=1200&q=70",
+      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=70",
   },
 ];
 
