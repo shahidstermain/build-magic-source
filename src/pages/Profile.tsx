@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,6 +57,8 @@ type VerificationRequest = {
 const Profile = () => {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+
+  usePageSeo({ title: "My Profile — AndamanBazaar", description: "Manage your AndamanBazaar profile and verification.", path: "/profile", noIndex: true });
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");

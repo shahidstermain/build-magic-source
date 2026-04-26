@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import {
   fetchTripRecommendations,
   getTripDownloadUrl,
@@ -24,6 +25,8 @@ type TripRow = {
 export default function MyTrips() {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+
+  usePageSeo({ title: "My Trips — AndamanBazaar", description: "Your saved AI-generated Andaman trip plans.", path: "/my-trips", noIndex: true });
   const [trips, setTrips] = useState<TripRow[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);

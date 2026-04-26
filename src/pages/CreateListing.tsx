@@ -1,6 +1,7 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ImagePlus, Info, Loader2, Sparkles, X } from "lucide-react";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,13 @@ const CreateListing = () => {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("edit");
   const isEdit = !!editId;
+
+  usePageSeo({
+    title: isEdit ? "Edit Listing — AndamanBazaar" : "Post a Listing — Sell on AndamanBazaar",
+    description: "Post your item for sale on AndamanBazaar — the hyperlocal marketplace for the Andaman Islands. Snap a photo, set a price, go live in under a minute.",
+    path: "/sell",
+    noIndex: true,
+  });
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
 

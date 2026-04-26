@@ -15,6 +15,7 @@ import {
   Edit3,
   Users,
 } from "lucide-react";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -57,6 +58,28 @@ export default function TripPlanner() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+
+  usePageSeo({
+    title: "AI Andaman Trip Planner — Ferry-aware, Day-by-Day PDF",
+    description: "Plan your Andaman trip with AI. Get a ferry-aware, weather-backed, day-by-day itinerary PDF built like a local insider. Covers Port Blair, Havelock, Neil and more. ₹49.",
+    path: "/trip-planner",
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": "AndamanBazaar AI Trip Planner",
+      "description": "AI-generated, ferry-aware Andaman trip itinerary PDF. Covers Port Blair, Havelock, Neil Island and beyond.",
+      "provider": { "@type": "Organization", "name": "AndamanBazaar" },
+      "areaServed": { "@type": "Place", "name": "Andaman and Nicobar Islands" },
+      "offers": { "@type": "Offer", "price": "49", "priceCurrency": "INR" },
+      "breadcrumb": {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://andamanbazaar.in/" },
+          { "@type": "ListItem", "position": 2, "name": "AI Trip Planner", "item": "https://andamanbazaar.in/trip-planner" },
+        ]
+      }
+    },
+  });
 
   const initialDates = defaultDates();
   const [days, setDays] = useState(5);

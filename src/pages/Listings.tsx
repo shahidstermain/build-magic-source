@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Loader2, MapPin, Search, SlidersHorizontal, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -60,6 +61,36 @@ const Listings = () => {
   const area = params.get("area") ?? "all";
   const sort = params.get("sort") ?? "new";
   const priceRange = params.get("price") ?? "all";
+
+  // Dynamic SEO based on active filters
+  const categoryLabel = CATEGORIES.find(c => c.value === category)?.label;
+  const seoTitle = [
+    categoryLabel ?? "All listings",
+    area !== "all" ? `in ${area}` : "in Andaman Islands",
+  ].join(" ");
+  const seoDesc = categoryLabel
+    ? `Browse ${categoryLabel.toLowerCase()} listings ${area !== "all" ? `in ${area}` : "across the Andaman Islands"}. Buy and sell locally on AndamanBazaar.`
+    : `Browse all listings across the Andaman & Nicobar Islands. Buy, sell, and discover local items and experiences on AndamanBazaar.`;
+
+  usePageSeo({
+    title: seoTitle,
+    description: seoDesc,
+    path: "/listings",
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "name": seoTitle,
+      "description": seoDesc,
+      "url": "https://andamanbazaar.in/listings",
+      "breadcrumb": {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://andamanbazaar.in/" },
+          { "@type": "ListItem", "position": 2, "name": "Listings", "item": "https://andamanbazaar.in/listings" },
+        ]
+      }
+    },
+  });
 
   // Sync activities to URL when they change — use functional setParams to avoid stale closure
   useEffect(() => {

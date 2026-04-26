@@ -9,6 +9,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/lib/listings";
 import { slangOfTheDay } from "@/lib/slang";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 const categories = [
   { id: "experiences", label: "Experiences", icon: Compass,   featured: true },
@@ -34,6 +35,23 @@ type FeaturedItem = {
 export default function Index() {
   const [featured, setFeatured] = useState<FeaturedItem[]>([]);
   const [loadingFeatured, setLoadingFeatured] = useState(true);
+
+  usePageSeo({
+    title: "AndamanBazaar — Buy, Sell & Discover Across the Islands",
+    description: "The hyperlocal marketplace for the Andaman & Nicobar Islands. Buy, sell, and discover local experiences across Port Blair, Havelock, Neil, Diglipur and beyond. Boat pe bharosa.",
+    path: "/",
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "AndamanBazaar — Island Marketplace",
+      "description": "Hyperlocal buy-sell marketplace and experience booking for the Andaman & Nicobar Islands",
+      "url": "https://andamanbazaar.in/",
+      "breadcrumb": {
+        "@type": "BreadcrumbList",
+        "itemListElement": [{ "@type": "ListItem", "position": 1, "name": "Home", "item": "https://andamanbazaar.in/" }]
+      }
+    },
+  });
 
   useEffect(() => {
     let cancelled = false;
