@@ -323,7 +323,10 @@ Write a publishable article for AndamanBazaar.in.`;
 
 // ---------- cover image ----------
 
-async function generateCoverImage(headline: string): Promise<string | null> {
+async function generateCoverImage(
+  headline: string,
+  altText: string,
+): Promise<string | null> {
   try {
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -336,7 +339,9 @@ async function generateCoverImage(headline: string): Promise<string | null> {
         messages: [
           {
             role: "user",
-            content: `Cinematic, photo-realistic editorial cover image for an Andaman Islands news article titled: "${headline}". Tropical, scenic, no text overlays.`,
+            content: `Cinematic, photo-realistic editorial cover image for an Andaman Islands news article titled: "${headline}".
+Visual brief (must be reflected in the image): ${altText}.
+Tropical, scenic, true-to-place, no text overlays, no watermarks.`,
           },
         ],
         modalities: ["image", "text"],
