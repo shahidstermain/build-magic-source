@@ -28,8 +28,7 @@ export interface TripAction {
 }
 
 export interface TripDetailsCardProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof statusBadgeVariants> {
+  extends VariantProps<typeof statusBadgeVariants> {
   origin: string;
   destination: string;
   travelerName: string;
@@ -37,21 +36,12 @@ export interface TripDetailsCardProps
   travelDate: Date;
   actions: TripAction[];
   status: "upcoming" | "completed" | "cancelled";
+  className?: string;
 }
 
 const TripDetailsCard = React.forwardRef<HTMLDivElement, TripDetailsCardProps>(
   (
-    {
-      className,
-      origin,
-      destination,
-      travelerName,
-      status,
-      tripId,
-      travelDate,
-      actions,
-      ...props
-    },
+    { className, origin, destination, travelerName, status, tripId, travelDate, actions },
     ref,
   ) => {
     const formattedDate = travelDate.toLocaleDateString("en-US", {
@@ -76,7 +66,6 @@ const TripDetailsCard = React.forwardRef<HTMLDivElement, TripDetailsCardProps>(
           "overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm",
           className,
         )}
-        {...props}
       >
         <div className="p-5 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
