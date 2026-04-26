@@ -11,6 +11,7 @@ import { slangOfTheDay } from "@/lib/slang";
 import { TRIP_PRICE_INR } from "@/lib/pricing";
 import { formatPriceLabel } from "@/lib/promo";
 import { HomeLatestPosts } from "@/components/HomeLatestPosts";
+import { Hero195 } from "@/components/ui/hero-195";
 
 const categories = [
   { id: "experiences", label: "Experiences", icon: Compass,   accent: true },
@@ -65,48 +66,7 @@ export default function Index() {
     <div className="space-y-8 py-2">
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden rounded-3xl bg-[image:var(--gradient-hero)] px-5 py-10 text-primary-foreground shadow-[var(--shadow-elevated)] sm:px-10 sm:py-14">
-        {/* Blobs */}
-        <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 right-8 h-48 w-48 rounded-full bg-accent/25 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 left-1/3 h-32 w-32 rounded-full bg-white/5 blur-2xl" />
-
-        <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur-sm">
-            <MapPin className="h-3 w-3" />
-            Andaman & Nicobar Islands
-          </div>
-
-          <h1 className="mt-4 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
-            Buy, sell &amp; discover<br className="hidden sm:block" /> across the islands.
-          </h1>
-
-          <p className="mt-3 text-sm text-primary-foreground/80 sm:text-base">
-            The hyperlocal marketplace for Port Blair, Havelock, Diglipur and beyond.
-          </p>
-          <p className="mt-1 font-mono text-xs italic text-primary-foreground/60">
-            {slangOfTheDay("homeTagline")}
-          </p>
-
-          {/* CTAs */}
-          <div className="mt-6 flex flex-wrap gap-2.5">
-            <Link
-              to="/listings?category=experiences"
-              className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-opacity hover:opacity-90 active:scale-95"
-            >
-              <Waves className="h-4 w-4 text-primary" />
-              Explore experiences
-            </Link>
-            <Link
-              to="/listings"
-              className="inline-flex items-center gap-2 rounded-full border border-white/25 px-5 py-2.5 text-sm font-medium text-primary-foreground backdrop-blur-sm transition-colors hover:bg-white/10 active:scale-95"
-            >
-              <Search className="h-4 w-4" />
-              Browse all
-            </Link>
-          </div>
-        </div>
-      </section>
+      <Hero195 />
 
       {/* ── AI Trip Planner banner ────────────────────────────────────────── */}
       <Link
