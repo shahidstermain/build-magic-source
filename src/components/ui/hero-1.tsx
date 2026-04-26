@@ -13,6 +13,7 @@ export interface Hero1Props {
   placeholder?: string;
   initialValue?: string;
   prompts?: HeroPrompt[];
+  activePromptLabels?: string[];
   ctaLabel?: string;
   onSubmit?: (value: string) => void;
   onPromptSelect?: (prompt: HeroPrompt) => void;
@@ -30,6 +31,7 @@ const Hero1 = ({
   placeholder = "e.g. 5 days in Havelock & Neil with scuba and a quiet beach stay…",
   initialValue = "",
   prompts = [],
+  activePromptLabels = [],
   ctaLabel = "Plan it",
   onSubmit,
   onPromptSelect,
@@ -90,19 +92,28 @@ const Hero1 = ({
         {/* Suggestion pills */}
         {prompts.length > 0 && (
           <div className="mt-5 flex flex-wrap justify-center gap-2">
-            {prompts.map((p) => (
-              <button
-                key={p.label}
-                type="button"
-                onClick={() => {
-                  setValue(p.value ?? p.label);
-                  onPromptSelect?.(p);
-                }}
-                className="rounded-full border border-border bg-background/60 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground"
-              >
-                {p.label}
-              </button>
-            ))}
+            {prompts.map((p) => {
+              const active = activePromptLabels.includes(p.label);
+              return (
+                <button
+                  key={p.label}
+                  type="button"
+                  onClick={() => {
+                    setValue(p.value ?? p.label);
+                    onPromptSelect?.(p);
+                  }}
+                  aria-pressed={active}
+                  className={cn(
+                    "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                    active
+                      ? "border-primary bg-primary/10 text-foreground"
+                      : "border-border bg-background/60 text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-foreground",
+                  )}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
