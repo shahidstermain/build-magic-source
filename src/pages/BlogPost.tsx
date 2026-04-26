@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Calendar, Clock, ChevronLeft, Loader2 } from "lucide-react";
 import { SeoHead } from "@/components/SeoHead";
+import { AuthorByline, AUTHOR_SHAHID } from "@/components/AuthorByline";
 import {
   fetchPostBySlug,
   fetchRelatedPosts,
@@ -134,6 +135,7 @@ export default function BlogPost() {
             {readingTime(post.content)} min read
           </span>
         </div>
+        <AuthorByline author={AUTHOR_SHAHID} variant="compact" />
         {post.tags.length > 0 && (
           <ul className="flex flex-wrap gap-1.5">
             {post.tags.map((t) => (
@@ -160,6 +162,8 @@ export default function BlogPost() {
       <div className="prose prose-sm max-w-none sm:prose-base prose-headings:font-semibold prose-headings:tracking-tight prose-a:text-primary prose-img:rounded-xl">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
       </div>
+
+      <AuthorByline author={AUTHOR_SHAHID} variant="card" />
 
       {related.length > 0 && (
         <section className="space-y-3 border-t border-border pt-6">
