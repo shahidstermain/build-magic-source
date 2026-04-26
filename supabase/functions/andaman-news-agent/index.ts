@@ -686,13 +686,19 @@ Deno.serve(async (req) => {
 
     const authorId = await resolveAuthorId(supabase);
     const slug = await ensureUniqueSlug(supabase, slugify(post.headline));
-    const coverUrl = await generateCoverImage(post.headline);
+    const coverUrl = await generateCoverImage(post.headline, post.coverAlt);
+
+    // Embed the cover image with proper alt text at the top of the markdown
+    // so it renders in the post body with SEO-friendly alt attribute.
+    const contentWithCover = coverUrl
+      ? `![${post.coverAlt.replace(/[\[\]]/g, "")}](${coverUrl})\n\n${post.bodyMarkdown}`
+      : post.bodyMarkdown;
 
     const { error: insertErr } = await supabase.from("posts").insert({
       title: post.headline,
       slug,
       excerpt: post.excerpt,
-      content: post.bodyMarkdown,
+      content: contentWithCover,
       category: "news",
       tags: post.tags ?? [],
       status: "published",
