@@ -1042,6 +1042,41 @@ export type Database = {
         }
         Relationships: []
       }
+      source_url_hashes: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string | null
+          source: string
+          url: string
+          url_hash: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id?: string | null
+          source: string
+          url: string
+          url_hash: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string | null
+          source?: string
+          url?: string
+          url_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_url_hashes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trip_collaborators: {
         Row: {
           collaborative_trip_id: string
