@@ -789,18 +789,20 @@ Deno.serve(async (req) => {
 
     console.log("[agent] picked:", story.source, story.title);
 
-    // Generate, validate, and retry once if validation fails.
+    // Generate, validate, and retry once — patching ONLY the failing sections.
     let post = await generateArticle(story);
     let validation = validateContent(post);
     if (!validation.ok) {
       console.warn("[validate] first attempt failed:", validation.reasons);
-      post = await generateArticle({
-        ...story,
-        title:
-          `${story.title}\n\nFix these issues from the previous draft:\n- ` +
-          validation.reasons.join("\n- "),
-      });
+      try {
+        post = await patchArticle(post, story, validation.reasons);
+      } catch (e) {
+        console.error("[validate] targeted patch failed:", e);
+      }
       validation = validateContent(post);
+      if (validation.ok) {
+        console.log("[validate] targeted patch succeeded");
+      }
     }
     if (!validation.ok) {
       return new Response(
