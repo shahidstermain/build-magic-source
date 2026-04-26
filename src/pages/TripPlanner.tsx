@@ -56,6 +56,7 @@ import { WhatsAppShare } from "@/components/WhatsAppShare";
 import { TripPlannerLeadForm } from "@/components/TripPlannerLeadForm";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { Hero1, type HeroPrompt } from "@/components/ui/hero-1";
 
 type Stage = "form" | "preview" | "generating" | "ready";
 
@@ -128,6 +129,28 @@ export default function TripPlanner() {
 
   const [stage, setStage] = useState<Stage>("form");
   const [submitting, setSubmitting] = useState(false);
+
+  const heroPrompts: (HeroPrompt & { days?: number; interests?: string[]; islands?: string[] })[] = [
+    { label: "5 days · Havelock + Neil", days: 5, islands: ["havelock", "neil"], interests: ["beach", "snorkeling", "relaxation"] },
+    { label: "Scuba-focused weekend", days: 3, islands: ["havelock"], interests: ["scuba", "beach"] },
+    { label: "7 days family with kids", days: 7, interests: ["beach", "sightseeing", "relaxation"] },
+    { label: "Honeymoon · 6 days", days: 6, islands: ["havelock", "neil"], interests: ["relaxation", "beach", "sunset"] },
+    { label: "Adventure: trekking + caves", days: 6, islands: ["diglipur", "baratang"], interests: ["trekking", "adventure"] },
+  ];
+
+  const handlePromptSelect = (p: HeroPrompt) => {
+    const meta = heroPrompts.find((x) => x.label === p.label);
+    if (!meta) return;
+    if (meta.days) onDaysChange(meta.days);
+    if (meta.interests) setInterests(meta.interests);
+    if (meta.islands) setIslands(meta.islands);
+    document.getElementById("trip-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const handleHeroSubmit = (value: string) => {
+    if (value) setExtraNotes(value);
+    document.getElementById("trip-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
   const [tripId, setTripId] = useState<string | null>(null);
   const [preview, setPreview] = useState<TripPreview | null>(null);
   const [payOpen, setPayOpen] = useState(false);
@@ -312,21 +335,35 @@ export default function TripPlanner() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <header className="space-y-2">
-        <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-          <Sparkles className="h-3.5 w-3.5" /> AI Trip Planner
-        </div>
-        <h1 className="text-3xl font-semibold tracking-tight">
-          Plan your Andaman trip in 60 seconds
-        </h1>
-        <p className="text-muted-foreground">
-          Ferry-aware, weather-backed, budget-tuned. Built with a local insider mindset — no
-          generic tourist fluff. Premium PDF for {formatPriceLabel(TRIP_PRICE_INR)}.
-        </p>
-      </header>
+      {stage === "form" ? (
+        <Hero1
+          eyebrow={`AI Trip Planner · ${formatPriceLabel(TRIP_PRICE_INR)}`}
+          title={
+            <>
+              Plan your <span className="text-primary">Andaman trip</span> in 60 seconds.
+            </>
+          }
+          subtitle="Ferry-aware, weather-backed, budget-tuned. Built with a local insider mindset — no generic tourist fluff."
+          placeholder="e.g. 5 days in Havelock & Neil with scuba and a quiet beach stay…"
+          prompts={heroPrompts.map(({ label }) => ({ label }))}
+          ctaLabel="Start"
+          onSubmit={handleHeroSubmit}
+          onPromptSelect={handlePromptSelect}
+          initialValue={extraNotes}
+        />
+      ) : (
+        <header className="space-y-2">
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+            <Sparkles className="h-3.5 w-3.5" /> AI Trip Planner
+          </div>
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Plan your Andaman trip in 60 seconds
+          </h1>
+        </header>
+      )}
 
       {stage === "form" && (
-        <Card className="space-y-6 p-6">
+        <Card id="trip-form" className="space-y-6 p-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="days">Number of days</Label>
