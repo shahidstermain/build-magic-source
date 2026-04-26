@@ -8,8 +8,8 @@ import { Layout } from "@/components/Layout";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SiteMetaProvider } from "@/hooks/useSiteMeta";
 import { recordVisitorOnce } from "@/lib/visitorTracking";
-import Index from "./pages/Index.tsx";
 
+const Index = lazy(() => import("./pages/Index.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const Listings = lazy(() => import("./pages/Listings.tsx"));
 const ListingDetail = lazy(() => import("./pages/ListingDetail.tsx"));
