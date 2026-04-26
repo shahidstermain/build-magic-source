@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { MessageCircle, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { BookingLeadDialog } from "@/components/BookingLeadDialog";
 
 interface WhatsAppShareProps {
   title: string;
@@ -220,9 +222,12 @@ export function WhatsAppBookingConfirm({
 }: WhatsAppBookingConfirmProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [leadOpen, setLeadOpen] = useState(false);
 
-  const handleSend = async () => {
-    const text = buildBookingConfirmationMessage(details);
+  const sendToWhatsApp = (extraNote?: string) => {
+    const text =
+      buildBookingConfirmationMessage(details) +
+      (extraNote ? `\n\n📝 ${extraNote}` : "");
     const base = details.toPhone
       ? `https://wa.me/${details.toPhone}`
       : `https://wa.me/`;
@@ -256,13 +261,36 @@ export function WhatsAppBookingConfirm({
   };
 
   return (
-    <Button
-      onClick={handleSend}
-      size={size}
-      className={`bg-green-600 text-white hover:bg-green-700 ${className ?? ""}`}
-    >
-      <MessageCircle className="mr-2 h-4 w-4" />
-      Send booking confirmation
-    </Button>
+    <>
+      <Button
+        onClick={() => setLeadOpen(true)}
+        size={size}
+        className={`bg-green-600 text-white hover:bg-green-700 ${className ?? ""}`}
+      >
+        <MessageCircle className="mr-2 h-4 w-4" />
+        Send booking confirmation
+      </Button>
+      <BookingLeadDialog
+        open={leadOpen}
+        onOpenChange={setLeadOpen}
+        context="whatsapp_booking"
+        defaults={{
+          bookingTitle: details.title,
+          islands: details.islands,
+          startDate: details.startDate,
+          endDate: details.endDate,
+          travelers: details.travelers,
+        }}
+        onConfirmed={(lead) => {
+          const note = [
+            lead.experiences.length ? `Interests: ${lead.experiences.join(", ")}` : null,
+            lead.notes,
+          ]
+            .filter(Boolean)
+            .join(" · ");
+          sendToWhatsApp(note);
+        }}
+      />
+    </>
   );
 }
