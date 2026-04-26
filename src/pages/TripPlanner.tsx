@@ -130,6 +130,11 @@ export default function TripPlanner() {
   const [stage, setStage] = useState<Stage>("form");
   const [submitting, setSubmitting] = useState(false);
 
+  type FormErrors = Partial<Record<"days" | "dates" | "interests" | "islands", string>>;
+  const [errors, setErrors] = useState<FormErrors>({});
+  const clearError = (key: keyof FormErrors) =>
+    setErrors((e) => (e[key] ? { ...e, [key]: undefined } : e));
+
   const heroPrompts: (HeroPrompt & { days?: number; interests?: string[]; islands?: string[] })[] = [
     { label: "5 days · Havelock + Neil", days: 5, islands: ["havelock", "neil"], interests: ["beach", "snorkeling", "relaxation"] },
     { label: "Scuba-focused weekend", days: 3, islands: ["havelock"], interests: ["scuba", "beach"] },
@@ -144,6 +149,7 @@ export default function TripPlanner() {
     if (meta.days) onDaysChange(meta.days);
     if (meta.interests) setInterests(meta.interests);
     if (meta.islands) setIslands(meta.islands);
+    setErrors({});
     document.getElementById("trip-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -174,18 +180,32 @@ export default function TripPlanner() {
     arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
 
   const onPreview = async () => {
-    if (!startDate || !endDate || days < 1) {
-      toast({ title: "Please fill all fields", variant: "destructive" });
+    const next: FormErrors = {};
+    if (!days || days < 1) next.days = "Choose at least 1 day.";
+    else if (days > 14) next.days = "Trips can be up to 14 days.";
+    if (!startDate || !endDate) next.dates = "Pick both a start and end date.";
+    else if (new Date(endDate) <= new Date(startDate))
+      next.dates = "End date must be after start date.";
+    if (interests.length === 0) next.interests = "Pick at least one interest.";
+    if (islands.length === 0) next.islands = "Pick at least one island to visit.";
+
+    if (Object.keys(next).length > 0) {
+      setErrors(next);
+      toast({
+        title: "A few things to fix",
+        description: "Please complete the highlighted fields below.",
+        variant: "destructive",
+      });
+      const firstKey = (["days", "dates", "interests", "islands"] as const).find((k) => next[k]);
+      const targetId = firstKey === "dates" ? "start" : firstKey;
+      if (targetId) {
+        const el = document.getElementById(targetId);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (el instanceof HTMLInputElement) el.focus({ preventScroll: true });
+      }
       return;
     }
-    if (new Date(endDate) <= new Date(startDate)) {
-      toast({ title: "End date must be after start date", variant: "destructive" });
-      return;
-    }
-    if (interests.length === 0) {
-      toast({ title: "Pick at least one interest", variant: "destructive" });
-      return;
-    }
+    setErrors({});
     setSubmitting(true);
     try {
       const inputs: TripInputs = {
@@ -373,8 +393,19 @@ export default function TripPlanner() {
                 min={1}
                 max={14}
                 value={days}
-                onChange={(e) => onDaysChange(Number(e.target.value))}
+                onChange={(e) => {
+                  onDaysChange(Number(e.target.value));
+                  clearError("days");
+                }}
+                aria-invalid={!!errors.days}
+                aria-describedby={errors.days ? "days-error" : undefined}
+                className={cn(errors.days && "border-destructive focus-visible:ring-destructive")}
               />
+              {errors.days && (
+                <p id="days-error" className="text-xs text-destructive">
+                  {errors.days}
+                </p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>Budget</Label>
@@ -403,7 +434,12 @@ export default function TripPlanner() {
                 id="start"
                 type="date"
                 value={startDate}
-                onChange={(e) => onStartDateChange(e.target.value)}
+                onChange={(e) => {
+                  onStartDateChange(e.target.value);
+                  clearError("dates");
+                }}
+                aria-invalid={!!errors.dates}
+                className={cn(errors.dates && "border-destructive focus-visible:ring-destructive")}
               />
             </div>
             <div className="space-y-1.5">
@@ -413,21 +449,37 @@ export default function TripPlanner() {
                 type="date"
                 value={endDate}
                 min={startDate}
-                onChange={(e) => onEndDateChange(e.target.value)}
+                onChange={(e) => {
+                  onEndDateChange(e.target.value);
+                  clearError("dates");
+                }}
+                aria-invalid={!!errors.dates}
+                className={cn(errors.dates && "border-destructive focus-visible:ring-destructive")}
               />
+              {errors.dates && (
+                <p className="col-span-full text-xs text-destructive">{errors.dates}</p>
+              )}
             </div>
           </div>
 
           <div className="space-y-2">
             <Label>Interests</Label>
-            <div className="flex flex-wrap gap-2">
+            <div
+              className={cn(
+                "flex flex-wrap gap-2 rounded-md",
+                errors.interests && "p-2 ring-1 ring-destructive",
+              )}
+            >
               {EXPANDED_INTEREST_OPTIONS.map((i) => {
                 const active = interests.includes(i);
                 return (
                   <button
                     key={i}
                     type="button"
-                    onClick={() => setInterests((arr) => toggle(arr, i))}
+                    onClick={() => {
+                      setInterests((arr) => toggle(arr, i));
+                      clearError("interests");
+                    }}
                     className={cn(
                       "rounded-full border px-3 py-1 text-xs capitalize transition-colors",
                       active
@@ -440,21 +492,35 @@ export default function TripPlanner() {
                 );
               })}
             </div>
+            {errors.interests && (
+              <p className="text-xs text-destructive">{errors.interests}</p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label>Preferred islands (optional)</Label>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <Label>Preferred islands</Label>
+            <div
+              className={cn(
+                "grid gap-2 rounded-md sm:grid-cols-2",
+                errors.islands && "p-2 ring-1 ring-destructive",
+              )}
+            >
               {ISLAND_OPTIONS.map((isl) => (
                 <label key={isl} className="flex items-center gap-2 text-sm">
                   <Checkbox
                     checked={islands.includes(isl)}
-                    onCheckedChange={() => setIslands((arr) => toggle(arr, isl))}
+                    onCheckedChange={() => {
+                      setIslands((arr) => toggle(arr, isl));
+                      clearError("islands");
+                    }}
                   />
                   <span>{isl}</span>
                 </label>
               ))}
             </div>
+            {errors.islands && (
+              <p className="text-xs text-destructive">{errors.islands}</p>
+            )}
           </div>
 
           {/* ========= Who's travelling ========= */}
