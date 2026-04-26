@@ -159,10 +159,8 @@ function dedupeByUrl(stories: RawStory[]): RawStory[] {
   });
 }
 
-async function filterAlreadyUsed(
-  supabase: ReturnType<typeof createClient>,
-  stories: RawStory[],
-): Promise<RawStory[]> {
+// deno-lint-ignore no-explicit-any
+async function filterAlreadyUsed(supabase: any, stories: RawStory[]): Promise<RawStory[]> {
   if (!stories.length) return stories;
   const hashes = await Promise.all(stories.map((s) => sha256Hex(s.url)));
   const { data, error } = await supabase
@@ -173,7 +171,7 @@ async function filterAlreadyUsed(
     console.warn("[selector] hash lookup error:", error.message);
     return stories;
   }
-  const used = new Set((data ?? []).map((r: { url_hash: string }) => r.url_hash));
+  const used = new Set((data ?? []).map((r: any) => r.url_hash as string));
   return stories.filter((_, i) => !used.has(hashes[i]));
 }
 
@@ -330,10 +328,8 @@ async function generateCoverImage(headline: string): Promise<string | null> {
 
 // ---------- save ----------
 
-async function ensureUniqueSlug(
-  supabase: ReturnType<typeof createClient>,
-  base: string,
-): Promise<string> {
+// deno-lint-ignore no-explicit-any
+async function ensureUniqueSlug(supabase: any, base: string): Promise<string> {
   let slug = base || `news-${Date.now()}`;
   for (let i = 0; i < 8; i++) {
     const { data } = await supabase
@@ -347,9 +343,8 @@ async function ensureUniqueSlug(
   return `${base}-${Date.now()}`;
 }
 
-async function resolveAuthorId(
-  supabase: ReturnType<typeof createClient>,
-): Promise<string> {
+// deno-lint-ignore no-explicit-any
+async function resolveAuthorId(supabase: any): Promise<string> {
   const env = Deno.env.get("AGENT_AUTHOR_ID");
   if (env) return env;
   const { data } = await supabase
