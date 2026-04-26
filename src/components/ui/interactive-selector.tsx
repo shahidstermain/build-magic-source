@@ -33,7 +33,7 @@ const defaultOptions: SelectorOption[] = [
     title: "Havelock (Swaraj Dweep)",
     description: "White-sand beaches, scuba & sunsets at Radhanagar.",
     image:
-      "https://images.unsplash.com/photo-1583309217394-d916fc3a92e2?auto=format&fit=crop&w=1200&q=70",
+      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=70",
     icon: Palmtree,
     href: "/listings?city=havelock",
   },
