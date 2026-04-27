@@ -182,8 +182,6 @@ export default function Index() {
                               loading="lazy"
                               decoding="async"
                               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                              src={cover} alt={item.title} loading="lazy"
-                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                             />
                           ) : (
                             <div className="flex h-full items-center justify-center text-2xl">🏝️</div>
@@ -242,11 +240,6 @@ export default function Index() {
       <HomeLatestPosts />
 
       {/* ── About ─────────────────────────────────────────────────────────── */}
-      <section className="overflow-hidden rounded-3xl border border-border bg-card shadow-[var(--shadow-card)]">
-        <div className="grid md:grid-cols-[1.1fr_0.9fr]">
-          <div className="space-y-4 p-6 sm:p-8">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">
-      {/* ── ABOUT ────────────────────────────────────────────────────────── */}
       <section className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-[var(--shadow-card)]">
         <div className="grid md:grid-cols-[1.15fr_0.85fr]">
           {/* Story */}
