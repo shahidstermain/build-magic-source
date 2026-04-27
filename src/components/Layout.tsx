@@ -73,31 +73,18 @@ export function Layout() {
       {/* ── Launch promo banner ───────────────────────────────────────────── */}
       <PromoBanner />
 
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/90 backdrop-blur-lg">
-        <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
-          {/* Logo */}
-          <Link to="/" className="flex shrink-0 items-center gap-2">
-            <img
-              src={logoUrl}
-              alt="AndamanBazaar"
-              width={32}
-              height={32}
-              decoding="async"
-              className="h-8 w-8 rounded-lg object-cover"
-            />
-            <span className="hidden text-base font-semibold tracking-tight sm:block">
-
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 border-b border-border/50 bg-background/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-15 max-w-6xl items-center gap-3 px-4 h-[56px]">
-
+        <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
           {/* Logo */}
           <Link to="/" className="flex shrink-0 items-center gap-2.5 group">
             <div className="relative">
               <img
                 src={logoUrl}
                 alt="AndamanBazaar"
+                width={32}
+                height={32}
+                decoding="async"
                 className="h-8 w-8 rounded-xl object-cover shadow-sm transition-transform group-hover:scale-105"
               />
               <div className="absolute inset-0 rounded-xl ring-2 ring-primary/0 transition-all group-hover:ring-primary/20" />
@@ -114,11 +101,9 @@ export function Layout() {
             </HeaderNavLink>
             <HeaderNavLink to="/trip-planner">
               <Wand2 className="h-3.5 w-3.5" /> AI Planner
-            </NavPill>
-            <NavPill to="/blog">📰 Blog</NavPill>
-            <NavPill to="/pricing">💎 Pricing</NavPill>
-          </div>
             </HeaderNavLink>
+            <HeaderNavLink to="/blog">📰 Blog</HeaderNavLink>
+            <HeaderNavLink to="/pricing">💎 Pricing</HeaderNavLink>
           </nav>
 
           {/* Search bar — desktop */}
