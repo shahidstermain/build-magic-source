@@ -90,88 +90,6 @@ export default function Index() {
 
       {/* ── Explore the islands ──────────────────────────────────────────── */}
       <InteractiveSelector />
-      {/* ── HERO ─────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden rounded-[2rem] shadow-[var(--shadow-elevated)]">
-        {/* Deep ocean background */}
-        <div className="absolute inset-0 bg-[image:var(--gradient-hero)]" />
-
-        {/* Layered texture blobs */}
-        <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-white/8 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-16 -left-16 h-64 w-64 rounded-full bg-[hsl(185_80%_50%/0.2)] blur-3xl" />
-        <div className="pointer-events-none absolute bottom-8 right-1/4 h-40 w-40 rounded-full bg-[hsl(16_92%_58%/0.15)] blur-2xl" />
-        <div className="pointer-events-none absolute left-1/2 top-0 h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-
-        {/* Content */}
-        <div className="relative z-10 px-6 py-12 sm:px-10 sm:py-16 lg:py-20">
-          <div className="max-w-2xl">
-            {/* Location pill */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white/90 backdrop-blur-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[hsl(var(--accent))] opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[hsl(var(--accent))]" />
-              </span>
-              Andaman & Nicobar Islands
-            </div>
-
-            {/* Headline */}
-            <h1 className="mt-5 text-4xl font-bold leading-[1.1] tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Buy, sell &amp;<br />
-              <span className="text-[hsl(185_80%_72%)]">discover</span> across<br />
-              the islands.
-            </h1>
-
-            <p className="mt-4 max-w-md text-base text-white/70 sm:text-lg">
-              The hyperlocal marketplace for Port Blair, Havelock, Diglipur and beyond.
-            </p>
-            <p className="mt-1.5 font-mono text-xs italic text-white/45">
-              {slangOfTheDay("homeTagline")}
-            </p>
-
-            {/* CTAs */}
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Link
-                to="/listings?category=experiences"
-                className="group inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-foreground shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 active:scale-95"
-              >
-                <Waves className="h-4 w-4 text-primary transition-transform group-hover:scale-110" />
-                Explore experiences
-              </Link>
-              <Link
-                to="/listings"
-                className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/20 active:scale-95"
-              >
-                <Search className="h-4 w-4" />
-                Browse marketplace
-              </Link>
-            </div>
-
-            {/* Social proof strip */}
-            <div className="mt-8 flex items-center gap-4">
-              <div className="flex -space-x-2">
-                {["🏄", "🤿", "🚤", "🐠"].map((emoji, i) => (
-                  <div
-                    key={i}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white/30 bg-white/15 text-sm backdrop-blur-sm"
-                  >
-                    {emoji}
-                  </div>
-                ))}
-              </div>
-              <div>
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-3 w-3 fill-[hsl(40_95%_60%)] text-[hsl(40_95%_60%)]" />
-                  ))}
-                </div>
-                <p className="mt-0.5 text-xs text-white/60">Trusted by islanders across A&N</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background/20 to-transparent" />
-      </section>
 
       {/* ── AI TRIP PLANNER BANNER ────────────────────────────────────────── */}
       <Link
@@ -184,14 +102,10 @@ export default function Index() {
         <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/15 text-primary shadow-[inset_0_1px_0_hsl(0_0%_100%/0.15)] transition-all group-hover:bg-primary/20 group-hover:scale-105">
           <Wand2 className="h-5 w-5" />
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold">
-            AI Trip Planner · {formatPriceLabel(TRIP_PRICE_INR)}
-          </p>
         <div className="relative min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="text-sm font-bold">AI Trip Planner</p>
-            <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold text-accent">₹49</span>
+            <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-bold text-accent">{formatPriceLabel(TRIP_PRICE_INR)}</span>
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
             Ferry-aware · weather-backed · day-by-day PDF — built like a local insider.
