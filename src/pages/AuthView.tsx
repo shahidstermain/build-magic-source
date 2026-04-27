@@ -47,8 +47,6 @@ const LegalDialog = ({
     </DialogContent>
   </Dialog>
 );
-import { Loader2, MapPin, Anchor, Compass, ShieldCheck } from "lucide-react";
-import logoUrl from "@/assets/logo.png";
 import { usePageSeo } from "@/hooks/usePageSeo";
 
 type Mode = "signin" | "signup" | "forgot";
