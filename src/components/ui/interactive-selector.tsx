@@ -12,6 +12,11 @@ import {
 
 import { cn } from "@/lib/utils";
 import { SmartImage } from "@/components/ui/smart-image";
+import havelockImg from "@/assets/islands/havelock-radhanagar.jpg";
+import neilImg from "@/assets/islands/neil-natural-bridge.jpg";
+import portBlairImg from "@/assets/islands/port-blair-cellular-jail.jpg";
+import diglipurImg from "@/assets/islands/diglipur-ross-smith.jpg";
+import baratangImg from "@/assets/islands/baratang-mangroves.jpg";
 
 export type SelectorOption = {
   title: string;
@@ -33,40 +38,35 @@ const defaultOptions: SelectorOption[] = [
   {
     title: "Havelock (Swaraj Dweep)",
     description: "White-sand beaches, scuba & sunsets at Radhanagar.",
-    image:
-      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=70",
+    image: havelockImg,
     icon: Palmtree,
     href: "/listings?city=havelock",
   },
   {
     title: "Neil Island (Shaheed Dweep)",
     description: "Slow mornings, coral reefs & cycle rides.",
-    image:
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=70",
+    image: neilImg,
     icon: Waves,
     href: "/listings?city=neil-island",
   },
   {
     title: "Port Blair",
     description: "Cellular Jail, harbour & the gateway to every ferry.",
-    image:
-      "https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=1200&q=70",
+    image: portBlairImg,
     icon: Anchor,
     href: "/listings?city=port-blair",
   },
   {
     title: "Diglipur",
     description: "Twin islands, mud volcanoes & turtle nesting.",
-    image:
-      "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1200&q=70",
+    image: diglipurImg,
     icon: Mountain,
     href: "/listings?city=diglipur",
   },
   {
     title: "Baratang",
     description: "Limestone caves & dawn mangrove cruises.",
-    image:
-      "https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1200&q=70",
+    image: baratangImg,
     icon: Ship,
     href: "/listings?city=baratang",
   },
