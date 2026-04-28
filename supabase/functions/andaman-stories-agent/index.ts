@@ -156,7 +156,7 @@ async function callLovableJSON(messages: Array<{ role: string; content: string }
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
+      model: "google/gemini-2.5-pro",
       messages,
       tools: [
         {
@@ -167,14 +167,39 @@ async function callLovableJSON(messages: Array<{ role: string; content: string }
             parameters: {
               type: "object",
               properties: {
-                topic: { type: "string" },
-                seoTitle: { type: "string" },
-                metaDescription: { type: "string" },
-                headline: { type: "string" },
-                excerpt: { type: "string" },
-                bodyMarkdown: { type: "string" },
-                tags: { type: "array", items: { type: "string" } },
-                coverAlt: { type: "string" },
+                topic: { type: "string", description: "The chosen topic from the pool." },
+                seoTitle: {
+                  type: "string",
+                  description: `SEO title, max ${SEO_TITLE_MAX} characters, includes "Andaman".`,
+                },
+                metaDescription: {
+                  type: "string",
+                  description: `Meta description, ${META_DESC_MIN}-${META_DESC_MAX} characters.`,
+                },
+                headline: { type: "string", description: "Article H1 headline (10-90 chars)." },
+                excerpt: {
+                  type: "string",
+                  description: "Short article summary, 60-180 characters.",
+                },
+                bodyMarkdown: {
+                  type: "string",
+                  description:
+                    `Full article body in GitHub-flavoured Markdown. MUST be ${MIN_WORDS}-${MAX_WORDS} words. ` +
+                    `MUST contain at least ${MIN_H2} second-level headings written as lines that start with "## " (two hash characters then a space then the heading text). ` +
+                    `One of those headings MUST be exactly "## FAQs" with 3-5 Q&A pairs using **Q:** and **A:** prefixes. ` +
+                    `Do NOT use HTML tags, do NOT use # for the title, do NOT escape the # characters. Plain Markdown only.`,
+                },
+                tags: {
+                  type: "array",
+                  items: { type: "string" },
+                  description: "3-6 short lowercase keyword tags.",
+                },
+                coverAlt: {
+                  type: "string",
+                  description:
+                    `Alt text for the cover image. MUST be ${ALT_MIN}-${ALT_MAX} characters (so write a full descriptive sentence). ` +
+                    `Describes the visual scene AND mentions a specific Andaman place. Do not start with "image of" or "photo of".`,
+                },
               },
               required: [
                 "topic",
