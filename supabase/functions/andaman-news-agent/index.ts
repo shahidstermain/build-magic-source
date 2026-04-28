@@ -840,11 +840,13 @@ Deno.serve(async (req) => {
 
     // Generate, validate, and retry once — patching ONLY the failing sections.
     let post = await generateArticle(story);
+    post = normalizePost(post);
     let validation = validateContent(post);
     if (!validation.ok) {
       console.warn("[validate] first attempt failed:", validation.reasons);
       try {
         post = await patchArticle(post, story, validation.reasons);
+        post = normalizePost(post);
       } catch (e) {
         console.error("[validate] targeted patch failed:", e);
       }
