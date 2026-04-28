@@ -1,6 +1,7 @@
-// Admin-only proxy that triggers the andaman-news-agent edge function.
-// Verifies the caller is an authenticated admin, then calls the news agent
-// server-side using NEWS_AGENT_SECRET (never exposed to the browser).
+// Admin-only proxy that triggers andaman-stories-agent.
+// Verifies the caller is an authenticated admin, then proxies to the stories
+// agent with NEWS_AGENT_SECRET (reused). Always returns 200 to the client with
+// a structured payload so the admin UI can show the real error reason.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -43,10 +44,10 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
     const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: claimsErr } = await userClient.auth.getClaims(
-      token,
-    );
+    const { data: claims, error: claimsErr } =
+      await userClient.auth.getClaims(token);
     if (claimsErr || !claims?.claims?.sub) {
+      console.error("[trigger-stories] getClaims failed:", claimsErr?.message);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -59,6 +60,7 @@ Deno.serve(async (req) => {
       _role: "admin",
     });
     if (roleErr || !isAdmin) {
+      console.error("[trigger-stories] role check failed:", roleErr?.message);
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -67,24 +69,28 @@ Deno.serve(async (req) => {
 
     let res: Response;
     try {
-      res = await fetch(`${SUPABASE_URL}/functions/v1/andaman-news-agent`, {
-        method: "POST",
-        headers: {
-          "x-cron-secret": NEWS_AGENT_SECRET,
-          "Content-Type": "application/json",
+      res = await fetch(
+        `${SUPABASE_URL}/functions/v1/andaman-stories-agent`,
+        {
+          method: "POST",
+          headers: {
+            "x-cron-secret": NEWS_AGENT_SECRET,
+            "Content-Type": "application/json",
+          },
         },
-      });
+      );
     } catch (e) {
       const msg = (e as Error).message;
-      console.error("[trigger-news] upstream fetch threw:", msg);
+      console.error("[trigger-stories] upstream fetch threw:", msg);
       return new Response(
         JSON.stringify({ status: "error", error: `upstream_unreachable: ${msg}` }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
     const text = await res.text();
     console.log(
-      `[trigger-news] upstream status=${res.status} body=`,
+      `[trigger-stories] upstream status=${res.status} body=`,
       text.slice(0, 500),
     );
     let payload: Record<string, unknown>;
@@ -112,13 +118,10 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     const msg = (e as Error).message;
-    console.error("[trigger-news] handler error:", msg);
-    return new Response(
-      JSON.stringify({ status: "error", error: msg }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    console.error("[trigger-stories] handler error:", msg);
+    return new Response(JSON.stringify({ status: "error", error: msg }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

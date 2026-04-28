@@ -1,153 +1,101 @@
-## AI Andaman Trip Planner — Implementation Plan
+## Problem
 
-Adapted to the existing AndamanBazaar stack: **React + Vite + Tailwind + shadcn/ui + Supabase + Cashfree** (not React Native/Razorpay). AI via **Lovable AI Gateway** (`google/gemini-2.5-pro`). Price **₹49**. Preview = teaser (Day 1 morning + summary, rest locked).
+Both "Run news agent" and "Run stories agent" buttons in `/admin/blog` fail with:
 
----
+> Edge Function returned a non-2xx status code
 
-### 1. Database (migration)
+Investigation shows:
 
-**Table `trip_requests`**
-- `id uuid pk default gen_random_uuid()`
-- `user_id uuid not null` (auth.users.id, no FK per project rules)
-- `inputs jsonb not null` — `{ days, budget: 'low'|'medium'|'high', start_date, end_date, interests: text[], islands: text[] }`
-- `status text not null default 'pending'` — `pending | paid | generating | generated | failed`
-- `preview jsonb` — small teaser blob generated pre-payment
-- `itinerary jsonb` — full structured output (post-payment)
-- `error text`
-- `created_at`, `updated_at` timestamptz
+1. **`andaman-stories-agent` and `admin-trigger-stories-agent` source files are missing** from `supabase/functions/` locally. Although the deployed remote versions still exist (we see HTTP 500s from `admin-trigger-stories-agent` in edge logs), there is no source to fix or redeploy. The "Run stories agent" button in `AdminBlog.tsx` doesn't even exist yet in the current code — it only has the news agent button.
+2. **`admin-trigger-news-agent` returned 500** in recent runs (`execution_time_ms: 1508`) with no captured `console.error` — meaning either the auth `getClaims` flow threw, or the proxied `andaman-news-agent` fetch returned a non-2xx body that bubbled up as a 500 status to the client. The proxy currently swallows error context.
+3. The proxies do not log the upstream status/body, so we cannot tell from logs whether it's an auth failure, a missing secret, an LLM error, or a moderation/duplicate skip being misclassified.
 
-**Table `trip_pdfs`**
-- `id uuid pk`
-- `trip_id uuid not null`
-- `user_id uuid not null`
-- `storage_path text not null` (e.g. `trip-pdfs/<user>/<trip>.pdf`)
-- `created_at` timestamptz
+## Goal
 
-**Reuse `payments` table** with new `purpose = 'trip_plan'`. Add `trip_id uuid` nullable column (the `listing_id` column stays unused for this purpose).
+- Restore the stories agent end-to-end (edge function + admin proxy + admin button + cron schedule + `verify_jwt=false` config).
+- Make both proxies log the upstream response and return a structured error so the admin UI shows the real reason instead of "non-2xx".
+- Verify both agents run successfully from the admin dashboard.
 
-**RLS**
-- `trip_requests`: SELECT/UPDATE/INSERT only where `auth.uid() = user_id`.
-- `trip_pdfs`: SELECT only where `auth.uid() = user_id`. INSERT only via service role (edge function).
-- Storage bucket **`trip-pdfs`** — **private**. Policy: users can SELECT objects whose first folder segment equals their `auth.uid()::text`.
+## Plan
 
----
+### 1. Recreate `supabase/functions/andaman-stories-agent/index.ts`
 
-### 2. Edge functions (Deno, follow existing Cashfree pattern)
+Mirror the architecture of `andaman-news-agent` but for evergreen organic-traffic content:
 
-1. **`trip-preview`** — auth required. Inserts `trip_requests` row (status `pending`), calls Lovable AI for a short teaser (summary + Day 1 morning only), stores in `preview`, returns `{ trip_id, preview }`. No PDF, no payment yet.
+- Triggered by `x-cron-secret` header (reuse `NEWS_AGENT_SECRET`) or by the admin proxy.
+- Brainstorm an evergreen Andaman topic via Lovable AI (`google/gemini-2.5-flash`) from a rotating pool: beaches, ferries, diving, food, budget guides, itineraries, festivals, packing, monsoon tips, etc.
+- Pull the last 40 published `posts` (category `blog`) to:
+  - Avoid duplicate topics (Jaccard similarity on title+tags ≥ 0.55 → skip).
+  - Encourage topical diversity.
+- Generate 500–1100 word Markdown with H2s, FAQ section, and SEO meta via Lovable AI.
+- Run AI moderation pass (banned terms list, geo-keyword requirement, structural checks reusing helpers from the news agent).
+- Generate cover image via `google/gemini-3.1-flash-image-preview`, upload to `post-images` bucket under `stories-agent/`.
+- Insert into `posts` with `category='blog'`, `status='published'`, `author_id` = a designated admin user (look up by `has_role`).
+- Return `{ status: 'created' | 'skipped' | 'error', slug?, title?, reason?, cover_image_url? }`.
 
-2. **`cashfree-create-trip-order`** — mirrors `cashfree-create-order` but for a `trip_id`. Amount ₹49. Stores `payments` row with `purpose='trip_plan'`, `trip_id` in `notes`. Returns `payment_session_id`.
+### 2. Recreate `supabase/functions/admin-trigger-stories-agent/index.ts`
 
-3. **`cashfree-verify-trip-payment`** — mirrors existing verify. On `paid`: marks payment paid, sets `trip_requests.status='paid'`, then **inline triggers** `trip-generate` (await). Returns `{ status, trip_id, pdf_path? }`.
+Same shape as `admin-trigger-news-agent`: verify Bearer token → check `has_role('admin')` → proxy to `andaman-stories-agent` with `x-cron-secret`.
 
-4. **`trip-generate`** — auth required (or service-role internal call). Loads paid `trip_requests` row, calls Lovable AI Gateway with a strict tool-calling JSON schema for the full itinerary (cover, overview, days[], ferry_logistics, budget, recommendations, packing, emergency). Renders PDF server-side (see §3), uploads to `trip-pdfs/<user_id>/<trip_id>.pdf`, inserts `trip_pdfs` row, sets `status='generated'`. Returns `{ storage_path }`.
+### 3. Harden both admin proxies
 
-5. **`trip-download-url`** — auth required. Verifies caller owns the trip; returns a short-lived signed URL (`createSignedUrl`, 10 min) for the PDF.
+In `admin-trigger-news-agent` and the new stories proxy:
 
-All functions: CORS headers, Zod-style input validation, structured error logging, surface 402/429 from Lovable AI as friendly toasts on the client. `verify_jwt` left at default (in-code auth check via `getUser()`).
+- Wrap each step (`getClaims`, `has_role`, upstream `fetch`) in a try/catch with `console.error` so failures appear in logs.
+- When the upstream returns non-2xx, **return HTTP 200** to the client with a structured body: `{ status: 'error', upstream_status, error: <parsed message or raw body snippet> }`. This way the admin UI can render the real reason instead of throwing on `error` from `supabase.functions.invoke`.
+- Log `upstream_status` and a 500-char snippet of the body before returning.
 
----
+### 4. Add the stories button + result card to `AdminBlog.tsx`
 
-### 3. PDF generation (server-side, Deno)
+- Add "Run stories agent" button next to "Run news agent" using the same loading state pattern.
+- Reuse the existing `agentResult` card for both (or split into two). Keep it minimal — one card that shows the most recent result with a label of which agent ran.
 
-Use **`pdf-lib`** (`https://esm.sh/pdf-lib@1.17.1`) inside `trip-generate`. Pure JS, no native deps, works in Deno. Layout:
+### 5. Update `supabase/config.toml`
 
-- Cover: AndamanBazaar logo block, trip title, dates, days, traveller type, budget tier.
-- Overview page: 2–3 sentence trip thesis + at-a-glance day summaries.
-- Per-day pages: heading, morning / afternoon / evening blocks, ferry hops (with timing notes), travel-time buffers, weather backup, "local insider" tip.
-- Ferry & logistics page (consolidated table).
-- Budget breakdown (table + total).
-- Local recommendations (food, hidden spots, marketplace cross-links to relevant categories like bike rentals).
-- Packing checklist.
-- Emergency & practical tips.
-- Closing summary + share line.
+Add:
 
-Design: clean sans, generous spacing, primary color accent strip, page numbers, footer with `andamanbazaar.in`.
+```toml
+[functions.andaman-stories-agent]
+verify_jwt = false
+```
 
-The AI returns structured JSON (tool-calling) so layout is deterministic and not parsed from prose.
+(`admin-trigger-stories-agent` keeps default — it validates the JWT in code.)
 
----
+### 6. Re-add the daily pg_cron schedule for stories
 
-### 4. AI prompt strategy (`trip-generate`)
+```sql
+select cron.schedule(
+  'andaman-stories-agent-daily',
+  '30 6 * * *',
+  $$ select net.http_post(
+       url := 'https://tsduibmoqntxqdaswbef.supabase.co/functions/v1/andaman-stories-agent',
+       headers := jsonb_build_object(
+         'Content-Type','application/json',
+         'x-cron-secret', current_setting('app.news_agent_secret', true)
+       )
+     ); $$
+);
+```
 
-System prompt establishes the persona: *"You are an Andaman local insider, ferry logistics expert, and budget optimizer. Produce realistic, conservative itineraries grounded in real Andaman geography (Port Blair, Havelock/Swaraj Dweep, Neil/Shaheed Dweep, Baratang, Long Island, Diglipur). Never schedule impossible ferry sequences. Always include weather backups. Avoid generic tourist fluff."*
+(Match whatever pattern the existing news cron uses — will inspect `cron.job` first and reuse the same secret-passing approach.)
 
-Hard rules embedded:
-- Inter-island days require an explicit ferry slot (Makruzz/Green Ocean/Nautika typical morning/afternoon windows) and a 90-minute buffer.
-- Max one inter-island transfer per day.
-- Day 1 = Port Blair arrival logistics (no Havelock same-day unless flight lands before 10:00).
-- Last day = back to Port Blair before 18:00.
-- Budget tier maps to ₹/day ranges: low ≈ ₹1.5–2.5k, medium ≈ ₹3–5k, high ≈ ₹6k+ (excluding flights).
-- Marketplace cross-sell: when the itinerary needs a scooter, snorkel gear, etc., include a suggestion line linking to `/listings?category=...`.
+### 7. Verify
 
-Tool schema enforces `{ cover, overview, days[{ date, island, morning, afternoon, evening, ferry, weather_backup, insider_tip }], ferry_logistics[], budget{items[],total}, recommendations{food[],hidden[],marketplace[]}, packing[], emergency[] }`.
+- Deploy `andaman-stories-agent`, `admin-trigger-stories-agent`, and the patched `admin-trigger-news-agent`.
+- Call both via `supabase--curl_edge_functions` while logged in as admin.
+- Read edge logs to confirm the upstream status/body is now logged.
+- Confirm the admin UI surfaces meaningful errors (e.g. "moderation rejected: …", "no fresh story found", "LOVABLE_API_KEY missing") instead of "non-2xx".
 
-Model: `google/gemini-2.5-pro`, `reasoning.effort='medium'`.
+## Files touched
 
----
+- `supabase/functions/andaman-stories-agent/index.ts` (new)
+- `supabase/functions/admin-trigger-stories-agent/index.ts` (new)
+- `supabase/functions/admin-trigger-news-agent/index.ts` (harden error reporting)
+- `supabase/config.toml` (add stories agent block)
+- `src/pages/AdminBlog.tsx` (add stories button + result card)
+- One SQL migration to (re)create the pg_cron schedule
 
-### 5. Frontend
+## Notes / risks
 
-**New route `/trip-planner`** added to `App.tsx`, plus a top-level entry point on `Index.tsx` (hero CTA "Plan your Andaman trip with AI — ₹49") and a `Sparkles` icon item in the header/dropdown.
-
-**Pages / components**
-- `src/pages/TripPlanner.tsx` — multi-step wizard:
-  1. Form (days, dates with shadcn DatePicker, budget tier, interests checkboxes, optional islands).
-  2. Loading → preview screen with teaser + locked sections (blurred cards with lock icon + "Unlock full plan ₹49").
-  3. `PayTripDialog` (mirrors `BoostListingDialog`: Cashfree SDK modal, error UI with stage/attempt, retry button).
-  4. Generating spinner (calls `trip-download-url` once `status='generated'`; polls every 2s up to 60s).
-  5. Success: download button + share (Web Share API with fallback to copying signed URL) + "Plan another".
-- `src/pages/MyTrips.tsx` — list of past trips for the user (status badges, redownload button that re-signs URL).
-- `src/components/TripPreviewCard.tsx`, `src/components/LockedSection.tsx`, `src/components/PayTripDialog.tsx`.
-- `src/lib/tripPlanner.ts` — typed wrappers around the 5 edge functions; clean separation from UI.
-
-Add **My Trips** link to user dropdown in `Layout.tsx`.
-
-All states covered: loading, empty (no past trips), error (with retry), rate-limit (`429` → friendly toast), credits (`402` → friendly toast), payment-cancelled, generation-failed (refundable note + retry generate without re-paying).
-
----
-
-### 6. Validation, security, hygiene
-
-- Zod schema for form inputs both client- and server-side.
-- Server enforces: caller owns trip, payment status = `paid` before generation, generation idempotent (skip if `status='generated'`).
-- Signed URLs only — never expose public storage paths.
-- Secrets stay server-side (`LOVABLE_API_KEY`, `CASHFREE_*`).
-- Strict CORS headers matching existing functions.
-- All edge functions log structured errors; client-side `PayTripDialog` shows stage + attempt details like `BoostListingDialog`.
-
----
-
-### 7. Files to add / edit
-
-**New**
-- `supabase/migrations/<ts>_trip_planner.sql`
-- `supabase/functions/trip-preview/index.ts`
-- `supabase/functions/cashfree-create-trip-order/index.ts`
-- `supabase/functions/cashfree-verify-trip-payment/index.ts`
-- `supabase/functions/trip-generate/index.ts`
-- `supabase/functions/trip-download-url/index.ts`
-- `src/pages/TripPlanner.tsx`
-- `src/pages/MyTrips.tsx`
-- `src/components/PayTripDialog.tsx`
-- `src/components/TripPreviewCard.tsx`
-- `src/components/LockedSection.tsx`
-- `src/lib/tripPlanner.ts`
-
-**Edit**
-- `src/App.tsx` — add `/trip-planner` and `/my-trips` routes.
-- `src/pages/Index.tsx` — add hero CTA card.
-- `src/components/Layout.tsx` — add "My Trips" dropdown item.
-
-No changes to existing payment/Cashfree code — new functions live alongside, sharing the same secrets.
-
----
-
-### 8. Out of scope (called out)
-
-- React Native app (project is web).
-- Razorpay (project standardised on Cashfree).
-- Refund automation (manual support note in failure UI).
-- Multi-language PDFs (English only v1).
-
-Approve and I'll implement end-to-end in default mode.
+- Lovable AI may rate-limit (429) or return 402 — both proxies will surface that text now instead of opaque 500.
+- If the news agent itself is currently broken on the deployed side, hardening the proxy will reveal the real cause in the next run; we may then need a follow-up patch to the news agent. I'll capture the upstream body on the first verification run and patch if needed before declaring done.

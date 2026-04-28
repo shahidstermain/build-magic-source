@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.andaman-news-agent]
 verify_jwt = false
+
+[functions.andaman-stories-agent]
+verify_jwt = false
