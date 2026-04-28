@@ -43,11 +43,9 @@ Deno.serve(async (req) => {
     const userClient = createClient(SUPABASE_URL, ANON, {
       global: { headers: { Authorization: authHeader } },
     });
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: claimsErr } =
-      await userClient.auth.getClaims(token);
-    if (claimsErr || !claims?.claims?.sub) {
-      console.error("[trigger-stories] getClaims failed:", claimsErr?.message);
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user?.id) {
+      console.error("[trigger-stories] getUser failed:", userErr?.message);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -56,7 +54,7 @@ Deno.serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SERVICE);
     const { data: isAdmin, error: roleErr } = await admin.rpc("has_role", {
-      _user_id: claims.claims.sub,
+      _user_id: userData.user.id,
       _role: "admin",
     });
     if (roleErr || !isAdmin) {
