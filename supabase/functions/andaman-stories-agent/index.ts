@@ -228,7 +228,10 @@ async function callLovableJSON(messages: Array<{ role: string; content: string }
   return JSON.parse(args) as GeneratedPost;
 }
 
-async function generateStory(recentTitles: string[]): Promise<GeneratedPost> {
+async function generateStory(
+  recentTitles: string[],
+  retryFeedback?: string[],
+): Promise<GeneratedPost> {
   const system = `You are a local Andaman travel writer for AndamanBazaar.in.
 Write SEO-optimised, helpful, evergreen blog posts that bring organic traffic.
 Style:
@@ -249,7 +252,13 @@ ${TOPIC_POOL.map((t, i) => `${i + 1}. ${t}`).join("\n")}
 Recently published post titles (avoid overlap):
 ${recentTitles.length ? recentTitles.map((t) => `- ${t}`).join("\n") : "- (none)"}
 
-Now write the full blog post via the \`publish_story\` tool.`;
+Now write the full blog post via the \`publish_story\` tool.${
+    retryFeedback && retryFeedback.length
+      ? `\n\nIMPORTANT — your previous attempt FAILED these checks. Fix every one of them this time:\n- ${
+        retryFeedback.join("\n- ")
+      }`
+      : ""
+  }`;
 
   return await callLovableJSON([
     { role: "system", content: system },
