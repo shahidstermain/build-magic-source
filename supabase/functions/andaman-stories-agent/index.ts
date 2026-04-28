@@ -524,13 +524,13 @@ Deno.serve(async (req) => {
       .limit(40);
     const recentTitles = (recent ?? []).map((r: { title: string }) => r.title);
 
-    let post = await generateStory(recentTitles);
+    let post = normalizePost(await generateStory(recentTitles));
     console.log("[stories-agent] picked topic:", post.topic, "→", post.headline);
 
     let validation = validate(post);
     if (!validation.ok) {
       console.warn("[validate] attempt 1 failed:", validation.reasons);
-      post = await generateStory(recentTitles, validation.reasons);
+      post = normalizePost(await generateStory(recentTitles, validation.reasons));
       validation = validate(post);
     }
     if (!validation.ok) {
