@@ -685,10 +685,25 @@ function normalizePost(post: GeneratedPost): GeneratedPost {
       ? clampHeadlineForSlug(post.headline, SLUG_MAX)
       : post.headline;
 
-  const coverAlt =
-    post.coverAlt && post.coverAlt.length > ALT_MAX
-      ? smartTruncate(post.coverAlt, ALT_MAX)
-      : post.coverAlt;
+  let coverAlt = post.coverAlt ?? "";
+  if (coverAlt.length > ALT_MAX) {
+    coverAlt = smartTruncate(coverAlt, ALT_MAX);
+  }
+  // Ensure cover alt references an Andaman location/place.
+  if (coverAlt && !includesAndamanKeyword(coverAlt)) {
+    const suffix = " in the Andaman Islands";
+    const stripped = coverAlt.replace(/[\s.…]+$/u, "");
+    const candidate = `${stripped}${suffix}`;
+    if (candidate.length <= ALT_MAX) {
+      coverAlt = candidate;
+    } else {
+      // Truncate the body of the alt enough to fit the suffix.
+      const room = ALT_MAX - suffix.length;
+      if (room >= ALT_MIN - suffix.length && room > 10) {
+        coverAlt = `${smartTruncate(stripped, room).replace(/[\s.…]+$/u, "")}${suffix}`;
+      }
+    }
+  }
 
   return { ...post, metaDescription, seoTitle, headline, coverAlt };
 }
