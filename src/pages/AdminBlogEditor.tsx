@@ -17,7 +17,6 @@ import { slugify, type PostCategory, type PostStatus } from "@/lib/posts";
 // Markdown editor is heavy — lazy-load
 const MdEditor = lazy(() => import("@uiw/react-md-editor"));
 import "@uiw/react-md-editor/markdown-editor.css";
-import "@uiw/react-markdown-preview/markdown.css";
 
 type FormState = {
   title: string;
