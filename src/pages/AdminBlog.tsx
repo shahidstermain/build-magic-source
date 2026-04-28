@@ -22,6 +22,9 @@ type AgentResult = {
   error?: string;
   gathered?: number;
   ranAt: string;
+  agent?: "news" | "stories";
+  upstream_status?: number;
+  issues?: string[];
 };
 
 function AdminBlogInner() {
@@ -29,6 +32,7 @@ function AdminBlogInner() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
+  const [runningStories, setRunningStories] = useState(false);
   const [agentResult, setAgentResult] = useState<AgentResult | null>(null);
 
   const load = async () => {
@@ -49,34 +53,52 @@ function AdminBlogInner() {
     void load();
   }, []);
 
-  const runNewsAgent = async () => {
-    setRunning(true);
+  const runAgent = async (agent: "news" | "stories") => {
+    const fnName =
+      agent === "news" ? "admin-trigger-news-agent" : "admin-trigger-stories-agent";
+    const setBusy = agent === "news" ? setRunning : setRunningStories;
+    const label = agent === "news" ? "News agent" : "Stories agent";
+    setBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke(
-        "admin-trigger-news-agent",
-        { method: "POST" },
-      );
+      const { data, error } = await supabase.functions.invoke(fnName, {
+        method: "POST",
+      });
       if (error) throw error;
-      const result: AgentResult = { ...(data ?? {}), ranAt: new Date().toISOString() };
+      const result: AgentResult = {
+        ...(data ?? {}),
+        agent,
+        ranAt: new Date().toISOString(),
+      };
       setAgentResult(result);
       if (result.status === "created") {
-        toast({ title: "News post published", description: result.title ?? result.slug });
+        toast({
+          title: `${label}: post published`,
+          description: result.title ?? result.slug,
+        });
         void load();
       } else if (result.status === "skipped") {
-        toast({ title: "Nothing new to publish", description: result.reason ?? "All sources up to date." });
+        toast({
+          title: `${label}: nothing published`,
+          description: result.reason ?? "Skipped.",
+        });
       } else {
         toast({
-          title: "News agent failed",
+          title: `${label} failed`,
           description: result.error ?? "Unknown error",
           variant: "destructive",
         });
       }
     } catch (e) {
       const msg = (e as Error).message;
-      setAgentResult({ status: "error", error: msg, ranAt: new Date().toISOString() });
-      toast({ title: "News agent failed", description: msg, variant: "destructive" });
+      setAgentResult({
+        status: "error",
+        error: msg,
+        agent,
+        ranAt: new Date().toISOString(),
+      });
+      toast({ title: `${label} failed`, description: msg, variant: "destructive" });
     } finally {
-      setRunning(false);
+      setBusy(false);
     }
   };
 
@@ -101,13 +123,25 @@ function AdminBlogInner() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" onClick={runNewsAgent} disabled={running}>
+          <Button variant="outline" onClick={() => runAgent("news")} disabled={running}>
             {running ? (
               <Loader2 className="mr-1 h-4 w-4 animate-spin" />
             ) : (
               <Sparkles className="mr-1 h-4 w-4" />
             )}
             {running ? "Running…" : "Run news agent"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => runAgent("stories")}
+            disabled={runningStories}
+          >
+            {runningStories ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="mr-1 h-4 w-4" />
+            )}
+            {runningStories ? "Running…" : "Run stories agent"}
           </Button>
           <Button asChild>
             <Link to="/admin/blog/new">
@@ -130,9 +164,12 @@ function AdminBlogInner() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="space-y-1">
               <p className="font-medium">
-                {agentResult.status === "created" && "Published a fresh story"}
-                {agentResult.status === "skipped" && "No new stories found"}
-                {agentResult.status !== "created" && agentResult.status !== "skipped" && "News agent error"}
+                {agentResult.agent === "stories" ? "Stories agent" : "News agent"}
+                {agentResult.status === "created" && " · published a fresh post"}
+                {agentResult.status === "skipped" && " · skipped"}
+                {agentResult.status !== "created" &&
+                  agentResult.status !== "skipped" &&
+                  " · error"}
               </p>
               {agentResult.title && (
                 <p className="text-muted-foreground">{agentResult.title}</p>
@@ -140,8 +177,20 @@ function AdminBlogInner() {
               {agentResult.reason && (
                 <p className="text-muted-foreground">{agentResult.reason}</p>
               )}
+              {agentResult.issues && agentResult.issues.length > 0 && (
+                <ul className="ml-4 list-disc text-xs text-muted-foreground">
+                  {agentResult.issues.map((i) => (
+                    <li key={i}>{i}</li>
+                  ))}
+                </ul>
+              )}
               {agentResult.error && (
-                <p className="text-destructive">{agentResult.error}</p>
+                <p className="text-destructive">
+                  {agentResult.error}
+                  {agentResult.upstream_status
+                    ? ` (upstream ${agentResult.upstream_status})`
+                    : ""}
+                </p>
               )}
               <p className="text-xs text-muted-foreground">
                 {agentResult.source && `Source: ${agentResult.source} · `}
