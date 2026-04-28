@@ -65,30 +65,58 @@ Deno.serve(async (req) => {
       });
     }
 
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/andaman-news-agent`, {
-      method: "POST",
-      headers: {
-        "x-cron-secret": NEWS_AGENT_SECRET,
-        "Content-Type": "application/json",
-      },
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${SUPABASE_URL}/functions/v1/andaman-news-agent`, {
+        method: "POST",
+        headers: {
+          "x-cron-secret": NEWS_AGENT_SECRET,
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (e) {
+      const msg = (e as Error).message;
+      console.error("[trigger-news] upstream fetch threw:", msg);
+      return new Response(
+        JSON.stringify({ status: "error", error: `upstream_unreachable: ${msg}` }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
     const text = await res.text();
-    let payload: unknown;
+    console.log(
+      `[trigger-news] upstream status=${res.status} body=`,
+      text.slice(0, 500),
+    );
+    let payload: Record<string, unknown>;
     try {
       payload = JSON.parse(text);
     } catch {
-      payload = { raw: text };
+      payload = { raw: text.slice(0, 500) };
+    }
+    if (!res.ok) {
+      payload = {
+        status: "error",
+        upstream_status: res.status,
+        error:
+          (payload as { error?: string }).error ??
+          (payload as { reason?: string }).reason ??
+          (payload as { raw?: string }).raw ??
+          `upstream returned ${res.status}`,
+        ...payload,
+      };
     }
 
     return new Response(JSON.stringify(payload), {
-      status: res.status,
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
+    const msg = (e as Error).message;
+    console.error("[trigger-news] handler error:", msg);
     return new Response(
-      JSON.stringify({ error: (e as Error).message }),
+      JSON.stringify({ status: "error", error: msg }),
       {
-        status: 500,
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
     );
