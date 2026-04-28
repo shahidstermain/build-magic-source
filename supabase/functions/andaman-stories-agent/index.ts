@@ -488,12 +488,17 @@ Deno.serve(async (req) => {
       .limit(40);
     const recentTitles = (recent ?? []).map((r: { title: string }) => r.title);
 
-    const post = await generateStory(recentTitles);
+    let post = await generateStory(recentTitles);
     console.log("[stories-agent] picked topic:", post.topic, "→", post.headline);
 
-    const validation = validate(post);
+    let validation = validate(post);
     if (!validation.ok) {
-      console.warn("[validate] failed:", validation.reasons);
+      console.warn("[validate] attempt 1 failed:", validation.reasons);
+      post = await generateStory(recentTitles, validation.reasons);
+      validation = validate(post);
+    }
+    if (!validation.ok) {
+      console.warn("[validate] attempt 2 failed:", validation.reasons);
       return new Response(
         JSON.stringify({
           status: "skipped",
