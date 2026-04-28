@@ -323,6 +323,42 @@ async function moderate(post: GeneratedPost): Promise<{ ok: true } | { ok: false
 
 // ---------- validation ----------
 
+function smartTruncate(text: string, max: number): string {
+  const t = (text ?? "").trim().replace(/\s+/g, " ");
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max - 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  const base = lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut;
+  return base.replace(/[\s,;:.!?\-]+$/, "") + "…";
+}
+
+function normalizePost(post: GeneratedPost): GeneratedPost {
+  let metaDescription = (post.metaDescription ?? "").trim().replace(/\s+/g, " ");
+  if (metaDescription.length > META_DESC_MAX) {
+    metaDescription = smartTruncate(metaDescription, META_DESC_MAX);
+  }
+
+  let coverAlt = (post.coverAlt ?? "").trim().replace(/\s+/g, " ");
+  if (coverAlt.length > ALT_MAX) {
+    coverAlt = smartTruncate(coverAlt, ALT_MAX);
+  }
+  if (coverAlt && !includesAndamanKeyword(coverAlt)) {
+    const suffix = " in the Andaman Islands";
+    const stripped = coverAlt.replace(/[\s.…]+$/u, "");
+    const candidate = `${stripped}${suffix}`;
+    if (candidate.length <= ALT_MAX) {
+      coverAlt = candidate;
+    } else {
+      const room = ALT_MAX - suffix.length;
+      if (room > 10) {
+        coverAlt = `${smartTruncate(stripped, room).replace(/[\s.…]+$/u, "")}${suffix}`;
+      }
+    }
+  }
+
+  return { ...post, metaDescription, coverAlt };
+}
+
 function validate(post: GeneratedPost): ValidationResult {
   const reasons: string[] = [];
   const words = wordCount(post.bodyMarkdown);
