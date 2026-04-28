@@ -644,6 +644,55 @@ function validateContent(post: GeneratedPost): ValidationResult {
   return reasons.length === 0 ? { ok: true } : { ok: false, reasons };
 }
 
+// ---------- normalization (deterministic clamping) ----------
+
+function smartTruncate(text: string, max: number): string {
+  const t = (text ?? "").trim().replace(/\s+/g, " ");
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max);
+  const lastSpace = cut.lastIndexOf(" ");
+  const base = lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut;
+  return base.replace(/[\s,;:.!?-]+$/, "") + "…";
+}
+
+function clampHeadlineForSlug(headline: string, maxSlug: number): string {
+  const h = (headline ?? "").trim().replace(/\s+/g, " ");
+  if (slugify(h).length <= maxSlug) return h;
+  // Greedy word-trim until slug fits.
+  const words = h.split(" ");
+  while (words.length > 1) {
+    words.pop();
+    const candidate = words.join(" ");
+    if (slugify(candidate).length <= maxSlug) return candidate;
+  }
+  // Fallback: hard cut
+  return h.slice(0, Math.max(10, maxSlug));
+}
+
+function normalizePost(post: GeneratedPost): GeneratedPost {
+  const metaDescription =
+    post.metaDescription && post.metaDescription.length > META_DESC_MAX
+      ? smartTruncate(post.metaDescription, META_DESC_MAX)
+      : post.metaDescription;
+
+  const seoTitle =
+    post.seoTitle && post.seoTitle.length > SEO_TITLE_MAX
+      ? smartTruncate(post.seoTitle, SEO_TITLE_MAX)
+      : post.seoTitle;
+
+  const headline =
+    post.headline && slugify(post.headline).length > SLUG_MAX
+      ? clampHeadlineForSlug(post.headline, SLUG_MAX)
+      : post.headline;
+
+  const coverAlt =
+    post.coverAlt && post.coverAlt.length > ALT_MAX
+      ? smartTruncate(post.coverAlt, ALT_MAX)
+      : post.coverAlt;
+
+  return { ...post, metaDescription, seoTitle, headline, coverAlt };
+}
+
 const ALT_MIN = 50;
 const ALT_MAX = 125;
 const ALT_TOPIC_OVERLAP_MIN = 2; // # of topic words that must appear in alt
