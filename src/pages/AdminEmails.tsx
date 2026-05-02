@@ -131,7 +131,15 @@ const AdminEmails = () => {
   const checkWebhook = async () => {
     setCheckingWebhook(true);
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-    const url = `https://${projectId}.functions.supabase.co/resend-webhook`;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+    if (!projectId && !supabaseUrl) {
+      toast({ title: "Configuration missing", description: "Neither VITE_SUPABASE_PROJECT_ID nor VITE_SUPABASE_URL is set.", variant: "destructive" });
+      setCheckingWebhook(false);
+      return;
+    }
+    const url = projectId
+      ? `https://${projectId}.functions.supabase.co/resend-webhook`
+      : `${supabaseUrl}/functions/v1/resend-webhook`;
     const checkedAt = new Date().toISOString();
     try {
       const res = await fetch(url, {
