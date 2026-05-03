@@ -148,7 +148,10 @@ function jaccard(a: Set<string>, b: Set<string>) {
 
 // ---------- LLM ----------
 
-async function callLovableJSON(messages: Array<{ role: string; content: string }>) {
+async function callLovableJSON(
+  messages: Array<{ role: string; content: string }>,
+  model: string = "google/gemini-2.5-pro",
+) {
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -156,7 +159,7 @@ async function callLovableJSON(messages: Array<{ role: string; content: string }
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "google/gemini-2.5-pro",
+      model,
       messages,
       tools: [
         {
@@ -260,10 +263,17 @@ Now write the full blog post via the \`publish_story\` tool.${
       : ""
   }`;
 
-  return await callLovableJSON([
-    { role: "system", content: system },
-    { role: "user", content: user },
-  ]);
+  // Cost guard: retries (when feedback is present) use the cheaper flash model.
+  const model = retryFeedback && retryFeedback.length
+    ? "google/gemini-2.5-flash"
+    : "google/gemini-2.5-pro";
+  return await callLovableJSON(
+    [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+    model,
+  );
 }
 
 // ---------- moderation ----------
