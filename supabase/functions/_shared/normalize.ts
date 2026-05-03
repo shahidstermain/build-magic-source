@@ -74,3 +74,28 @@ export function ensureAndamanReference(text: string, max: number): string {
   if (room <= 10) return t;
   return `${smartTruncate(stripped, room).replace(/[\s.…]+$/u, "")}${suffix}`;
 }
+
+/**
+ * Pads `text` with neutral filler clauses until it reaches at least `min` chars,
+ * never exceeding `max`. Used to satisfy min-length validation when the model
+ * underwrites metaDescription/coverAlt. Filler clauses are appended in order
+ * and only if they fit within `max`.
+ */
+export function padToMin(
+  text: string,
+  min: number,
+  max: number,
+  fillers: string[],
+): string {
+  let out = (text ?? "").trim().replace(/\s+/g, " ");
+  if (out.length >= min) return out;
+  for (const filler of fillers) {
+    const sep = /[.!?…]$/.test(out) ? " " : ". ";
+    const candidate = out ? `${out}${sep}${filler}` : filler;
+    if (candidate.length > max) continue;
+    out = candidate;
+    if (out.length >= min) break;
+  }
+  return out;
+}
+

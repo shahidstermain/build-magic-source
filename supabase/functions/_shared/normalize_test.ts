@@ -6,6 +6,7 @@ import {
   clampHeadlineForSlug,
   ensureAndamanReference,
   includesAndamanKeyword,
+  padToMin,
   slugify,
   smartTruncate,
 } from "./normalize.ts";
@@ -63,4 +64,23 @@ Deno.test("clampHeadlineForSlug shortens until slug fits", () => {
   const headline = "An Incredibly Long Story About Diving In Havelock Beach Andaman 2026";
   const out = clampHeadlineForSlug(headline, 40);
   assert(slugify(out).length <= 40, `slug ${slugify(out)}`);
+});
+
+Deno.test("padToMin appends fillers to reach minimum", () => {
+  const out = padToMin("Short blurb.", 90, 165, [
+    "Read the full local guide on AndamanBazaar",
+    "Updated for 2026 with timings, prices and tips",
+  ]);
+  assert(out.length >= 90, `length ${out.length}`);
+  assert(out.length <= 165);
+});
+
+Deno.test("padToMin no-op when already long enough", () => {
+  const text = "x".repeat(100);
+  assertEquals(padToMin(text, 90, 165, ["filler"]), text);
+});
+
+Deno.test("padToMin skips filler that would exceed max", () => {
+  const out = padToMin("hi", 50, 30, ["this filler is way too long to ever fit"]);
+  assert(out.length <= 30);
 });
