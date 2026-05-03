@@ -670,10 +670,16 @@ function clampHeadlineForSlug(headline: string, maxSlug: number): string {
 }
 
 function normalizePost(post: GeneratedPost): GeneratedPost {
-  const metaDescription =
+  let metaDescription =
     post.metaDescription && post.metaDescription.length > META_DESC_MAX
       ? smartTruncate(post.metaDescription, META_DESC_MAX)
       : post.metaDescription;
+  if (metaDescription && metaDescription.length < META_DESC_MIN) {
+    metaDescription = padToMin(metaDescription, META_DESC_MIN, META_DESC_MAX, [
+      "Read the latest Andaman news on AndamanBazaar",
+      "Updated coverage from Port Blair and the islands",
+    ]);
+  }
 
   const seoTitle =
     post.seoTitle && post.seoTitle.length > SEO_TITLE_MAX
@@ -704,8 +710,27 @@ function normalizePost(post: GeneratedPost): GeneratedPost {
       }
     }
   }
+  if (coverAlt && coverAlt.length < ALT_MIN) {
+    coverAlt = padToMin(coverAlt, ALT_MIN, ALT_MAX, [
+      "scenic view from the Andaman Islands",
+      "captured along the coast on a clear day",
+    ]);
+  }
 
   return { ...post, metaDescription, seoTitle, headline, coverAlt };
+}
+
+function padToMin(text: string, min: number, max: number, fillers: string[]): string {
+  let out = (text ?? "").trim().replace(/\s+/g, " ");
+  if (out.length >= min) return out;
+  for (const filler of fillers) {
+    const sep = /[.!?…]$/.test(out) ? " " : ". ";
+    const candidate = out ? `${out}${sep}${filler}` : filler;
+    if (candidate.length > max) continue;
+    out = candidate;
+    if (out.length >= min) break;
+  }
+  return out;
 }
 
 const ALT_MIN = 50;
