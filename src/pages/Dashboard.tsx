@@ -25,6 +25,7 @@ import { BoostListingDialog } from "@/components/BoostListingDialog";
 import { PaymentHistory } from "@/components/PaymentHistory";
 import { SiteSettingsCard } from "@/components/SiteSettingsCard";
 import { VerifiedLocalBadge } from "@/components/VerifiedLocalBadge";
+import { AdminToolsCard } from "@/components/AdminToolsCard";
 
 type ListingRow = {
   id: string;
@@ -395,6 +396,8 @@ const Dashboard = () => {
           )
         }
       />
+
+      <AdminToolsCard />
     </section>
   );
 };
