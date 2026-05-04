@@ -196,6 +196,7 @@ export function Layout() {
             <ul className="flex flex-wrap items-center gap-5">
               {[
                 { to: "/contact", label: "Contact" },
+                { to: "/whats-new", label: "What's new" },
                 { to: "/privacy", label: "Privacy" },
                 { to: "/terms",   label: "Terms" },
                 { to: "/brand",   label: "Brand" },
